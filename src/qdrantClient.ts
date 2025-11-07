@@ -35,8 +35,29 @@ export class QdrantVectorStore {
                     }
                 });
                 console.log(`[Qdrant] Created collection: ${this.collectionName}`);
+                
+                // Create payload index for filePath (required for filtering/deleting)
+                await this.client.createPayloadIndex(this.collectionName, {
+                    field_name: 'filePath',
+                    field_schema: 'keyword'
+                });
+                console.log(`[Qdrant] Created payload index for 'filePath'`);
             } else {
                 console.log(`[Qdrant] Collection exists: ${this.collectionName}`);
+                
+                // Ensure payload index exists (in case collection was created without it)
+                try {
+                    await this.client.createPayloadIndex(this.collectionName, {
+                        field_name: 'filePath',
+                        field_schema: 'keyword'
+                    });
+                    console.log(`[Qdrant] Payload index for 'filePath' verified/created`);
+                } catch (indexError: any) {
+                    // Index might already exist, that's okay
+                    if (!indexError.message?.includes('already exists')) {
+                        console.warn('[Qdrant] Payload index warning:', indexError.message);
+                    }
+                }
             }
         } catch (error) {
             console.error('Failed to initialize collection:', error);
@@ -128,8 +149,13 @@ export class QdrantVectorStore {
                 }
             });
             console.log(`[Qdrant] Deleted vectors for ${filePath}`);
-        } catch (error) {
-            console.error('Delete error:', error);
+        } catch (error: any) {
+            // Ignore index errors - will be fixed after collection initialization
+            if (error.message?.includes('Index required') || error.status === 400) {
+                console.log(`[Qdrant] Skip delete for ${filePath} (index not ready yet)`);
+            } else {
+                console.error('Delete error:', error);
+            }
         }
     }
 
