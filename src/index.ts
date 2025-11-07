@@ -5,22 +5,33 @@ import { CodebaseIndexMCPServer } from './server.js';
 
 config();
 
-// Determine vector store type
-const vectorStoreType = (process.env.VECTOR_STORE_TYPE || 'memory') as 'qdrant' | 'memory' | 'cloud';
+// Validate required environment variables
+if (!process.env.GEMINI_API_KEY) {
+    console.error('[Error] GEMINI_API_KEY is required');
+    process.exit(1);
+}
+
+if (!process.env.QDRANT_URL) {
+    console.error('[Error] QDRANT_URL is required');
+    process.exit(1);
+}
+
+if (!process.env.QDRANT_API_KEY) {
+    console.error('[Error] QDRANT_API_KEY is required');
+    process.exit(1);
+}
 
 const server = new CodebaseIndexMCPServer({
     repoPath: process.env.REPO_PATH || process.cwd(),
     codebaseMemoryPath: process.env.MEMORY_FILE_PATH || './memory/index-metadata.json',
-    vectorStoreType,
+    vectorStoreType: 'cloud',
     qdrant: {
-        url: vectorStoreType === 'memory'
-            ? './vector_storage'  // Local file storage for memory mode
-            : process.env.QDRANT_URL || 'http://localhost:6333',
+        url: process.env.QDRANT_URL,
         apiKey: process.env.QDRANT_API_KEY,
         collectionName: process.env.QDRANT_COLLECTION || 'codebase'
     },
     embedding: {
-        apiKey: process.env.GEMINI_API_KEY || '',
+        apiKey: process.env.GEMINI_API_KEY,
         model: 'text-embedding-004',
         dimension: 768
     },

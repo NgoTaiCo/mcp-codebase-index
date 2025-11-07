@@ -8,8 +8,9 @@
             ],
             "env": {
                 "REPO_PATH": "/Users/ngotaico/Projects/openim-flutter-nfca",
-                "VECTOR_STORE_TYPE": "memory",
-                "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE"
+                "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE",
+                "QDRANT_URL": "YOUR_QDRANT_CLOUD_URL_HERE",
+                "QDRANT_API_KEY": "YOUR_QDRANT_API_KEY_HERE"
             }
         }
     }
