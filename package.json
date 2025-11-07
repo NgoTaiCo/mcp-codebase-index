@@ -1,7 +1,7 @@
 {
   "name": "@ngotaico/mcp-codebase-index",
-  "version": "1.0.0",
-  "description": "MCP Server for real-time codebase indexing and semantic search with Qdrant",
+  "version": "1.0.1",
+  "description": "MCP server for AI-powered codebase indexing and semantic search using Qdrant Cloud",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
