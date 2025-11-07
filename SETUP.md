@@ -1,187 +1,309 @@
-# Setup Instructions
+# Setup Guide
+
+Complete walkthrough to get MCP Codebase Index Server running with Claude Desktop.
 
 ## Prerequisites
 
-1. **Node.js** (v18+)
-2. **Gemini API Key** - Get from: https://makersuite.google.com/app/apikey
+### 1. Get Gemini API Key
 
-**Note:** Docker is now **optional**! You can use in-memory vector storage without Docker.
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Sign in with Google account
+3. Click "Create API Key"
+4. Copy the key (starts with `AIzaSy...`)
 
----
+### 2. Create Qdrant Cloud Account
 
-## Quick Setup (No Docker Required!)
+1. Go to [cloud.qdrant.io](https://cloud.qdrant.io)
+2. Sign up (free tier available)
+3. Create a new cluster:
+   - Choose region (e.g., GCP us-east4)
+   - Select free tier (1GB)
+   - Click "Create"
 
-### 1. Configure Environment
+### 3. Get Qdrant Credentials
 
+After cluster is created:
+
+1. Click on your cluster name
+2. Copy **Cluster URL** (looks like `https://xxx-xxx.gcp.cloud.qdrant.io:6333`)
+3. Go to "API Keys" tab
+4. Click "Create API Key"
+5. Copy the API key (JWT token starting with `eyJhbGci...`)
+
+📖 **Detailed guide**: See [QDRANT_CLOUD_SETUP.md](QDRANT_CLOUD_SETUP.md)
+
+## Installation
+
+### Step 1: Find Claude Config
+
+**macOS:**
 ```bash
-cp .env.example .env
+~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
-Edit `.env` and set:
-
-```env
-REPO_PATH=/path/to/your/codebase
-GEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-VECTOR_STORE_TYPE=memory  # No Docker needed!
+**Windows:**
+```
+%APPDATA%\Claude\claude_desktop_config.json
 ```
 
-### 2. Build and Run
-
+**Linux:**
 ```bash
-npm install
-npm run build
-npm start
+~/.config/Claude/claude_desktop_config.json
 ```
 
-That's it! The server will use **SimpleVectorStore** which stores vectors in JSON files locally.
+### Step 2: Edit Config
 
----
-
-## Alternative Setup (With Qdrant Docker)
-
-If you want better performance for large codebases, use Qdrant:
-
-### 1. Start Qdrant Vector Database
-
-```bash
-docker run -d -p 6333:6333 -p 6334:6334 \
-  -v $(pwd)/qdrant_storage:/qdrant/storage \
-  qdrant/qdrant
-```
-
-Verify it's running:
-```bash
-curl http://localhost:6333/collections
-```
-
-### 2. Configure for Qdrant
-
-Edit `.env`:
-```env
-VECTOR_STORE_TYPE=qdrant  # Use Qdrant instead of memory
-QDRANT_URL=http://localhost:6333
-```
-
----
-
-## Vector Store Options
-
-| Type | Pros | Cons | Setup |
-|------|------|------|-------|
-| **memory** | ✅ No Docker<br>✅ Zero config<br>✅ Portable | ⚠️ Slower search<br>⚠️ Large memory use | Set `VECTOR_STORE_TYPE=memory` |
-| **qdrant** | ✅ Fast search<br>✅ Scalable<br>✅ Optimized | ⚠️ Requires Docker | Docker + Set `VECTOR_STORE_TYPE=qdrant` |
-| **cloud** | ✅ No local setup<br>✅ Always available | ⚠️ Costs money<br>⚠️ Network latency | Qdrant Cloud + API key |
-
-**Recommendation:**
-- **Small projects (<1000 files):** Use `memory` mode
-- **Large projects (>1000 files):** Use `qdrant` Docker
-- **Team collaboration:** Use `cloud` mode
-
----
-
-## Testing with MCP Inspector
-
-```bash
-npm run inspector
-```
-
-This will open a web UI where you can test the `search_codebase` tool.
-
----
-
-## Configure in Your IDE
-
-### VS Code (Copilot)
-
-Add to `.vscode/settings.json`:
-
-```json
-{
-  "mcp.servers": {
-    "codebase-index": {
-      "command": "node",
-      "args": ["/Users/ngotaico/Projects/mcp-codebase-index/dist/index.js"],
-      "env": {
-        "REPO_PATH": "/Users/ngotaico/Projects/YOUR_PROJECT",
-        "GEMINI_API_KEY": "your-key-here",
-        "QDRANT_URL": "http://localhost:6333"
-      },
-      "type": "stdio"
-    }
-  }
-}
-```
-
-### Claude Desktop
-
-Edit: `~/Library/Application Support/Claude/claude_desktop_config.json`
+Open the file and add:
 
 ```json
 {
   "mcpServers": {
-    "codebase-index": {
-      "command": "node",
-      "args": ["/Users/ngotaico/Projects/mcp-codebase-index/dist/index.js"],
+    "codebase": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
       "env": {
-        "REPO_PATH": "/Users/ngotaico/Projects/YOUR_PROJECT",
-        "GEMINI_API_KEY": "your-key-here",
-        "QDRANT_URL": "http://localhost:6333"
+        "REPO_PATH": "/Users/you/Projects/your-project",
+        "GEMINI_API_KEY": "AIzaSyC...",
+        "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
+        "QDRANT_API_KEY": "eyJhbGci..."
       }
     }
   }
 }
 ```
 
-Restart Claude Desktop.
+Replace:
+- `REPO_PATH`: **Absolute path** to your project
+- `GEMINI_API_KEY`: Your Gemini API key
+- `QDRANT_URL`: Your Qdrant cluster URL
+- `QDRANT_API_KEY`: Your Qdrant API key
 
----
+### Step 3: Restart Claude Desktop
 
-## Usage Examples
+1. Quit Claude completely
+2. Reopen Claude Desktop
+3. Wait 30-60 seconds for indexing to start
 
-Once configured, ask your AI assistant:
+## Verification
 
+### Check Server is Running
+
+1. Open Claude Desktop
+2. Look for the 🔌 icon (bottom right)
+3. You should see "codebase" server listed
+
+### Check Logs
+
+**macOS/Linux:**
+```bash
+tail -f ~/Library/Logs/Claude/mcp*.log
 ```
-"Search codebase: How is authentication implemented?"
-"Search codebase: Where is the user login function?"
-"Search codebase: Show me error handling code"
+
+**Windows:**
+```powershell
+Get-Content "$env:APPDATA\Claude\logs\mcp*.log" -Wait
 ```
 
----
+You should see:
+```
+[Qdrant] Collection exists: codebase
+[FileWatcher] Scanning for changes...
+[Indexer] Found 150 chunks to index
+[Embedder] Processing batch 1/3...
+```
+
+### Test Search
+
+Ask Claude:
+```
+Search my codebase for "authentication"
+```
+
+If working, you'll see relevant code chunks.
+
+## Configuration Options
+
+### Minimal Config (Required Only)
+
+```json
+{
+  "env": {
+    "REPO_PATH": "/path/to/project",
+    "GEMINI_API_KEY": "AIzaSy...",
+    "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
+    "QDRANT_API_KEY": "eyJhbGci..."
+  }
+}
+```
+
+### Full Config (All Options)
+
+```json
+{
+  "env": {
+    "REPO_PATH": "/path/to/project",
+    "GEMINI_API_KEY": "AIzaSy...",
+    "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
+    "QDRANT_API_KEY": "eyJhbGci...",
+    "QDRANT_COLLECTION": "my_project",
+    "WATCH_MODE": "true",
+    "BATCH_SIZE": "50"
+  }
+}
+```
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `REPO_PATH` | ✅ | - | Absolute path to your project |
+| `GEMINI_API_KEY` | ✅ | - | Google Gemini API key |
+| `QDRANT_URL` | ✅ | - | Qdrant cluster URL with port |
+| `QDRANT_API_KEY` | ✅ | - | Qdrant Cloud API key |
+| `QDRANT_COLLECTION` | ❌ | `codebase` | Collection name in Qdrant |
+| `WATCH_MODE` | ❌ | `true` | Auto-update on file changes |
+| `BATCH_SIZE` | ❌ | `50` | Embedding batch size |
 
 ## Troubleshooting
 
-### No Docker / Don't want Docker
+### Error: "Server not responding"
 
-✅ **Solution:** Use memory mode!
-
-```env
-VECTOR_STORE_TYPE=memory
-```
-
-Vectors are stored in `./vector_storage/codebase.json` file.
-
-### Qdrant Connection Error
-
+**Check 1: Verify absolute path**
 ```bash
-# Check if Qdrant is running
-curl http://localhost:6333/collections
+# macOS/Linux
+echo $REPO_PATH
+ls -la $REPO_PATH
 
-# Or restart Qdrant
-docker restart <qdrant-container>
+# Windows
+echo %REPO_PATH%
+dir %REPO_PATH%
 ```
 
-Or switch to memory mode: `VECTOR_STORE_TYPE=memory`
+**Check 2: Test Qdrant connection**
+```bash
+curl -H "api-key: YOUR_API_KEY" \
+  https://YOUR_CLUSTER.gcp.cloud.qdrant.io:6333/collections
+```
 
-### Embedding Rate Limit
+Should return JSON like:
+```json
+{
+  "result": {
+    "collections": []
+  }
+}
+```
 
----
+**Check 3: Verify Gemini API key**
+```bash
+curl "https://generativelanguage.googleapis.com/v1/models?key=YOUR_KEY"
+```
 
-## Next Steps
+Should list available models.
 
-1. **Index your codebase**: Update `REPO_PATH` in `.env`
-2. **Configure your IDE**: Add MCP server config
-3. **Start searching**: Ask natural language questions about your code
+### Error: "Failed to initialize collection"
 
----
+- ❌ Check Qdrant URL includes `:6333` port
+- ❌ Verify API key has write permissions
+- ❌ Check cluster is running (not paused)
 
-**Need help?** Check the [README.md](README.md) or create an issue on GitHub.
+### Error: "Embedding failed"
+
+- ❌ Check Gemini API quota: [aistudio.google.com](https://aistudio.google.com)
+- ❌ Reduce `BATCH_SIZE` to avoid rate limits
+- ❌ Wait a few minutes and try again
+
+### Indexing Too Slow
+
+For large repositories (1000+ files):
+
+1. **Initial indexing**: 5-10 minutes (normal)
+2. **Reduce batch size**:
+   ```json
+   {
+     "env": {
+       "BATCH_SIZE": "20"
+     }
+   }
+   ```
+3. **Check API limits**: Free tier has 60 requests/minute
+
+### Search Not Finding Code
+
+1. **Wait for indexing to complete**
+   - Check logs for "Indexing complete"
+   
+2. **Try more specific queries**
+   - ❌ "auth"
+   - ✅ "user authentication logic"
+   
+3. **Check collection has data**
+   ```bash
+   curl -H "api-key: YOUR_KEY" \
+     https://YOUR_CLUSTER.gcp.cloud.qdrant.io:6333/collections/codebase
+   ```
+
+## Advanced Usage
+
+### Multiple Projects
+
+Add multiple servers in config:
+
+```json
+{
+  "mcpServers": {
+    "frontend": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "REPO_PATH": "/path/to/frontend",
+        "GEMINI_API_KEY": "...",
+        "QDRANT_URL": "...",
+        "QDRANT_API_KEY": "...",
+        "QDRANT_COLLECTION": "frontend"
+      }
+    },
+    "backend": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "REPO_PATH": "/path/to/backend",
+        "GEMINI_API_KEY": "...",
+        "QDRANT_URL": "...",
+        "QDRANT_API_KEY": "...",
+        "QDRANT_COLLECTION": "backend"
+      }
+    }
+  }
+}
+```
+
+### Disable File Watching
+
+For one-time indexing:
+
+```json
+{
+  "env": {
+    "WATCH_MODE": "false"
+  }
+}
+```
+
+### Custom Ignore Patterns
+
+Edit `src/index.ts` and rebuild:
+
+```typescript
+ignorePaths: [
+  '.git', 'node_modules',
+  'your_custom_folder',
+  '*.generated.ts'
+]
+```
+
+## Support
+
+- 📖 **Documentation**: [github.com/NgoTaiCo/mcp-codebase-index](https://github.com/NgoTaiCo/mcp-codebase-index)
+- 🐛 **Issues**: [github.com/NgoTaiCo/mcp-codebase-index/issues](https://github.com/NgoTaiCo/mcp-codebase-index/issues)
+- 💬 **Discussions**: [github.com/NgoTaiCo/mcp-codebase-index/discussions](https://github.com/NgoTaiCo/mcp-codebase-index/discussions)

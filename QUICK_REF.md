@@ -1,47 +1,24 @@
-# Quick Reference - MCP Codebase Index
+# MCP Codebase Index - Quick Reference
 
-## TL;DR
+One-page cheat sheet for fast setup and troubleshooting.
+
+---
+
+## Required Config
+
+**All 4 variables are mandatory:**
 
 ```json
 {
   "mcpServers": {
-    "codebase-index": {
+    "codebase": {
       "command": "npx",
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
       "env": {
-        "REPO_PATH": "/path/to/project",
-        "GEMINI_API_KEY": "your-key"
-      }
-    }
-  }
-}
-```
-
-Add to: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
----
-
-## Config Locations
-
-| Platform | Config File |
-|----------|-------------|
-| **macOS** | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| **Windows** | `%APPDATA%\Claude\claude_desktop_config.json` |
-| **Linux** | `~/.config/Claude/claude_desktop_config.json` |
-
----
-
-## Minimal Config
-
-```json
-{
-  "mcpServers": {
-    "codebase-index": {
-      "command": "npx",
-      "args": ["-y", "@ngotaico/mcp-codebase-index"],
-      "env": {
-        "REPO_PATH": "/Users/you/projects/myapp",
-        "GEMINI_API_KEY": "AIzaSy..."
+        "REPO_PATH": "/Users/you/Projects/myapp",
+        "GEMINI_API_KEY": "AIzaSyC...",
+        "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
+        "QDRANT_API_KEY": "eyJhbGci..."
       }
     }
   }
@@ -50,94 +27,105 @@ Add to: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ---
 
-## Full Config
+## Optional Config
 
 ```json
 {
-  "mcpServers": {
-    "codebase-index": {
-      "command": "npx",
-      "args": ["-y", "@ngotaico/mcp-codebase-index"],
-      "env": {
-        "REPO_PATH": "/Users/you/projects/myapp",
-        "GEMINI_API_KEY": "AIzaSy...",
-        "VECTOR_STORE_TYPE": "memory",
-        "WATCH_MODE": "true",
-        "BATCH_SIZE": "50"
-      }
-    }
+  "env": {
+    "QDRANT_COLLECTION": "my_project",
+    "WATCH_MODE": "true",
+    "BATCH_SIZE": "50"
   }
 }
 ```
 
 ---
 
-## Qdrant Cloud Config
+## Get Credentials
 
-```json
-{
-  "mcpServers": {
-    "codebase-index": {
-      "command": "npx",
-      "args": ["-y", "@ngotaico/mcp-codebase-index"],
-      "env": {
-        "REPO_PATH": "/Users/you/projects/myapp",
-        "GEMINI_API_KEY": "AIzaSy...",
-        "VECTOR_STORE_TYPE": "cloud",
-        "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
-        "QDRANT_API_KEY": "eyJhbGci...",
-        "QDRANT_COLLECTION": "codebase"
-      }
-    }
-  }
-}
+### Gemini API Key
+1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. Click "Create API Key"
+3. Copy key (starts with `AIzaSy...`)
+
+### Qdrant Cloud
+1. Sign up at [cloud.qdrant.io](https://cloud.qdrant.io)
+2. Create cluster (free tier)
+3. Copy cluster URL: `https://xxx.gcp.cloud.qdrant.io:6333`
+4. Create API key: JWT token starting with `eyJhbGci...`
+
+📖 **Detailed guide**: [QDRANT_CLOUD_SETUP.md](QDRANT_CLOUD_SETUP.md)
+
+---
+
+## Config File Location
+
+**macOS:**
+```bash
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+**Windows:**
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
+
+**Linux:**
+```bash
+~/.config/Claude/claude_desktop_config.json
 ```
 
 ---
 
-## Local Development Config
+## Usage Examples
 
-```json
-{
-  "mcpServers": {
-    "codebase-index": {
-      "command": "npx",
-      "args": ["-y", "/Users/you/dev/mcp-codebase-index"],
-      "env": {
-        "REPO_PATH": "/Users/you/projects/myapp",
-        "GEMINI_API_KEY": "AIzaSy..."
-      }
-    }
-  }
-}
+```
+"Find the authentication logic"
+"Show me database connection code"
+"Where is error handling implemented?"
+"Find all API endpoints"
 ```
 
 ---
 
-## Multiple Projects
+## Troubleshooting
 
-```json
-{
-  "mcpServers": {
-    "project-a": {
-      "command": "npx",
-      "args": ["-y", "@ngotaico/mcp-codebase-index"],
-      "env": {
-        "REPO_PATH": "/Users/you/projects/project-a",
-        "GEMINI_API_KEY": "AIzaSy..."
-      }
-    },
-    "project-b": {
-      "command": "npx",
-      "args": ["-y", "@ngotaico/mcp-codebase-index"],
-      "env": {
-        "REPO_PATH": "/Users/you/projects/project-b",
-        "GEMINI_API_KEY": "AIzaSy..."
-      }
-    }
-  }
-}
+### Check Logs
+```bash
+# macOS/Linux
+tail -f ~/Library/Logs/Claude/mcp*.log
+
+# Windows
+Get-Content "$env:APPDATA\Claude\logs\mcp*.log" -Wait
 ```
+
+### Test Qdrant Connection
+```bash
+curl -H "api-key: YOUR_KEY" \
+  https://YOUR_CLUSTER.gcp.cloud.qdrant.io:6333/collections
+```
+
+### Common Issues
+
+✅ **Server not appearing?**
+- Restart Claude Desktop
+- Check all 4 env variables are set
+- Verify `REPO_PATH` is absolute path
+
+✅ **Can't connect to Qdrant?**
+- Check URL includes `:6333` port
+- Verify API key is correct
+- Check cluster is running
+
+✅ **Indexing too slow?**
+- Large repos take 5-10 minutes
+- Reduce `BATCH_SIZE` to 20-30
+- Check Gemini API quota
+
+✅ **Search returns nothing?**
+- Wait for indexing to complete
+- Try more specific queries
+- Check logs for errors
 
 ---
 
@@ -145,138 +133,24 @@ Add to: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `REPO_PATH` | ✅ Yes | - | Absolute path to codebase |
-| `GEMINI_API_KEY` | ✅ Yes | - | Google Gemini API key |
-| `VECTOR_STORE_TYPE` | No | `memory` | `memory` or `qdrant` or `cloud` |
-| `WATCH_MODE` | No | `true` | Auto re-index on changes |
-| `BATCH_SIZE` | No | `50` | Embedding batch size |
-| `QDRANT_URL` | No | `http://localhost:6333` | Qdrant endpoint |
-| `QDRANT_API_KEY` | No | - | For Qdrant Cloud |
-| `QDRANT_COLLECTION` | No | `codebase` | Collection name |
+| `REPO_PATH` | ✅ | - | Absolute path to project |
+| `GEMINI_API_KEY` | ✅ | - | Google Gemini API key |
+| `QDRANT_URL` | ✅ | - | Qdrant cluster URL |
+| `QDRANT_API_KEY` | ✅ | - | Qdrant Cloud API key |
+| `QDRANT_COLLECTION` | ❌ | `codebase` | Collection name |
+| `WATCH_MODE` | ❌ | `true` | Auto-update files |
+| `BATCH_SIZE` | ❌ | `50` | Embedding batch size |
 
 ---
 
-## Commands
+## Supported Languages
 
-```bash
-# Build
-npm run build
-
-# Run locally
-npm start
-
-# Test with inspector
-npm run inspector
-
-# Publish to npm
-npm publish --access public
-```
+Python • TypeScript • JavaScript • Dart • Go • Rust • Java • Kotlin • Swift • Ruby • PHP • C • C++ • C# • Shell
 
 ---
 
-## Usage in Claude
+## Links
 
-```
-Search my codebase for authentication
-Where is the login function?
-Show me error handling code
-Find all database queries
-How is the API implemented?
-```
-
----
-
-## Troubleshooting
-
-### Check logs
-```bash
-# macOS
-tail -f ~/Library/Logs/Claude/mcp*.log
-
-# Windows
-type %APPDATA%\Claude\Logs\mcp*.log
-
-# Linux
-tail -f ~/.config/Claude/logs/mcp*.log
-```
-
-### Re-index from scratch
-Delete storage and restart Claude:
-```bash
-rm -rf ./vector_storage ./memory
-```
-
-### Use Qdrant for better performance
-```bash
-docker run -d -p 6333:6333 qdrant/qdrant
-```
-
-Then add to config:
-```json
-"VECTOR_STORE_TYPE": "qdrant"
-```
-
----
-
-## Files Created
-
-| File | Purpose |
-|------|---------|
-| `./vector_storage/codebase.json` | Vector embeddings (memory mode) |
-| `./memory/index-metadata.json` | File hashes for incremental updates |
-| `./qdrant_storage/` | Qdrant data (if using Docker) |
-
----
-
-## Get Gemini API Key
-
-1. Go to: https://makersuite.google.com/app/apikey
-2. Click "Create API key"
-3. Copy key
-4. Add to config
-
-**Free tier:** 1,500 requests/day
-
----
-
-## Publishing to npm
-
-```bash
-# 1. Update version
-npm version patch  # or minor, major
-
-# 2. Login
-npm login
-
-# 3. Publish
-npm publish --access public
-
-# 4. Test
-npx @ngotaico/mcp-codebase-index
-```
-
----
-
-## Compare with other MCP servers
-
-| Server | Purpose | Config Complexity |
-|--------|---------|-------------------|
-| `server-memory` | Store memories | ⭐ Simple |
-| `server-filesystem` | File operations | ⭐ Simple |
-| **`mcp-codebase-index`** | **Code search** | **⭐ Simple** |
-| `server-postgres` | Database queries | ⭐⭐ Medium |
-
-All use same pattern:
-```json
-{
-  "command": "npx",
-  "args": ["-y", "@package/name"],
-  "env": { "KEY": "value" }
-}
-```
-
----
-
-**That's it! 🚀**
-
-See [SIMPLE_SETUP.md](SIMPLE_SETUP.md) for more details.
+- **NPM**: [npmjs.com/package/@ngotaico/mcp-codebase-index](https://www.npmjs.com/package/@ngotaico/mcp-codebase-index)
+- **GitHub**: [github.com/NgoTaiCo/mcp-codebase-index](https://github.com/NgoTaiCo/mcp-codebase-index)
+- **Issues**: [github.com/NgoTaiCo/mcp-codebase-index/issues](https://github.com/NgoTaiCo/mcp-codebase-index/issues)

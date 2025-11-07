@@ -1,16 +1,14 @@
 {
-    "mcpServers": {
-        "codebase-index": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@ngotaico/mcp-codebase-index"
-            ],
-            "env": {
-                "REPO_PATH": "/Users/ngotaico/Projects/YOUR_PROJECT_HERE",
-                "VECTOR_STORE_TYPE": "memory",
-                "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE"
-            }
-        }
+  "mcpServers": {
+    "codebase": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "REPO_PATH": "/Users/you/Projects/your-project",
+        "GEMINI_API_KEY": "AIzaSyC...",
+        "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
+        "QDRANT_API_KEY": "eyJhbGci..."
+      }
     }
+  }
 }
