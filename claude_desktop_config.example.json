@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "codebase-index": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@ngotaico/mcp-codebase-index"
+            ],
+            "env": {
+                "REPO_PATH": "/Users/ngotaico/Projects/YOUR_PROJECT_HERE",
+                "VECTOR_STORE_TYPE": "memory",
+                "GEMINI_API_KEY": "YOUR_GEMINI_API_KEY_HERE"
+            }
+        }
+    }
+}

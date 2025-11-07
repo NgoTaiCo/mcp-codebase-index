@@ -1,0 +1,55 @@
+{
+  "name": "@ngotaico/mcp-codebase-index",
+  "version": "1.0.0",
+  "description": "MCP Server for real-time codebase indexing and semantic search with Qdrant",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-codebase-index": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build",
+    "dev": "nodemon --exec tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "tsx --test",
+    "inspector": "npx @modelcontextprotocol/inspector node ./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "mcpName": "io.github.ngotaico/codebase-index",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "code-indexing",
+    "qdrant",
+    "gemini",
+    "semantic-search",
+    "vector-search",
+    "codebase-search"
+  ],
+  "author": "ngotaico",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NgoTaiCo/mcp-codebase-index.git"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@modelcontextprotocol/sdk": "^1.21.0",
+    "@qdrant/js-client-rest": "^1.15.1",
+    "chokidar": "^4.0.3",
+    "dotenv": "^17.2.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "nodemon": "^3.1.10",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
