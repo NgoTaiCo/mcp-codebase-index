@@ -92,6 +92,14 @@ export class CodebaseIndexMCPServer {
                         },
                         required: ['query']
                     }
+                },
+                {
+                    name: 'indexing_status',
+                    description: 'Check the current indexing status and progress.',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {}
+                    }
                 }
             ]
         }));
@@ -100,6 +108,9 @@ export class CodebaseIndexMCPServer {
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
             if (request.params.name === 'search_codebase') {
                 return await this.handleSearch(request.params.arguments);
+            }
+            if (request.params.name === 'indexing_status') {
+                return await this.handleIndexingStatus();
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -170,6 +181,51 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                     {
                         type: 'text',
                         text: `Search failed: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle indexing status check
+     */
+    private async handleIndexingStatus(): Promise<any> {
+        try {
+            const collections = await this.vectorStore.getCollections();
+            const vectorCount = collections.collections?.[0]?.vectors_count ||
+                collections.collections?.[0]?.points_count || 0;
+
+            const status = {
+                isIndexing: this.isIndexing,
+                queuedFiles: this.indexingQueue.size,
+                vectorsStored: vectorCount,
+                collection: this.config.qdrant.collectionName
+            };
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `**Indexing Status**
+
+📊 **Stats:**
+- Vectors stored: ${status.vectorsStored}
+- Currently indexing: ${status.isIndexing ? 'Yes' : 'No'}
+- Queued files: ${status.queuedFiles}
+- Collection: ${status.collection}
+
+${status.isIndexing ? '⏳ Indexing in progress...' : '✅ Ready for search'}
+${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be indexed` : ''}`
+                    }
+                ]
+            };
+        } catch (error: any) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to get status: ${error.message || error}`
                     }
                 ]
             };
@@ -269,27 +325,37 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
         // Load previous index metadata
         this.watcher.loadIndexMetadata(this.config.codebaseMemoryPath);
 
-        // Initial scan for changed files
-        console.log('[Init] Scanning for changes...');
-        const changedFiles = await this.watcher.scanForChanges();
-        console.log(`[Init] Found ${changedFiles.length} changed files`);
+        // Start MCP server FIRST (non-blocking)
+        const transport = new StdioServerTransport();
+        await this.server.connect(transport);
+        console.log('[MCP] Server started and listening...');
 
-        // Index changed files
-        if (changedFiles.length > 0) {
-            for (const file of changedFiles) {
-                this.indexingQueue.add(file);
-            }
-            await this.processIndexingQueue();
-        }
+        // Start background indexing (don't await)
+        this.startBackgroundIndexing().catch(error => {
+            console.error('[Background Indexing] Error:', error);
+        });
 
         // Start watching for future changes
         if (this.config.watchMode) {
             this.watcher.startWatching();
         }
+    }
 
-        // Start MCP server with StdIO transport
-        const transport = new StdioServerTransport();
-        await this.server.connect(transport);
-        console.log('[MCP] Server started and listening...');
+    /**
+     * Background indexing - doesn't block server startup
+     */
+    private async startBackgroundIndexing(): Promise<void> {
+        console.log('[Init] Scanning for changes...');
+        const changedFiles = await this.watcher.scanForChanges();
+        console.log(`[Init] Found ${changedFiles.length} changed files`);
+
+        // Queue files for indexing
+        if (changedFiles.length > 0) {
+            for (const file of changedFiles) {
+                this.indexingQueue.add(file);
+            }
+            // Process in background
+            await this.processIndexingQueue();
+        }
     }
 }
