@@ -16,11 +16,51 @@ export class CodeIndexer {
 
             // For now, use simple line-based chunking
             // In production, use proper AST parsing per language
-            return this.chunkByStructure(content, filePath, language);
+            const chunks = this.chunkByStructure(content, filePath, language);
+            
+            // Split chunks that are too large (Gemini limit is 36KB, we use 20KB to be safe)
+            return this.splitLargeChunks(chunks);
         } catch (error) {
             console.error(`Error parsing ${filePath}:`, error);
             return [];
         }
+    }
+
+    /**
+     * Split chunks that exceed size limit
+     */
+    private splitLargeChunks(chunks: CodeChunk[]): CodeChunk[] {
+        const MAX_CHUNK_SIZE = 20000; // 20KB (safe limit, Gemini allows 36KB)
+        const result: CodeChunk[] = [];
+
+        for (const chunk of chunks) {
+            const size = Buffer.byteLength(chunk.content, 'utf-8');
+            
+            if (size <= MAX_CHUNK_SIZE) {
+                result.push(chunk);
+                continue;
+            }
+
+            // Split large chunk into smaller pieces
+            const lines = chunk.content.split('\n');
+            const linesPerChunk = Math.ceil(lines.length / Math.ceil(size / MAX_CHUNK_SIZE));
+            
+            for (let i = 0; i < lines.length; i += linesPerChunk) {
+                const subLines = lines.slice(i, i + linesPerChunk);
+                const subContent = subLines.join('\n');
+                
+                result.push({
+                    ...chunk,
+                    id: `${chunk.id}_part${Math.floor(i / linesPerChunk)}`,
+                    content: subContent,
+                    startLine: chunk.startLine + i,
+                    endLine: chunk.startLine + i + subLines.length,
+                    complexity: this.estimateComplexity(subContent)
+                });
+            }
+        }
+
+        return result;
     }
 
     private detectLanguage(filePath: string): string {

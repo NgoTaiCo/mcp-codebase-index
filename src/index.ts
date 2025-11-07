@@ -29,7 +29,8 @@ const server = new CodebaseIndexMCPServer({
     ignorePaths: [
         '.git', '.venv', 'node_modules', '__pycache__',
         '.env', 'build', 'dist', '.next', 'target',
-        'vendor', 'coverage', '.pytest_cache'
+        'vendor', 'coverage', '.pytest_cache',
+        '.fvm', '.dart_tool', 'ios/Pods', 'android/.gradle'
     ]
 });
 
