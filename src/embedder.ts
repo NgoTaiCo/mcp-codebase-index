@@ -72,15 +72,17 @@ export class CodeEmbedder {
         try {
             const embeddingModel = this.genAI.getGenerativeModel({ model: this.model });
 
-            // For gemini-embedding-001, specify output dimension
-            const taskType = 'RETRIEVAL_DOCUMENT';
-            const result = this.model === 'gemini-embedding-001'
-                ? await embeddingModel.embedContent({
-                    content: chunk.content,
-                    taskType,
+            // For gemini-embedding-001, specify output dimension and task type
+            let result;
+            if (this.model === 'gemini-embedding-001') {
+                result = await embeddingModel.embedContent({
+                    content: { parts: [{ text: chunk.content }] },
+                    taskType: 'RETRIEVAL_DOCUMENT',
                     outputDimensionality: this.outputDimension
-                })
-                : await embeddingModel.embedContent(chunk.content);
+                } as any);
+            } else {
+                result = await embeddingModel.embedContent(chunk.content);
+            }
 
             return result.embedding.values;
         } catch (error) {
@@ -93,33 +95,67 @@ export class CodeEmbedder {
      * Embed multiple chunks in batch with rate limiting
      */
     async embedChunks(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
-        const results: (number[] | null)[] = [];
+        // text-embedding-005 has better rate limits, use parallel processing
+        // gemini-embedding-001 needs sequential processing to avoid 429 errors
+        if (this.model === 'text-embedding-005') {
+            return this.embedChunksParallel(chunks);
+        } else {
+            return this.embedChunksSequential(chunks);
+        }
+    }
 
-        // Process in smaller batches to respect rate limits
-        // Gemini free tier: 1500 RPD (requests per day), ~1 per second safe
-        const BATCH_SIZE = 50; // Process 50 at a time
-        const DELAY_PER_REQUEST = 700; // 700ms between requests (safer than 100ms)
+    /**
+     * Parallel embedding for models with good rate limits (text-embedding-005)
+     */
+    private async embedChunksParallel(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
+        const results: (number[] | null)[] = [];
+        const BATCH_SIZE = 50;
+        const DELAY_PER_REQUEST = 100; // 100ms between requests
 
         for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
             const batch = chunks.slice(i, i + BATCH_SIZE);
 
             try {
-                // Parallel embedding with increased delay to avoid 429
                 const promises = batch.map((chunk, idx) =>
-                    this.delayedEmbedWithRetry(chunk, idx * DELAY_PER_REQUEST)
+                    this.delayedEmbedWithRetry(chunk, idx * DELAY_PER_REQUEST, 3)
                 );
 
                 const batchResults = await Promise.all(promises);
                 results.push(...batchResults);
 
                 console.log(`[Embedder] Processed ${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length} chunks`);
-                
-                // Additional delay between batches
-                if (i + BATCH_SIZE < chunks.length) {
-                    await new Promise(resolve => setTimeout(resolve, 2000)); // 2s between batches
+            } catch (error) {
+                console.error('[Embedder] Batch error:', error);
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Sequential embedding for models with strict rate limits (gemini-embedding-001)
+     */
+    private async embedChunksSequential(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
+        const results: (number[] | null)[] = [];
+        const DELAY_BETWEEN_REQUESTS = 1500; // 1.5s between each request
+
+        console.log(`[Embedder] Processing ${chunks.length} chunks sequentially (rate-limited model)...`);
+
+        for (let i = 0; i < chunks.length; i++) {
+            try {
+                if (i > 0) {
+                    await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+                }
+
+                const result = await this.delayedEmbedWithRetry(chunks[i], 0, 5);
+                results.push(result);
+
+                if ((i + 1) % 5 === 0 || i === chunks.length - 1) {
+                    console.log(`[Embedder] Processed ${i + 1}/${chunks.length} chunks`);
                 }
             } catch (error) {
-                console.error('Batch embedding error:', error);
+                console.error(`[Embedder] Error processing chunk ${i}:`, error);
+                results.push(null);
             }
         }
 
@@ -142,7 +178,9 @@ export class CodeEmbedder {
             } catch (err: any) {
                 // Check if it's a 429 rate limit error
                 if (err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('quota')) {
-                    const retryDelay = Math.pow(2, attempt) * 2000; // Exponential backoff: 2s, 4s, 8s
+                    // Exponential backoff based on model
+                    const baseDelay = this.model === 'gemini-embedding-001' ? 5000 : 2000;
+                    const retryDelay = Math.min(Math.pow(2, attempt) * baseDelay, 60000);
                     console.warn(`[Rate Limit] ${chunk.id}: Retry ${attempt + 1}/${maxRetries} after ${retryDelay}ms`);
                     await new Promise(resolve => setTimeout(resolve, retryDelay));
                     continue;
@@ -166,14 +204,16 @@ export class CodeEmbedder {
             const embeddingModel = this.genAI.getGenerativeModel({ model: this.model });
 
             // For gemini-embedding-001, specify output dimension and task type for queries
-            const taskType = 'RETRIEVAL_QUERY';
-            const result = this.model === 'gemini-embedding-001'
-                ? await embeddingModel.embedContent({
-                    content: query,
-                    taskType,
+            let result;
+            if (this.model === 'gemini-embedding-001') {
+                result = await embeddingModel.embedContent({
+                    content: { parts: [{ text: query }] },
+                    taskType: 'RETRIEVAL_QUERY',
                     outputDimensionality: this.outputDimension
-                })
-                : await embeddingModel.embedContent(query);
+                } as any);
+            } else {
+                result = await embeddingModel.embedContent(query);
+            }
 
             return result.embedding.values;
         } catch (error) {
