@@ -787,6 +787,9 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
         // Load incremental index state
         this.loadIndexState();
 
+        // Check sync between Qdrant and memory state
+        await this.checkAndFixSync();
+
         // Load previous index metadata (for backward compatibility with FileWatcher)
         this.watcher.loadIndexMetadata(path.join(this.config.codebaseMemoryPath, 'index-metadata.json'));
 
@@ -803,6 +806,66 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
         // Start watching for future changes
         if (this.config.watchMode) {
             this.watcher.startWatching();
+        }
+    }
+
+    /**
+     * Check if Qdrant and memory state are in sync
+     * If collection is empty but memory has data, mark all files as pending
+     */
+    private async checkAndFixSync(): Promise<void> {
+        try {
+            const collections = await this.vectorStore.getCollections();
+            const vectorCount = collections.collections?.[0]?.vectors_count ||
+                collections.collections?.[0]?.points_count || 0;
+            
+            const indexedFilesCount = this.indexState.indexedFiles.size;
+
+            // Case 1: Collection empty but memory has indexed files
+            if (vectorCount === 0 && indexedFilesCount > 0) {
+                console.log(`\n⚠️  [Sync Check] Mismatch detected!`);
+                console.log(`   Qdrant vectors: ${vectorCount}`);
+                console.log(`   Memory state: ${indexedFilesCount} indexed files`);
+                console.log(`   → Collection was likely deleted. Marking all files for re-indexing...\n`);
+                
+                // Clear indexed files state - force full re-index
+                this.indexState.indexedFiles.clear();
+                this.indexState.stats = {
+                    newFiles: 0,
+                    modifiedFiles: 0,
+                    unchangedFiles: 0,
+                    deletedFiles: 0
+                };
+                
+                // Reset quota for fresh start
+                const today = this.getTodayString();
+                this.indexState.dailyQuota = {
+                    date: today,
+                    chunksIndexed: 0,
+                    limit: this.DAILY_QUOTA_LIMIT
+                };
+                
+                // Clear file watcher hashes to force re-scan
+                this.watcher.clearFileHashes();
+                
+                this.saveIndexState();
+                console.log(`✅ [Sync Check] State reset. Will re-index all files.\n`);
+            }
+            // Case 2: Both in sync
+            else if (vectorCount > 0 && indexedFilesCount > 0) {
+                console.log(`[Sync Check] ✅ Qdrant (${vectorCount} vectors) and memory (${indexedFilesCount} files) are in sync`);
+            }
+            // Case 3: Both empty (fresh start)
+            else if (vectorCount === 0 && indexedFilesCount === 0) {
+                console.log(`[Sync Check] Fresh start - no data in Qdrant or memory`);
+            }
+            // Case 4: Memory empty but Qdrant has data (unusual but okay)
+            else {
+                console.log(`[Sync Check] Qdrant has ${vectorCount} vectors, memory tracking ${indexedFilesCount} files`);
+            }
+        } catch (error) {
+            console.error('[Sync Check] Error checking sync:', error);
+            // Continue anyway - don't block startup
         }
     }
 

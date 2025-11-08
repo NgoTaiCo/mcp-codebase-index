@@ -30,6 +30,14 @@ export class FileWatcher {
     }
 
     /**
+     * Clear all file hashes (force re-scan on next check)
+     */
+    clearFileHashes(): void {
+        this.fileHashes.clear();
+        console.log('[FileWatcher] Cleared all file hashes');
+    }
+
+    /**
      * Save file hashes for next run
      */
     saveIndexMetadata(metadataPath: string): void {
