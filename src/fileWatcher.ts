@@ -12,7 +12,8 @@ export class FileWatcher {
     constructor(
         private repoPath: string,
         private ignorePaths: string[],
-        private onFileChange: (filePath: string) => Promise<void>
+        private onFileChange: (filePath: string) => Promise<void>,
+        private onFileDelete?: (filePath: string) => Promise<void>
     ) { }
 
     /**
@@ -181,8 +182,14 @@ export class FileWatcher {
             }
         });
 
-        this.watcher.on('unlink', (filePath: string) => {
+        this.watcher.on('unlink', async (filePath: string) => {
+            // Delete from file hashes
             this.fileHashes.delete(filePath);
+
+            // Call delete callback if provided (to delete vectors from Qdrant)
+            if (this.onFileDelete) {
+                await this.onFileDelete(filePath).catch(console.error);
+            }
         });
 
         console.log(`[FileWatcher] Watching ${this.repoPath}`);

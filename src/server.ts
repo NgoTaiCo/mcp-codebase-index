@@ -84,7 +84,7 @@ export class CodebaseIndexMCPServer {
         this.server = new Server(
             {
                 name: 'mcp-codebase-index',
-                version: '1.0.0'
+                version: '1.6.0'
             },
             {
                 capabilities: {
@@ -107,7 +107,8 @@ export class CodebaseIndexMCPServer {
         this.watcher = new FileWatcher(
             config.repoPath,
             config.ignorePaths,
-            this.onFileChange.bind(this)
+            this.onFileChange.bind(this),
+            this.onFileDelete.bind(this)
         );
 
         this.setupHandlers();
@@ -153,6 +154,42 @@ export class CodebaseIndexMCPServer {
                             }
                         }
                     }
+                },
+                {
+                    name: 'check_index',
+                    description: 'Verify index health and detect issues like missing files, orphaned vectors, and dimension mismatches.',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            deepScan: {
+                                type: 'boolean',
+                                description: 'Perform deep scan (slower but more thorough, default: false)',
+                                default: false
+                            }
+                        }
+                    }
+                },
+                {
+                    name: 'repair_index',
+                    description: 'Repair detected index issues by re-indexing missing files and removing orphaned vectors.',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            issues: {
+                                type: 'array',
+                                description: 'Array of issue types to fix: "missing_files", "orphaned_vectors" (default: all)',
+                                items: {
+                                    type: 'string',
+                                    enum: ['missing_files', 'orphaned_vectors']
+                                }
+                            },
+                            autoFix: {
+                                type: 'boolean',
+                                description: 'Automatically fix all detected issues (default: false)',
+                                default: false
+                            }
+                        }
+                    }
                 }
             ]
         }));
@@ -164,6 +201,12 @@ export class CodebaseIndexMCPServer {
             }
             if (request.params.name === 'indexing_status') {
                 return await this.handleIndexingStatus(request.params.arguments);
+            }
+            if (request.params.name === 'check_index') {
+                return await this.handleCheckIndex(request.params.arguments);
+            }
+            if (request.params.name === 'repair_index') {
+                return await this.handleRepairIndex(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -391,6 +434,348 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
     }
 
     /**
+     * Handle check_index tool - verify index health and detect issues
+     */
+    private async handleCheckIndex(args?: any): Promise<any> {
+        try {
+            const deepScan = args?.deepScan === true || args?.deepScan === 'true';
+
+            // Warn if indexing in progress
+            if (this.isIndexing) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: '⚠️ **Warning:** Indexing is currently in progress. Results may be incomplete or inaccurate.\n\nPlease wait for indexing to complete and try again.'
+                        }
+                    ]
+                };
+            }
+
+            console.log('[CheckIndex] Starting index health check...');
+
+            // 1. Get all files in repository
+            const repoFiles = new Set<string>();
+            const walkDir = (dir: string) => {
+                const files = fs.readdirSync(dir);
+                for (const file of files) {
+                    const filePath = path.join(dir, file);
+                    try {
+                        const stat = fs.statSync(filePath);
+                        if (stat.isDirectory()) {
+                            const dirName = path.basename(filePath);
+                            const shouldIgnore = this.config.ignorePaths.some(pattern =>
+                                dirName === pattern ||
+                                filePath.includes(path.sep + pattern + path.sep) ||
+                                filePath.endsWith(path.sep + pattern)
+                            );
+                            if (!shouldIgnore) {
+                                walkDir(filePath);
+                            }
+                        } else if (this.watcher['shouldWatch'](filePath)) {
+                            const relativePath = path.relative(this.config.repoPath, filePath);
+                            repoFiles.add(relativePath);
+                        }
+                    } catch (error) {
+                        // Skip files that can't be read
+                    }
+                }
+            };
+            walkDir(this.config.repoPath);
+
+            // 2. Get all indexed files from Qdrant
+            const indexedFiles = await this.vectorStore.getAllIndexedFiles();
+
+            // 3. Compare and detect issues
+            const missingFiles: string[] = [];
+            const orphanedVectors: string[] = [];
+
+            // Find missing files (in repo but not indexed)
+            for (const file of repoFiles) {
+                if (!indexedFiles.has(file)) {
+                    missingFiles.push(file);
+                }
+            }
+
+            // Find orphaned vectors (indexed but not in repo)
+            for (const file of indexedFiles) {
+                if (!repoFiles.has(file)) {
+                    orphanedVectors.push(file);
+                }
+            }
+
+            // 4. Get vector count and stats
+            const vectorCount = await this.vectorStore.getVectorCount();
+            const coverage = repoFiles.size > 0
+                ? ((repoFiles.size - missingFiles.length) / repoFiles.size * 100).toFixed(1)
+                : '0.0';
+
+            // 5. Determine overall status
+            const totalIssues = missingFiles.length + orphanedVectors.length;
+            let overallStatus = '✅ Healthy';
+            if (totalIssues > 0 && totalIssues < 10) {
+                overallStatus = '⚠️ Healthy (minor issues)';
+            } else if (totalIssues >= 10) {
+                overallStatus = '❌ Issues detected';
+            }
+
+            // 6. Build report
+            let report = `🔍 **Index Health Check**\n\n`;
+            report += `**Overall Status:** ${overallStatus}\n\n`;
+
+            report += `📊 **Statistics:**\n`;
+            report += `- Files in repo: ${repoFiles.size}\n`;
+            report += `- Files indexed: ${repoFiles.size - missingFiles.length}\n`;
+            report += `- Coverage: ${coverage}%\n`;
+            report += `- Vectors stored: ${vectorCount}\n\n`;
+
+            if (totalIssues > 0) {
+                report += `⚠️ **Issues Found (${totalIssues}):**\n\n`;
+
+                if (missingFiles.length > 0) {
+                    report += `**1. Missing Files (${missingFiles.length}):**\n`;
+                    const filesToShow = missingFiles.slice(0, 10);
+                    for (const file of filesToShow) {
+                        report += `   - ${file}\n`;
+                    }
+                    if (missingFiles.length > 10) {
+                        report += `   - ... and ${missingFiles.length - 10} more\n`;
+                    }
+                    report += `\n`;
+                }
+
+                if (orphanedVectors.length > 0) {
+                    report += `**2. Orphaned Vectors (${orphanedVectors.length}):**\n`;
+                    const filesToShow = orphanedVectors.slice(0, 10);
+                    for (const file of filesToShow) {
+                        report += `   - ${file} (deleted)\n`;
+                    }
+                    if (orphanedVectors.length > 10) {
+                        report += `   - ... and ${orphanedVectors.length - 10} more\n`;
+                    }
+                    report += `\n`;
+                }
+
+                report += `💡 **Recommendations:**\n`;
+                if (missingFiles.length > 0) {
+                    report += `- Run \`repair_index\` with \`issues: ["missing_files"]\` to index missing files\n`;
+                }
+                if (orphanedVectors.length > 0) {
+                    report += `- Run \`repair_index\` with \`issues: ["orphaned_vectors"]\` to clean orphaned vectors\n`;
+                }
+                report += `- Or use \`autoFix: true\` to fix all issues automatically\n`;
+            } else {
+                report += `✅ **No Issues Found**\n\n`;
+                report += `Your index is healthy and up to date!`;
+            }
+
+            console.log('[CheckIndex] Health check complete');
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: report
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[CheckIndex] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `❌ Failed to check index: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle repair_index tool - fix detected index issues
+     */
+    private async handleRepairIndex(args?: any): Promise<any> {
+        try {
+            // Parse arguments
+            const issuesToFix = args?.issues || ['missing_files', 'orphaned_vectors'];
+            const autoFix = args?.autoFix === true || args?.autoFix === 'true';
+
+            // Check if indexing is already in progress
+            if (this.isIndexing) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: '⚠️ **Error:** Indexing is currently in progress.\n\nPlease wait for the current indexing operation to complete before running repair.'
+                        }
+                    ]
+                };
+            }
+
+            console.log('[RepairIndex] Starting index repair...');
+            console.log('[RepairIndex] Issues to fix:', issuesToFix);
+
+            // Lock to prevent concurrent operations
+            this.isIndexing = true;
+
+            try {
+                let report = `🔧 **Index Repair**\n\n`;
+                let totalFixed = 0;
+
+                // 1. Get all files in repository
+                const repoFiles = new Set<string>();
+                const walkDir = (dir: string) => {
+                    const files = fs.readdirSync(dir);
+                    for (const file of files) {
+                        const filePath = path.join(dir, file);
+                        try {
+                            const stat = fs.statSync(filePath);
+                            if (stat.isDirectory()) {
+                                const dirName = path.basename(filePath);
+                                const shouldIgnore = this.config.ignorePaths.some(pattern =>
+                                    dirName === pattern ||
+                                    filePath.includes(path.sep + pattern + path.sep) ||
+                                    filePath.endsWith(path.sep + pattern)
+                                );
+                                if (!shouldIgnore) {
+                                    walkDir(filePath);
+                                }
+                            } else if (this.watcher['shouldWatch'](filePath)) {
+                                const relativePath = path.relative(this.config.repoPath, filePath);
+                                repoFiles.add(relativePath);
+                            }
+                        } catch (error) {
+                            // Skip files that can't be read
+                        }
+                    }
+                };
+                walkDir(this.config.repoPath);
+
+                // 2. Get all indexed files from Qdrant
+                const indexedFiles = await this.vectorStore.getAllIndexedFiles();
+
+                // 3. Handle missing files
+                if (issuesToFix.includes('missing_files')) {
+                    const missingFiles: string[] = [];
+                    for (const file of repoFiles) {
+                        if (!indexedFiles.has(file)) {
+                            missingFiles.push(file);
+                        }
+                    }
+
+                    if (missingFiles.length > 0) {
+                        report += `**Missing Files (${missingFiles.length}):**\n`;
+
+                        if (autoFix) {
+                            report += `Re-indexing missing files...\n\n`;
+
+                            // Add to indexing queue
+                            for (const file of missingFiles) {
+                                const fullPath = path.join(this.config.repoPath, file);
+                                this.indexingQueue.add(fullPath);
+                            }
+
+                            // Process queue
+                            await this.processIndexingQueue();
+
+                            totalFixed += missingFiles.length;
+                            report += `✅ Re-indexed ${missingFiles.length} files\n\n`;
+                        } else {
+                            const filesToShow = missingFiles.slice(0, 10);
+                            for (const file of filesToShow) {
+                                report += `   - ${file}\n`;
+                            }
+                            if (missingFiles.length > 10) {
+                                report += `   - ... and ${missingFiles.length - 10} more\n`;
+                            }
+                            report += `\n💡 Use \`autoFix: true\` to re-index these files\n\n`;
+                        }
+                    } else {
+                        report += `**Missing Files:** None found ✅\n\n`;
+                    }
+                }
+
+                // 4. Handle orphaned vectors
+                if (issuesToFix.includes('orphaned_vectors')) {
+                    const orphanedVectors: string[] = [];
+                    for (const file of indexedFiles) {
+                        if (!repoFiles.has(file)) {
+                            orphanedVectors.push(file);
+                        }
+                    }
+
+                    if (orphanedVectors.length > 0) {
+                        report += `**Orphaned Vectors (${orphanedVectors.length}):**\n`;
+
+                        if (autoFix) {
+                            report += `Removing orphaned vectors...\n\n`;
+
+                            // Delete orphaned vectors
+                            for (const file of orphanedVectors) {
+                                await this.vectorStore.deleteByFilePath(file);
+                                this.indexState.indexedFiles.delete(file);
+                            }
+
+                            // Save state
+                            this.saveIndexState();
+
+                            totalFixed += orphanedVectors.length;
+                            report += `✅ Removed ${orphanedVectors.length} orphaned vectors\n\n`;
+                        } else {
+                            const filesToShow = orphanedVectors.slice(0, 10);
+                            for (const file of filesToShow) {
+                                report += `   - ${file} (deleted)\n`;
+                            }
+                            if (orphanedVectors.length > 10) {
+                                report += `   - ... and ${orphanedVectors.length - 10} more\n`;
+                            }
+                            report += `\n💡 Use \`autoFix: true\` to remove these vectors\n\n`;
+                        }
+                    } else {
+                        report += `**Orphaned Vectors:** None found ✅\n\n`;
+                    }
+                }
+
+                // 5. Summary
+                if (autoFix) {
+                    report += `\n✅ **Repair Complete**\n`;
+                    report += `Total issues fixed: ${totalFixed}\n\n`;
+                    report += `Run \`check_index\` to verify the repairs.`;
+                } else {
+                    report += `\n💡 **Next Steps:**\n`;
+                    report += `Run this command again with \`autoFix: true\` to apply the fixes.`;
+                }
+
+                console.log('[RepairIndex] Repair complete');
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: report
+                        }
+                    ]
+                };
+            } finally {
+                // Always release lock
+                this.isIndexing = false;
+            }
+        } catch (error: any) {
+            console.error('[RepairIndex] Error:', error);
+            this.isIndexing = false;
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `❌ Failed to repair index: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
      * Format time ago in human-readable format
      */
     private formatTimeAgo(ms: number): string {
@@ -560,6 +945,28 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
         // Debounce: wait 500ms before indexing
         if (!this.isIndexing) {
             setTimeout(() => this.processIndexingQueue(), 500);
+        }
+    }
+
+    /**
+     * File delete handler - removes vectors from Qdrant when file is deleted
+     */
+    private async onFileDelete(filePath: string): Promise<void> {
+        const relativePath = path.relative(this.config.repoPath, filePath);
+
+        try {
+            // Delete vectors from Qdrant
+            await this.vectorStore.deleteByFilePath(relativePath);
+
+            // Remove from indexed files state
+            this.indexState.indexedFiles.delete(relativePath);
+
+            // Update stats
+            this.indexState.stats.deletedFiles++;
+
+            console.log(`[Deleted] ${relativePath}`);
+        } catch (error) {
+            console.error(`[Delete Error] Failed to delete ${relativePath}:`, error);
         }
     }
 
@@ -835,7 +1242,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      */
     async start(): Promise<void> {
         // Log version
-        console.log('[MCP] Version: 1.4.10');
+        console.log('[MCP] Version: 1.6.0');
         
         // Initialize vector store
         await this.vectorStore.initializeCollection();
