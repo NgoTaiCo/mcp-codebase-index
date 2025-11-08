@@ -1,10 +1,71 @@
 // src/indexer.ts
 import * as fs from 'fs';
 import * as path from 'path';
-import { CodeChunk } from './types.js';
+import * as crypto from 'crypto';
+import { CodeChunk, FileMetadata } from './types.js';
 
 export class CodeIndexer {
     constructor(private repoPath: string) { }
+
+    /**
+     * Calculate MD5 hash of file content for change detection
+     */
+    calculateFileHash(filePath: string): string {
+        try {
+            const content = fs.readFileSync(filePath, 'utf-8');
+            return crypto.createHash('md5').update(content).digest('hex');
+        } catch (error) {
+            console.error(`Error calculating hash for ${filePath}:`, error);
+            return '';
+        }
+    }
+
+    /**
+     * Categorize files into new, modified, and unchanged
+     */
+    categorizeFiles(
+        allFiles: string[],
+        indexedFiles: Map<string, FileMetadata>
+    ): {
+        newFiles: string[];
+        modifiedFiles: string[];
+        unchangedFiles: string[];
+        deletedFiles: string[];
+    } {
+        const newFiles: string[] = [];
+        const modifiedFiles: string[] = [];
+        const unchangedFiles: string[] = [];
+        const deletedFiles: string[] = [];
+
+        // Find deleted files (in index but not on disk)
+        for (const [filePath, _] of indexedFiles) {
+            const fullPath = path.join(this.repoPath, filePath);
+            if (!fs.existsSync(fullPath)) {
+                deletedFiles.push(filePath);
+            }
+        }
+
+        // Categorize current files
+        for (const filePath of allFiles) {
+            const relativePath = path.relative(this.repoPath, filePath);
+            const metadata = indexedFiles.get(relativePath);
+
+            if (!metadata) {
+                // New file
+                newFiles.push(filePath);
+            } else {
+                // Check if modified
+                const currentHash = this.calculateFileHash(filePath);
+                if (currentHash !== metadata.hash) {
+                    modifiedFiles.push(filePath);
+                } else {
+                    unchangedFiles.push(filePath);
+                }
+            }
+        }
+
+        return { newFiles, modifiedFiles, unchangedFiles, deletedFiles };
+    }
 
     /**
      * Parse file and extract chunks
