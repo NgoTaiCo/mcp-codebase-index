@@ -68,7 +68,6 @@ export interface EmbeddingConfig {
 export interface IndexerConfig {
     repoPath: string;
     codebaseMemoryPath: string; // Path to store index metadata
-    vectorStoreType: 'qdrant' | 'memory' | 'cloud'; // Type of vector store
     qdrant: QdrantConfig;
     embedding: EmbeddingConfig;
     watchMode: boolean;

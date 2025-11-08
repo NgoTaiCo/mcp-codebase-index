@@ -2,13 +2,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CodeChunk } from './types.js';
 
-const SUPPORTED_MODELS = ['gemini-embedding-001', 'text-embedding-005'] as const;
+const SUPPORTED_MODELS = ['gemini-embedding-001', 'text-embedding-004'] as const;
 type SupportedModel = typeof SUPPORTED_MODELS[number];
 
 // Model dimensions mapping (maximum recommended dimensions for best results)
 const MODEL_DEFAULT_DIMENSIONS: Record<SupportedModel, number> = {
     'gemini-embedding-001': 3072, // Maximum dimension for best accuracy
-    'text-embedding-005': 768     // Maximum dimension for English/code specialization
+    'text-embedding-004': 768     // Maximum dimension for English/code specialization
 };
 
 export class CodeEmbedder {
@@ -19,8 +19,8 @@ export class CodeEmbedder {
     constructor(apiKey: string, model?: string, outputDimension?: number) {
         this.genAI = new GoogleGenerativeAI(apiKey);
         
-        // Get model from parameter or environment variable, default to text-embedding-005
-        const selectedModel = model || process.env.EMBEDDING_MODEL || 'text-embedding-005';
+        // Get model from parameter or environment variable, default to text-embedding-004
+        const selectedModel = model || process.env.EMBEDDING_MODEL || 'text-embedding-004';
         
         // Validate model
         if (!SUPPORTED_MODELS.includes(selectedModel as SupportedModel)) {
@@ -47,10 +47,10 @@ export class CodeEmbedder {
             }
         }
         
-        // Validate dimension for text-embedding-005
-        if (this.model === 'text-embedding-005' && this.outputDimension > 768) {
+        // Validate dimension for text-embedding-004
+        if (this.model === 'text-embedding-004' && this.outputDimension > 768) {
             throw new Error(
-                `Invalid output dimension for text-embedding-005: ${this.outputDimension}. ` +
+                `Invalid output dimension for text-embedding-004: ${this.outputDimension}. ` +
                 `Maximum is 768.`
             );
         }
@@ -95,9 +95,9 @@ export class CodeEmbedder {
      * Embed multiple chunks in batch with rate limiting
      */
     async embedChunks(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
-        // text-embedding-005 has better rate limits, use parallel processing
+        // text-embedding-004 has better rate limits, use parallel processing
         // gemini-embedding-001 needs sequential processing to avoid 429 errors
-        if (this.model === 'text-embedding-005') {
+        if (this.model === 'text-embedding-004') {
             return this.embedChunksParallel(chunks);
         } else {
             return this.embedChunksSequential(chunks);
@@ -105,7 +105,7 @@ export class CodeEmbedder {
     }
 
     /**
-     * Parallel embedding for models with good rate limits (text-embedding-005)
+     * Parallel embedding for models with good rate limits (text-embedding-004)
      */
     private async embedChunksParallel(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
         const results: (number[] | null)[] = [];

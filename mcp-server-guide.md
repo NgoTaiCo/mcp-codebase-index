@@ -169,7 +169,7 @@ export interface QdrantConfig {
 
 export interface EmbeddingConfig {
   apiKey: string;
-  model: string; // "gemini-embedding-001"
+  model: string; // "text-embedding-004" (recommended) or "text-embedding-005"
   dimension: number; // 768
 }
 
@@ -533,7 +533,7 @@ import { CodeChunk } from './types.js';
 
 export class CodeEmbedder {
   private client: any;
-  private model = 'embedding-001';
+  private model = 'text-embedding-004'; // Recommended for all users, especially free tier
 
   constructor(apiKey: string) {
     this.client = genai(apiKey);
@@ -1026,7 +1026,7 @@ const server = new CodebaseIndexMCPServer({
   },
   embedding: {
     apiKey: process.env.GEMINI_API_KEY || '',
-    model: 'embedding-001',
+    model: 'text-embedding-004', // Recommended for all users
     dimension: 768
   },
   watchMode: process.env.WATCH_MODE !== 'false',

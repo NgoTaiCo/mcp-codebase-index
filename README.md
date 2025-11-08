@@ -2,7 +2,7 @@
 
 > AI-powered semantic search for your codebase in GitHub Copilot
 
-A Model Context Protocol (MCP) server that enables GitHub Copilot to search and understand your codebase using Google's Gemini embeddings and Qdrant Cloud vector storage.
+A Model Context Protocol (MCP) server that enables GitHub Copilot to search and understand your codebase using Google's Gemini embeddings and Qdrant vector storage.
 
 ## ✨ Features
 
@@ -10,7 +10,7 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 - 🎯 **Smart Chunking**: Automatically splits code into logical functions/classes
 - 🔄 **Real-time Watch**: Monitors file changes and updates index automatically
 - 🌐 **Multi-language**: Supports 15+ programming languages
-- ☁️ **Cloud Storage**: Uses Qdrant Cloud for persistent vector storage
+- ☁️ **Vector Storage**: Uses Qdrant for persistent vector storage
 - 📦 **Simple Setup**: Just 4 environment variables to get started
 
 ## 🚀 Quick Start
@@ -75,33 +75,39 @@ You can customize the embedding model and output dimension:
     "GEMINI_API_KEY": "AIzaSyC...",
     "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
     "QDRANT_API_KEY": "eyJhbGci...",
-    "EMBEDDING_MODEL": "text-embedding-005",
+    "EMBEDDING_MODEL": "text-embedding-004",
     "EMBEDDING_DIMENSION": "768"
   }
 }
 ```
 
 **Supported embedding models:**
-- `text-embedding-005` (default, recommended) - Specialized for English and code tasks
-  - Maximum dimension: 768 (default)
-  - Best for code search and English documentation
+- `text-embedding-004` (✅ **RECOMMENDED** - default) - Best for all users, especially free tier
+  - Dimension: 768 (fixed)
+  - Excellent for code search and documentation
+  - Works reliably with free tier Gemini API
   - Optimized performance and accuracy
-- `gemini-embedding-001` - State-of-the-art multilingual model
-  - Flexible output dimension: 128-3072 (default: 3072 for maximum accuracy)
-  - Best for multilingual codebases and complex searches
-  - Recommended dimensions: 768, 1536, 3072
+- `text-embedding-005` (alternative) - Similar to 004 with minor improvements
+  - Dimension: 768 (fixed)
+  - Good alternative to text-embedding-004
+  - Works with free tier
+- `gemini-embedding-001` (⚠️ **NOT RECOMMENDED for free tier**)
+  - Flexible dimensions: 768-3072
+  - ❌ May not work with free tier accounts due to quota/rate limits
+  - Only use if you have paid Gemini API access
 
 **Environment Variables:**
-- `EMBEDDING_MODEL`: Choose embedding model (default: `text-embedding-005`)
-- `EMBEDDING_DIMENSION`: Output dimension size
-  - `text-embedding-005`: up to 768 (default: 768)
-  - `gemini-embedding-001`: 128-3072 (default: 3072)
-  - Higher dimensions = better accuracy but more storage/cost
+- `EMBEDDING_MODEL`: Choose embedding model (default: `text-embedding-004`)
+- `EMBEDDING_DIMENSION`: Output dimension size (optional, auto-detected from model)
+  - `text-embedding-004`: 768 (fixed)
+  - `text-embedding-005`: 768 (fixed)
+  - `gemini-embedding-001`: 768-3072 (configurable, but not recommended for free tier)
 
 **💡 Recommendation:**
-- **Most codebases**: Use `text-embedding-005` with 768 dimensions (default)
-- **Multilingual projects**: Use `gemini-embedding-001` with 3072 dimensions
-- **Large codebases (>10k files)**: Use 768 dimensions to save storage
+- **All users (especially free tier)**: Use `text-embedding-004` with 768 dimensions (default)
+- **Alternative option**: Use `text-embedding-005` with 768 dimensions
+- **Paid API users only**: Consider `gemini-embedding-001` for multilingual projects
+- **Large codebases (>10k files)**: Stick with 768 dimensions to save storage
 
 **⚡ Rate Limiting:**
 The indexer automatically handles Gemini API rate limits:
@@ -162,7 +168,7 @@ Ask GitHub Copilot to search your codebase:
 | `QDRANT_COLLECTION` | `codebase` | Collection name in Qdrant |
 | `WATCH_MODE` | `true` | Auto-update on file changes |
 | `BATCH_SIZE` | `50` | Embedding batch size |
-| `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` or `gemini-embedding-001`) |
+| `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` recommended, `text-embedding-005` alternative, `gemini-embedding-001` not recommended for free tier) |
 
 ## 🔧 Setup Guides
 
@@ -239,6 +245,14 @@ Should return JSON with collections list.
 - Large repos (1000+ files) take 5-10 minutes initially
 - Reduce `BATCH_SIZE` if hitting rate limits
 - Check Gemini API quota: [aistudio.google.com](https://aistudio.google.com)
+
+### Embedding errors with gemini-embedding-001?
+
+If you see errors like "quota exceeded" or "model not available":
+- ⚠️ `gemini-embedding-001` often doesn't work with free tier accounts
+- ✅ **Solution**: Switch to `text-embedding-004` (recommended for all users)
+- Update your config: `"EMBEDDING_MODEL": "text-embedding-004"`
+- Reload VS Code and re-index
 
 ## 📊 Performance
 

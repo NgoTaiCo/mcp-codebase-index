@@ -24,7 +24,6 @@ if (!process.env.QDRANT_API_KEY) {
 const server = new CodebaseIndexMCPServer({
     repoPath: process.env.REPO_PATH || process.cwd(),
     codebaseMemoryPath: process.env.MEMORY_FILE_PATH || './memory',
-    vectorStoreType: 'cloud',
     qdrant: {
         url: process.env.QDRANT_URL,
         apiKey: process.env.QDRANT_API_KEY,

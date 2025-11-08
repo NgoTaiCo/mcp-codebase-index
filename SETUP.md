@@ -220,7 +220,7 @@ If working, you'll see relevant code chunks.
 | `QDRANT_COLLECTION` | ❌ | `codebase` | Collection name in Qdrant |
 | `WATCH_MODE` | ❌ | `true` | Auto-update on file changes |
 | `BATCH_SIZE` | ❌ | `50` | Embedding batch size |
-| `EMBEDDING_MODEL` | ❌ | `text-embedding-004` | Gemini embedding model (`text-embedding-004` or `gemini-embedding-001`) |
+| `EMBEDDING_MODEL` | ❌ | `text-embedding-004` | Gemini embedding model (`text-embedding-004` recommended, `text-embedding-005` alternative, `gemini-embedding-001` not recommended for free tier) |
 
 ## Troubleshooting
 
@@ -267,6 +267,19 @@ Should list available models.
 
 ### Error: "Embedding failed"
 
+**If using `gemini-embedding-001`:**
+- ⚠️ This model often doesn't work with free tier accounts
+- ✅ **Solution**: Switch to `text-embedding-004` (recommended)
+  ```json
+  {
+    "env": {
+      "EMBEDDING_MODEL": "text-embedding-004"
+    }
+  }
+  ```
+- Reload VS Code after changing
+
+**Other causes:**
 - ❌ Check Gemini API quota: [aistudio.google.com](https://aistudio.google.com)
 - ❌ Reduce `BATCH_SIZE` to avoid rate limits
 - ❌ Wait a few minutes and try again

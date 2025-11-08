@@ -14,19 +14,15 @@ import { FileWatcher } from './fileWatcher.js';
 import { CodeIndexer } from './indexer.js';
 import { CodeEmbedder } from './embedder.js';
 import { QdrantVectorStore } from './qdrantClient.js';
-import { SimpleVectorStore } from './simpleVectorStore.js';
 import * as fs from 'fs';
 import * as path from 'path';
-
-// Union type for vector store
-type VectorStore = QdrantVectorStore | SimpleVectorStore;
 
 export class CodebaseIndexMCPServer {
     private server: Server;
     private watcher: FileWatcher;
     private indexer: CodeIndexer;
     private embedder: CodeEmbedder;
-    private vectorStore: VectorStore;
+    private vectorStore: QdrantVectorStore;
     private config: IndexerConfig;
     private indexingQueue: Set<string> = new Set();
     private isIndexing = false;
@@ -75,14 +71,9 @@ export class CodebaseIndexMCPServer {
         // Get vector dimension from embedder
         const vectorDimension = this.embedder.getDimension();
 
-        // Choose vector store based on config
-        if (config.vectorStoreType === 'memory') {
-            console.log('[VectorStore] Using in-memory SimpleVectorStore (no Docker needed)');
-            this.vectorStore = new SimpleVectorStore(config.qdrant);
-        } else {
-            console.log('[VectorStore] Using Qdrant');
-            this.vectorStore = new QdrantVectorStore(config.qdrant, vectorDimension);
-        }
+        // Always use Qdrant
+        console.log('[VectorStore] Using Qdrant');
+        this.vectorStore = new QdrantVectorStore(config.qdrant, vectorDimension);
 
         this.watcher = new FileWatcher(
             config.repoPath,

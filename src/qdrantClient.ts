@@ -173,7 +173,7 @@ export class QdrantVectorStore {
     }
 
     /**
-     * Get collections (for compatibility with SimpleVectorStore)
+     * Get collections
      */
     async getCollections(): Promise<any> {
         return await this.client.getCollections();

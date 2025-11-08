@@ -1,31 +1,6 @@
 # Qdrant Cloud Setup Guide
 
-## Option 1: In-Memory Storage (Default - No Setup)
-
-Vectors được lưu trong file JSON local: `./vector_storage/codebase.json`
-
-```json
-{
-  "env": {
-    "REPO_PATH": "/path/to/project",
-    "VECTOR_STORE_TYPE": "memory",
-    "GEMINI_API_KEY": "your-key"
-  }
-}
-```
-
-**Pros:**
-- ✅ Zero setup
-- ✅ No account needed
-- ✅ Works offline
-
-**Cons:**
-- ⚠️ Slower for large codebases (>1000 files)
-- ⚠️ Higher memory usage
-
----
-
-## Option 2: Qdrant Cloud (Recommended for Production)
+## Qdrant Cloud Setup (Required)
 
 ### Step 1: Create Qdrant Cloud Account
 
@@ -78,7 +53,6 @@ This opens: `~/Library/Application Support/Code/User/mcp.json`
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
       "env": {
         "REPO_PATH": "/path/to/your/project",
-        "VECTOR_STORE_TYPE": "cloud",
         "QDRANT_URL": "https://88ff41e9-133e-4a78-a664-274a90eebd58.us-east4-0.gcp.cloud.qdrant.io:6333",
         "QDRANT_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.ajP06MkSp4hThyqkzyfRaZUisw2zyCesBZMhasm_qLw",
         "QDRANT_COLLECTION": "codebase",
@@ -93,7 +67,6 @@ This opens: `~/Library/Application Support/Code/User/mcp.json`
 **Or .env file:**
 
 ```bash
-VECTOR_STORE_TYPE=cloud
 QDRANT_URL=https://88ff41e9-133e-4a78-a664-274a90eebd58.us-east4-0.gcp.cloud.qdrant.io:6333
 QDRANT_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.ajP06MkSp4hThyqkzyfRaZUisw2zyCesBZMhasm_qLw
 QDRANT_COLLECTION=codebase
@@ -124,7 +97,7 @@ QDRANT_COLLECTION=codebase
 
 ---
 
-## Option 3: Local Qdrant Docker
+## Local Qdrant Docker (Alternative)
 
 ### Step 1: Start Qdrant
 
@@ -146,7 +119,6 @@ Open MCP config via Copilot Chat (Settings → MCP Servers → MCP Configuration
       "command": "npx",
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
       "env": {
-        "VECTOR_STORE_TYPE": "qdrant",
         "QDRANT_URL": "http://localhost:6333",
         "REPO_PATH": "/path/to/project",
         "GEMINI_API_KEY": "your-key"
@@ -159,13 +131,12 @@ Open MCP config via Copilot Chat (Settings → MCP Servers → MCP Configuration
 
 ---
 
-## Storage Comparison
+## Storage Options
 
 | Mode | Storage Location | Setup | Performance | Cost |
 |------|------------------|-------|-------------|------|
-| **memory** | `./vector_storage/codebase.json` | ✅ None | ⭐⭐⭐ Good | Free |
 | **cloud** | Qdrant Cloud | ⚠️ Account needed | ⭐⭐⭐⭐⭐ Excellent | Free tier: 1GB |
-| **qdrant** | `./qdrant_storage/` | ⚠️ Docker | ⭐⭐⭐⭐⭐ Excellent | Free |
+| **local** | `./qdrant_storage/` | ⚠️ Docker | ⭐⭐⭐⭐⭐ Excellent | Free |
 
 ---
 
@@ -224,37 +195,13 @@ curl -X PUT 'https://YOUR-URL:6333/collections/codebase' \
 
 ## Migration Between Storage Types
 
-### Memory → Cloud
-
-```bash
-# 1. Change config
-VECTOR_STORE_TYPE=cloud
-QDRANT_URL=https://your-cluster...
-QDRANT_API_KEY=your-key
-
-# 2. Restart
-# Server will re-index to cloud automatically
-```
-
-### Cloud → Memory
-
-```bash
-# 1. Change config
-VECTOR_STORE_TYPE=memory
-
-# 2. Delete cloud collection (optional)
-curl -X DELETE 'https://YOUR-URL:6333/collections/codebase' \
-  --header 'api-key: YOUR-KEY'
-```
-
-### Cloud → Docker
+### Cloud → Local Docker
 
 ```bash
 # 1. Start Docker
 docker run -d -p 6333:6333 qdrant/qdrant
 
 # 2. Change config
-VECTOR_STORE_TYPE=qdrant
 QDRANT_URL=http://localhost:6333
 # Remove QDRANT_API_KEY
 
@@ -267,17 +214,20 @@ QDRANT_URL=http://localhost:6333
 
 ### Development
 ```bash
-VECTOR_STORE_TYPE=memory  # Fast iteration, no setup
+# Use local Docker for fast iteration
+docker run -d -p 6333:6333 qdrant/qdrant
 ```
 
 ### Production / Team
 ```bash
-VECTOR_STORE_TYPE=cloud   # Shared index, always available
+# Use Qdrant Cloud for shared index
+QDRANT_URL=https://your-cluster.gcp.cloud.qdrant.io:6333
 ```
 
 ### Large Projects (>5000 files)
 ```bash
-VECTOR_STORE_TYPE=qdrant  # Best performance, Docker local
+# Use local Docker for best performance
+docker run -d -p 6333:6333 qdrant/qdrant
 ```
 
 ---
@@ -316,7 +266,6 @@ VECTOR_STORE_TYPE=qdrant  # Best performance, Docker local
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
       "env": {
         "REPO_PATH": "/path/to/project-a",
-        "VECTOR_STORE_TYPE": "cloud",
         "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
         "QDRANT_API_KEY": "your-key",
         "QDRANT_COLLECTION": "project_a",
@@ -328,7 +277,6 @@ VECTOR_STORE_TYPE=qdrant  # Best performance, Docker local
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
       "env": {
         "REPO_PATH": "/path/to/project-b",
-        "VECTOR_STORE_TYPE": "cloud",
         "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
         "QDRANT_API_KEY": "your-key",
         "QDRANT_COLLECTION": "project_b",
@@ -370,4 +318,4 @@ https://cloud.qdrant.io → Your Cluster → Collections → codebase
 
 ---
 
-**Need help?** See [SIMPLE_SETUP.md](SIMPLE_SETUP.md) or open an issue on GitHub.
+**Need help?** Open an issue on [GitHub](https://github.com/NgoTaiCo/mcp-codebase-index/issues).

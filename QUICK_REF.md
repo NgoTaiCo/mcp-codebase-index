@@ -151,6 +151,12 @@ curl -H "api-key: YOUR_KEY" \
 - Try more specific queries
 - Check logs for errors
 
+✅ **Embedding errors?**
+- ⚠️ If using `gemini-embedding-001`: Switch to `text-embedding-004`
+- Free tier users should always use `text-embedding-004`
+- Update config: `"EMBEDDING_MODEL": "text-embedding-004"`
+- Reload VS Code
+
 ---
 
 ## Environment Variables
@@ -164,7 +170,7 @@ curl -H "api-key: YOUR_KEY" \
 | `QDRANT_COLLECTION` | ❌ | `codebase` | Collection name |
 | `WATCH_MODE` | ❌ | `true` | Auto-update files |
 | `BATCH_SIZE` | ❌ | `50` | Embedding batch size |
-| `EMBEDDING_MODEL` | ❌ | `text-embedding-004` | Embedding model (`text-embedding-004` or `gemini-embedding-001`) |
+| `EMBEDDING_MODEL` | ❌ | `text-embedding-004` | Embedding model (`text-embedding-004` ✅ recommended, `text-embedding-005` alternative, `gemini-embedding-001` ⚠️ not for free tier) |
 
 ---
 
