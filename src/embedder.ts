@@ -2,13 +2,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CodeChunk } from './types.js';
 
-const SUPPORTED_MODELS = ['gemini-embedding-001', 'text-embedding-004'] as const;
+const SUPPORTED_MODELS = ['text-embedding-004', 'text-embedding-005', 'gemini-embedding-001'] as const;
 type SupportedModel = typeof SUPPORTED_MODELS[number];
 
 // Model dimensions mapping (maximum recommended dimensions for best results)
 const MODEL_DEFAULT_DIMENSIONS: Record<SupportedModel, number> = {
-    'gemini-embedding-001': 3072, // Maximum dimension for best accuracy
-    'text-embedding-004': 768     // Maximum dimension for English/code specialization
+    'text-embedding-004': 768,    // Fixed dimension for English/code specialization (recommended)
+    'text-embedding-005': 768,    // Fixed dimension, similar to 004 with improvements
+    'gemini-embedding-001': 3072  // Flexible dimension 768-3072 (not recommended for free tier)
 };
 
 export class CodeEmbedder {
@@ -47,10 +48,10 @@ export class CodeEmbedder {
             }
         }
         
-        // Validate dimension for text-embedding-004
-        if (this.model === 'text-embedding-004' && this.outputDimension > 768) {
+        // Validate dimension for text-embedding-004 and text-embedding-005
+        if ((this.model === 'text-embedding-004' || this.model === 'text-embedding-005') && this.outputDimension > 768) {
             throw new Error(
-                `Invalid output dimension for text-embedding-004: ${this.outputDimension}. ` +
+                `Invalid output dimension for ${this.model}: ${this.outputDimension}. ` +
                 `Maximum is 768.`
             );
         }
@@ -95,9 +96,9 @@ export class CodeEmbedder {
      * Embed multiple chunks in batch with rate limiting
      */
     async embedChunks(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
-        // text-embedding-004 has better rate limits, use parallel processing
+        // text-embedding-004 and text-embedding-005 have better rate limits, use parallel processing
         // gemini-embedding-001 needs sequential processing to avoid 429 errors
-        if (this.model === 'text-embedding-004') {
+        if (this.model === 'text-embedding-004' || this.model === 'text-embedding-005') {
             return this.embedChunksParallel(chunks);
         } else {
             return this.embedChunksSequential(chunks);
@@ -105,7 +106,7 @@ export class CodeEmbedder {
     }
 
     /**
-     * Parallel embedding for models with good rate limits (text-embedding-004)
+     * Parallel embedding for models with good rate limits (text-embedding-004, text-embedding-005)
      */
     private async embedChunksParallel(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
         const results: (number[] | null)[] = [];
