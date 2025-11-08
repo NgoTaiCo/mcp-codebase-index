@@ -1,6 +1,6 @@
 {
   "name": "@ngotaico/mcp-codebase-index",
-  "version": "1.4.10",
+  "version": "1.5.0",
   "description": "MCP server for AI-powered codebase indexing with auto-save checkpoints, incremental updates, and real-time progress tracking",
   "type": "module",
   "main": "dist/index.js",
