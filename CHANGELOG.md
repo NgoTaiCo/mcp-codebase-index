@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2025-11-08
+
+### Fixed
+- **Critical: Sync check between Qdrant and memory state**
+  - Server now detects when Qdrant collection is deleted but memory state remains
+  - Automatically resets state and forces full re-index when mismatch detected
+  - Clears FileWatcher hashes to ensure all files are re-scanned
+  - Prevents "stuck" state where server thinks files are indexed but vectors are missing
+  - Logs clear warnings when sync issues are detected
+
+### Added
+- `checkAndFixSync()` method to verify Qdrant-memory consistency on startup
+- `clearFileHashes()` method in FileWatcher for forced re-scanning
+- Detailed sync check logging with vector count and file count comparison
+
+### Changed
+- Startup sequence now includes sync verification step
+- Better error recovery for out-of-sync scenarios
+
 ## [1.4.0] - 2025-11-08
 
 ### Added
