@@ -5,6 +5,12 @@ import { CodeChunk } from './types.js';
 const SUPPORTED_MODELS = ['gemini-embedding-001', 'text-embedding-004'] as const;
 type SupportedModel = typeof SUPPORTED_MODELS[number];
 
+// Model dimensions mapping
+const MODEL_DIMENSIONS: Record<SupportedModel, number> = {
+    'gemini-embedding-001': 768,
+    'text-embedding-004': 3072
+};
+
 export class CodeEmbedder {
     private genAI: GoogleGenerativeAI;
     private model: SupportedModel;
@@ -24,7 +30,14 @@ export class CodeEmbedder {
         }
         
         this.model = selectedModel as SupportedModel;
-        console.log(`[Embedder] Using embedding model: ${this.model}`);
+        console.log(`[Embedder] Using embedding model: ${this.model} (dimension: ${this.getDimension()})`);
+    }
+
+    /**
+     * Get the dimension of the current model
+     */
+    getDimension(): number {
+        return MODEL_DIMENSIONS[this.model];
     }
 
     /**

@@ -72,13 +72,16 @@ export class CodebaseIndexMCPServer {
         this.indexer = new CodeIndexer(config.repoPath);
         this.embedder = new CodeEmbedder(config.embedding.apiKey);
 
+        // Get vector dimension from embedder
+        const vectorDimension = this.embedder.getDimension();
+
         // Choose vector store based on config
         if (config.vectorStoreType === 'memory') {
             console.log('[VectorStore] Using in-memory SimpleVectorStore (no Docker needed)');
             this.vectorStore = new SimpleVectorStore(config.qdrant);
         } else {
             console.log('[VectorStore] Using Qdrant');
-            this.vectorStore = new QdrantVectorStore(config.qdrant);
+            this.vectorStore = new QdrantVectorStore(config.qdrant, vectorDimension);
         }
 
         this.watcher = new FileWatcher(
