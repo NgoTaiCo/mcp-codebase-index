@@ -8,3 +8,4 @@ memory/
 .idea/
 vscode_settings.local.json
 claude_desktop_config.local.json
+github-issues/*

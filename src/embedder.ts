@@ -2,12 +2,29 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CodeChunk } from './types.js';
 
+const SUPPORTED_MODELS = ['gemini-embedding-001', 'text-embedding-004'] as const;
+type SupportedModel = typeof SUPPORTED_MODELS[number];
+
 export class CodeEmbedder {
     private genAI: GoogleGenerativeAI;
-    private model = 'text-embedding-004';
+    private model: SupportedModel;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, model?: string) {
         this.genAI = new GoogleGenerativeAI(apiKey);
+        
+        // Get model from parameter or environment variable, default to text-embedding-004
+        const selectedModel = model || process.env.EMBEDDING_MODEL || 'text-embedding-004';
+        
+        // Validate model
+        if (!SUPPORTED_MODELS.includes(selectedModel as SupportedModel)) {
+            throw new Error(
+                `Unsupported embedding model: ${selectedModel}. ` +
+                `Supported models: ${SUPPORTED_MODELS.join(', ')}`
+            );
+        }
+        
+        this.model = selectedModel as SupportedModel;
+        console.log(`[Embedder] Using embedding model: ${this.model}`);
     }
 
     /**

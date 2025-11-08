@@ -64,6 +64,26 @@ Add this to your `mcp.json`:
 | `QDRANT_URL` | Qdrant Cloud cluster URL | `https://xxx.gcp.cloud.qdrant.io:6333` |
 | `QDRANT_API_KEY` | Qdrant Cloud API key | `eyJhbGci...` |
 
+### Optional Configuration
+
+You can customize the embedding model by adding the `EMBEDDING_MODEL` variable:
+
+```json
+{
+  "env": {
+    "REPO_PATH": "/Users/you/Projects/myapp",
+    "GEMINI_API_KEY": "AIzaSyC...",
+    "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
+    "QDRANT_API_KEY": "eyJhbGci...",
+    "EMBEDDING_MODEL": "text-embedding-004"
+  }
+}
+```
+
+**Supported models:**
+- `text-embedding-004` (default) - Latest model with improved performance
+- `gemini-embedding-001` - Earlier model for compatibility
+
 ### Restart VS Code
 
 The server will automatically:
@@ -105,7 +125,8 @@ Ask GitHub Copilot to search your codebase:
   "env": {
     "QDRANT_COLLECTION": "my_project",
     "WATCH_MODE": "true",
-    "BATCH_SIZE": "50"
+    "BATCH_SIZE": "50",
+    "EMBEDDING_MODEL": "text-embedding-004"
   }
 }
 ```
@@ -115,6 +136,7 @@ Ask GitHub Copilot to search your codebase:
 | `QDRANT_COLLECTION` | `codebase` | Collection name in Qdrant |
 | `WATCH_MODE` | `true` | Auto-update on file changes |
 | `BATCH_SIZE` | `50` | Embedding batch size |
+| `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` or `gemini-embedding-001`) |
 
 ## 🔧 Setup Guides
 

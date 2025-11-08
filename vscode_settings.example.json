@@ -10,7 +10,8 @@
         "REPO_PATH": "/Users/you/Projects/your-project",
         "GEMINI_API_KEY": "AIzaSyC...",
         "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
-        "QDRANT_API_KEY": "eyJhbGci..."
+        "QDRANT_API_KEY": "eyJhbGci...",
+        "EMBEDDING_MODEL": "text-embedding-004"
       },
       "type": "stdio"
     }

@@ -164,6 +164,7 @@ curl -H "api-key: YOUR_KEY" \
 | `QDRANT_COLLECTION` | ❌ | `codebase` | Collection name |
 | `WATCH_MODE` | ❌ | `true` | Auto-update files |
 | `BATCH_SIZE` | ❌ | `50` | Embedding batch size |
+| `EMBEDDING_MODEL` | ❌ | `text-embedding-004` | Embedding model (`text-embedding-004` or `gemini-embedding-001`) |
 
 ---
 
