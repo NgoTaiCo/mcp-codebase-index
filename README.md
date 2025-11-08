@@ -66,7 +66,7 @@ Add this to your `mcp.json`:
 
 ### Optional Configuration
 
-You can customize the embedding model by adding the `EMBEDDING_MODEL` variable:
+You can customize the embedding model and output dimension:
 
 ```json
 {
@@ -75,14 +75,40 @@ You can customize the embedding model by adding the `EMBEDDING_MODEL` variable:
     "GEMINI_API_KEY": "AIzaSyC...",
     "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
     "QDRANT_API_KEY": "eyJhbGci...",
-    "EMBEDDING_MODEL": "text-embedding-004"
+    "EMBEDDING_MODEL": "text-embedding-005",
+    "EMBEDDING_DIMENSION": "768"
   }
 }
 ```
 
-**Supported models:**
-- `text-embedding-004` (default) - Latest model with improved performance
-- `gemini-embedding-001` - Earlier model for compatibility
+**Supported embedding models:**
+- `text-embedding-005` (default, recommended) - Specialized for English and code tasks
+  - Maximum dimension: 768 (default)
+  - Best for code search and English documentation
+  - Optimized performance and accuracy
+- `gemini-embedding-001` - State-of-the-art multilingual model
+  - Flexible output dimension: 128-3072 (default: 3072 for maximum accuracy)
+  - Best for multilingual codebases and complex searches
+  - Recommended dimensions: 768, 1536, 3072
+
+**Environment Variables:**
+- `EMBEDDING_MODEL`: Choose embedding model (default: `text-embedding-005`)
+- `EMBEDDING_DIMENSION`: Output dimension size
+  - `text-embedding-005`: up to 768 (default: 768)
+  - `gemini-embedding-001`: 128-3072 (default: 3072)
+  - Higher dimensions = better accuracy but more storage/cost
+
+**💡 Recommendation:**
+- **Most codebases**: Use `text-embedding-005` with 768 dimensions (default)
+- **Multilingual projects**: Use `gemini-embedding-001` with 3072 dimensions
+- **Large codebases (>10k files)**: Use 768 dimensions to save storage
+
+**⚡ Rate Limiting:**
+The indexer automatically handles Gemini API rate limits:
+- 700ms delay between requests
+- Exponential backoff for 429 errors (2s, 4s, 8s)
+- 2s delay between batches of 50 chunks
+- Automatic retries up to 3 times
 
 ### Restart VS Code
 
