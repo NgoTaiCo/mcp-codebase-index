@@ -87,10 +87,6 @@ You can customize the embedding model and output dimension:
   - Excellent for code search and documentation
   - Works reliably with free tier Gemini API
   - Optimized performance and accuracy
-- `text-embedding-005` (alternative) - Similar to 004 with minor improvements
-  - Dimension: 768 (fixed)
-  - Good alternative to text-embedding-004
-  - Works with free tier
 - `gemini-embedding-001` (⚠️ **NOT RECOMMENDED for free tier**)
   - Flexible dimensions: 768-3072
   - ❌ May not work with free tier accounts due to quota/rate limits
@@ -100,12 +96,10 @@ You can customize the embedding model and output dimension:
 - `EMBEDDING_MODEL`: Choose embedding model (default: `text-embedding-004`)
 - `EMBEDDING_DIMENSION`: Output dimension size (optional, auto-detected from model)
   - `text-embedding-004`: 768 (fixed)
-  - `text-embedding-005`: 768 (fixed)
   - `gemini-embedding-001`: 768-3072 (configurable, but not recommended for free tier)
 
 **💡 Recommendation:**
 - **All users (especially free tier)**: Use `text-embedding-004` with 768 dimensions (default)
-- **Alternative option**: Use `text-embedding-005` with 768 dimensions
 - **Paid API users only**: Consider `gemini-embedding-001` for multilingual projects
 - **Large codebases (>10k files)**: Stick with 768 dimensions to save storage
 
@@ -168,7 +162,7 @@ Ask GitHub Copilot to search your codebase:
 | `QDRANT_COLLECTION` | `codebase` | Collection name in Qdrant |
 | `WATCH_MODE` | `true` | Auto-update on file changes |
 | `BATCH_SIZE` | `50` | Embedding batch size |
-| `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` recommended, `text-embedding-005` alternative, `gemini-embedding-001` not recommended for free tier) |
+| `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` recommended, `gemini-embedding-001` not recommended for free tier) |
 
 ## 🔧 Setup Guides
 

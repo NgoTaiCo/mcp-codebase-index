@@ -61,8 +61,8 @@ export interface QdrantConfig {
 
 export interface EmbeddingConfig {
     apiKey: string;
-    model: string; // "text-embedding-004" (recommended), "text-embedding-005", or "gemini-embedding-001"
-    dimension: number; // 768 for text-embedding-004/005, 768-3072 for gemini-embedding-001
+    model: string; // "text-embedding-004" (recommended) or "gemini-embedding-001"
+    dimension: number; // 768 for text-embedding-004, 768-3072 for gemini-embedding-001
 }
 
 export interface IndexerConfig {
