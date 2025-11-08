@@ -9,7 +9,14 @@ import {
     McpError
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { IndexerConfig, IncrementalIndexState, FileMetadata } from './types.js';
+import { 
+    IndexerConfig, 
+    IncrementalIndexState, 
+    FileMetadata, 
+    IndexingError,
+    IndexingProgress,
+    PerformanceMetrics 
+} from './types.js';
 import { FileWatcher } from './fileWatcher.js';
 import { CodeIndexer } from './indexer.js';
 import { CodeEmbedder } from './embedder.js';
@@ -27,7 +34,28 @@ export class CodebaseIndexMCPServer {
     private indexingQueue: Set<string> = new Set();
     private isIndexing = false;
     private indexState: IncrementalIndexState;
-    private readonly DAILY_QUOTA_LIMIT = 950; // Safe limit (1000 - 50 buffer)
+    // text-embedding-004: 1,500 RPM (no daily limit, no cost)
+    // We use a conservative daily limit to spread indexing over time for large codebases
+    private readonly DAILY_QUOTA_LIMIT = 10000; // Conservative limit for spreading work
+    private readonly RPM_LIMIT = 1500; // Requests per minute (enforced by embedder)
+    
+    // Enhanced status tracking
+    private indexingProgress: IndexingProgress = {
+        totalFiles: 0,
+        processedFiles: 0,
+        currentFile: null,
+        percentage: 0,
+        startTime: 0,
+        estimatedTimeRemaining: null
+    };
+    private performanceMetrics: PerformanceMetrics = {
+        filesPerSecond: 0,
+        averageTimePerFile: 0,
+        totalDuration: 0,
+        chunksProcessed: 0
+    };
+    private recentErrors: IndexingError[] = [];
+    private readonly MAX_ERRORS_STORED = 10;
 
     constructor(config: IndexerConfig) {
         this.config = config;
@@ -116,7 +144,13 @@ export class CodebaseIndexMCPServer {
                     description: 'Check the current indexing status and progress.',
                     inputSchema: {
                         type: 'object',
-                        properties: {}
+                        properties: {
+                            verbose: {
+                                type: 'boolean',
+                                description: 'Show detailed logs including all errors (default: false)',
+                                default: false
+                            }
+                        }
                     }
                 }
             ]
@@ -128,7 +162,7 @@ export class CodebaseIndexMCPServer {
                 return await this.handleSearch(request.params.arguments);
             }
             if (request.params.name === 'indexing_status') {
-                return await this.handleIndexingStatus();
+                return await this.handleIndexingStatus(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -208,11 +242,17 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
     /**
      * Handle indexing status check
      */
-    private async handleIndexingStatus(): Promise<any> {
+    private async handleIndexingStatus(args?: any): Promise<any> {
         try {
+            // Parse verbose flag
+            const verbose = args?.verbose === true || args?.verbose === 'true';
+            
             const collections = await this.vectorStore.getCollections();
             const vectorCount = collections.collections?.[0]?.vectors_count ||
                 collections.collections?.[0]?.points_count || 0;
+
+            // Calculate storage size estimate (rough: 768 dim * 4 bytes per float + metadata)
+            const estimatedSize = vectorCount * (768 * 4 + 500); // ~3.5KB per vector
 
             const status = {
                 isIndexing: this.isIndexing,
@@ -221,35 +261,101 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                 collection: this.config.qdrant.collectionName,
                 dailyQuota: this.indexState.dailyQuota,
                 stats: this.indexState.stats,
-                pendingQueue: this.indexState.pendingQueue.length
+                pendingQueue: this.indexState.pendingQueue.length,
+                progress: this.indexingProgress,
+                performance: this.performanceMetrics,
+                recentErrors: this.recentErrors,
+                storageSize: estimatedSize
             };
+
+            // Build status message
+            let message = `**📊 Indexing Status**\n\n`;
+
+            // Progress section (only if indexing)
+            if (status.isIndexing && status.progress.totalFiles > 0) {
+                message += `**Progress:** ${status.progress.percentage}% (${status.progress.processedFiles}/${status.progress.totalFiles} files)\n`;
+                message += `**Current File:** \`${status.progress.currentFile || 'Processing...'}\`\n`;
+                
+                if (status.progress.estimatedTimeRemaining !== null) {
+                    message += `**ETA:** ${this.formatDuration(status.progress.estimatedTimeRemaining)}\n`;
+                }
+                message += `\n`;
+            }
+
+            // Performance metrics (only if indexing or recently indexed)
+            if (status.performance.filesPerSecond > 0) {
+                message += `**⏱️ Performance:**\n`;
+                message += `- Speed: ${status.performance.filesPerSecond.toFixed(2)} files/sec\n`;
+                message += `- Average: ${this.formatDuration(status.performance.averageTimePerFile)} per file\n`;
+                message += `- Total Time: ${this.formatDuration(status.performance.totalDuration)}\n`;
+                message += `- Chunks Processed: ${status.performance.chunksProcessed}\n`;
+                message += `\n`;
+            }
+
+            // Quota usage
+            const quotaUsagePercent = ((status.dailyQuota.chunksIndexed / status.dailyQuota.limit) * 100).toFixed(1);
+            message += `**📈 Daily Quota (${status.dailyQuota.date}):**\n`;
+            message += `- Used: ${status.dailyQuota.chunksIndexed} / ${status.dailyQuota.limit} chunks\n`;
+            message += `- Remaining: ${status.dailyQuota.limit - status.dailyQuota.chunksIndexed} chunks\n`;
+            message += `- Usage: ${quotaUsagePercent}%\n`;
+            message += `- Rate Limit: ${this.RPM_LIMIT} RPM (text-embedding-004)\n`;
+            message += `\n`;
+
+            // Storage stats
+            message += `**📦 Storage:**\n`;
+            message += `- Vectors: ${status.vectorsStored}\n`;
+            message += `- Collection: \`${status.collection}\`\n`;
+            message += `- Estimated Size: ${this.formatBytes(status.storageSize)}\n`;
+            message += `\n`;
+
+            // File categorization stats
+            message += `**📊 File Categorization:**\n`;
+            message += `- ✨ New: ${status.stats.newFiles}\n`;
+            message += `- 📝 Modified: ${status.stats.modifiedFiles}\n`;
+            message += `- ✅ Unchanged: ${status.stats.unchangedFiles}\n`;
+            message += `- 🗑️ Deleted: ${status.stats.deletedFiles}\n`;
+            message += `\n`;
+
+            // Recent errors (if any)
+            if (status.recentErrors.length > 0) {
+                message += `**⚠️ Recent Errors (${status.recentErrors.length}):**\n`;
+                const errorsToShow = verbose ? status.recentErrors : status.recentErrors.slice(0, 3);
+                
+                for (const error of errorsToShow) {
+                    const timeAgo = this.formatTimeAgo(Date.now() - error.timestamp);
+                    message += `- \`${error.filePath}\`: ${error.error} (${timeAgo})\n`;
+                }
+                
+                if (!verbose && status.recentErrors.length > 3) {
+                    message += `  _...and ${status.recentErrors.length - 3} more (use verbose:true to see all)_\n`;
+                }
+                message += `\n`;
+            }
+
+            // Queue status
+            if (status.pendingQueue > 0) {
+                message += `**📋 Queue:** ${status.pendingQueue} files pending for next run\n`;
+                message += `\n`;
+            }
+
+            // Overall status
+            message += status.isIndexing ? 
+                '⏳ **Status:** Indexing in progress...' : 
+                '✅ **Status:** Ready for search';
+
+            if (status.queuedFiles > 0) {
+                message += `\n⚠️ ${status.queuedFiles} files queued for processing`;
+            }
+
+            if (status.pendingQueue > 0) {
+                message += `\n⚠️ ${status.pendingQueue} files queued for next run (quota reached)`;
+            }
 
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `**Incremental Indexing Status**
-
-📊 **Stats:**
-- Total vectors: ${status.vectorsStored}
-- Currently indexing: ${status.isIndexing ? 'Yes' : 'No'}
-- Queued files: ${status.queuedFiles}
-- Pending (next run): ${status.pendingQueue}
-- Collection: ${status.collection}
-
-📈 **File Categorization:**
-- New files: ${status.stats.newFiles}
-- Modified files: ${status.stats.modifiedFiles}
-- Unchanged files: ${status.stats.unchangedFiles}
-- Deleted files: ${status.stats.deletedFiles}
-
-📉 **Daily Quota (${status.dailyQuota.date}):**
-- Used: ${status.dailyQuota.chunksIndexed} / ${status.dailyQuota.limit}
-- Remaining: ${status.dailyQuota.limit - status.dailyQuota.chunksIndexed}
-- Usage: ${((status.dailyQuota.chunksIndexed / status.dailyQuota.limit) * 100).toFixed(1)}%
-
-${status.isIndexing ? '⏳ Indexing in progress...' : '✅ Ready for search'}
-${status.pendingQueue > 0 ? `\n⚠️ ${status.pendingQueue} files queued for next run (quota reached)` : ''}`
+                        text: message
                     }
                 ]
             };
@@ -263,6 +369,16 @@ ${status.pendingQueue > 0 ? `\n⚠️ ${status.pendingQueue} files queued for ne
                 ]
             };
         }
+    }
+
+    /**
+     * Format time ago in human-readable format
+     */
+    private formatTimeAgo(ms: number): string {
+        if (ms < 1000) return 'just now';
+        if (ms < 60000) return `${Math.round(ms / 1000)}s ago`;
+        if (ms < 3600000) return `${Math.round(ms / 60000)}m ago`;
+        return `${Math.round(ms / 3600000)}h ago`;
     }
 
     /**
@@ -440,6 +556,23 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
 
         console.log(`\n[Incremental Indexer] Processing ${filesToIndex.length} files...`);
 
+        // Initialize progress tracking
+        this.indexingProgress = {
+            totalFiles: filesToIndex.length,
+            processedFiles: 0,
+            currentFile: null,
+            percentage: 0,
+            startTime: Date.now(),
+            estimatedTimeRemaining: null
+        };
+
+        this.performanceMetrics = {
+            filesPerSecond: 0,
+            averageTimePerFile: 0,
+            totalDuration: 0,
+            chunksProcessed: 0
+        };
+
         try {
             // Categorize files
             const categorization = this.indexer.categorizeFiles(
@@ -499,13 +632,21 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             for (const filePath of filesToProcess) {
                 try {
                     const relativePath = path.relative(this.config.repoPath, filePath);
+                    
+                    // Update current file being processed
+                    this.indexingProgress.currentFile = relativePath;
+                    this.updateProgressMetrics();
 
                     // Delete old vectors if exists
                     await this.vectorStore.deleteByFilePath(relativePath);
 
                     // Parse and embed
                     const chunks = await this.indexer.parseFile(filePath);
-                    if (chunks.length === 0) continue;
+                    if (chunks.length === 0) {
+                        this.indexingProgress.processedFiles++;
+                        this.updateProgressMetrics();
+                        continue;
+                    }
 
                     // Check quota for this file
                     if (!this.hasQuotaRemaining(chunks.length)) {
@@ -532,10 +673,25 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                     // Update quota
                     this.indexState.dailyQuota.chunksIndexed += chunks.length;
                     processedChunks += chunks.length;
+                    this.performanceMetrics.chunksProcessed += chunks.length;
+
+                    // Update progress
+                    this.indexingProgress.processedFiles++;
+                    this.updateProgressMetrics();
 
                     console.log(`  ✓ ${relativePath} (${chunks.length} chunks)`);
                 } catch (error) {
                     console.error(`  ✗ Error indexing ${filePath}:`, error);
+                    
+                    // Track error
+                    this.addError({
+                        filePath: path.relative(this.config.repoPath, filePath),
+                        error: error instanceof Error ? error.message : String(error),
+                        timestamp: Date.now()
+                    });
+                    
+                    this.indexingProgress.processedFiles++;
+                    this.updateProgressMetrics();
                 }
             }
 
@@ -552,7 +708,73 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             console.error('[Indexer] Error:', error);
         } finally {
             this.isIndexing = false;
+            // Final progress update
+            this.indexingProgress.currentFile = null;
+            this.indexingProgress.percentage = 100;
         }
+    }
+
+    /**
+     * Update progress metrics and calculate ETA
+     */
+    private updateProgressMetrics(): void {
+        const now = Date.now();
+        const elapsed = now - this.indexingProgress.startTime;
+        
+        this.performanceMetrics.totalDuration = elapsed;
+        
+        if (this.indexingProgress.processedFiles > 0) {
+            // Calculate average time per file
+            this.performanceMetrics.averageTimePerFile = elapsed / this.indexingProgress.processedFiles;
+            
+            // Calculate files per second
+            this.performanceMetrics.filesPerSecond = (this.indexingProgress.processedFiles / elapsed) * 1000;
+            
+            // Calculate percentage
+            this.indexingProgress.percentage = Math.round(
+                (this.indexingProgress.processedFiles / this.indexingProgress.totalFiles) * 100
+            );
+            
+            // Calculate ETA
+            const remainingFiles = this.indexingProgress.totalFiles - this.indexingProgress.processedFiles;
+            if (remainingFiles > 0) {
+                this.indexingProgress.estimatedTimeRemaining = 
+                    remainingFiles * this.performanceMetrics.averageTimePerFile;
+            } else {
+                this.indexingProgress.estimatedTimeRemaining = 0;
+            }
+        }
+    }
+
+    /**
+     * Add error to recent errors list (keep last N errors)
+     */
+    private addError(error: IndexingError): void {
+        this.recentErrors.unshift(error);
+        if (this.recentErrors.length > this.MAX_ERRORS_STORED) {
+            this.recentErrors = this.recentErrors.slice(0, this.MAX_ERRORS_STORED);
+        }
+    }
+
+    /**
+     * Format duration in human-readable format
+     */
+    private formatDuration(ms: number): string {
+        if (ms < 1000) return `${Math.round(ms)}ms`;
+        if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+        
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.round((ms % 60000) / 1000);
+        return `${minutes}m ${seconds}s`;
+    }
+
+    /**
+     * Format file size in human-readable format
+     */
+    private formatBytes(bytes: number): string {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     }
 
     /**

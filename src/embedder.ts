@@ -106,26 +106,37 @@ export class CodeEmbedder {
 
     /**
      * Parallel embedding for models with good rate limits (text-embedding-004)
+     * text-embedding-004: 1,500 RPM = 25 requests per second
      */
     private async embedChunksParallel(chunks: CodeChunk[]): Promise<(number[] | null)[]> {
         const results: (number[] | null)[] = [];
-        const BATCH_SIZE = 50;
-        const DELAY_PER_REQUEST = 100; // 100ms between requests
+        const BATCH_SIZE = 25; // Process 25 at a time (max rate = 25 RPS)
+        const DELAY_PER_BATCH = 1000; // 1 second between batches = exactly 25 RPS
+
+        console.log(`[Embedder] Processing ${chunks.length} chunks with parallel batching: 1,500 RPM (25 RPS)`);
 
         for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
             const batch = chunks.slice(i, i + BATCH_SIZE);
+            const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+            const totalBatches = Math.ceil(chunks.length / BATCH_SIZE);
 
             try {
-                const promises = batch.map((chunk, idx) =>
-                    this.delayedEmbedWithRetry(chunk, idx * DELAY_PER_REQUEST, 3)
-                );
-
+                // Process batch in parallel
+                const promises = batch.map(chunk => this.delayedEmbedWithRetry(chunk, 0, 3));
                 const batchResults = await Promise.all(promises);
                 results.push(...batchResults);
 
-                console.log(`[Embedder] Processed ${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length} chunks`);
+                const processed = Math.min(i + BATCH_SIZE, chunks.length);
+                console.log(`[Embedder] Batch ${batchNumber}/${totalBatches}: ${processed}/${chunks.length} chunks (${((processed / chunks.length) * 100).toFixed(1)}%)`);
+
+                // Wait between batches to respect rate limit (except for last batch)
+                if (i + BATCH_SIZE < chunks.length) {
+                    await new Promise(resolve => setTimeout(resolve, DELAY_PER_BATCH));
+                }
             } catch (error) {
-                console.error('[Embedder] Batch error:', error);
+                console.error(`[Embedder] Batch ${batchNumber} error:`, error);
+                // Add nulls for failed batch
+                results.push(...new Array(batch.length).fill(null));
             }
         }
 

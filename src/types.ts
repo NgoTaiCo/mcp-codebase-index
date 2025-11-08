@@ -27,6 +27,28 @@ export interface FileMetadata {
     status: 'indexed' | 'pending' | 'failed';
 }
 
+export interface IndexingError {
+    filePath: string;
+    error: string;
+    timestamp: number;
+}
+
+export interface IndexingProgress {
+    totalFiles: number;
+    processedFiles: number;
+    currentFile: string | null;
+    percentage: number; // 0-100
+    startTime: number;
+    estimatedTimeRemaining: number | null; // milliseconds
+}
+
+export interface PerformanceMetrics {
+    filesPerSecond: number;
+    averageTimePerFile: number; // milliseconds
+    totalDuration: number; // milliseconds
+    chunksProcessed: number;
+}
+
 export interface IncrementalIndexState {
     version: string; // State format version
     lastUpdated: number; // Timestamp
@@ -36,7 +58,7 @@ export interface IncrementalIndexState {
     dailyQuota: {
         date: string; // YYYY-MM-DD
         chunksIndexed: number;
-        limit: number; // 950 (safe limit)
+        limit: number; // 10000 (conservative limit for text-embedding-004)
     };
     stats: {
         newFiles: number;
