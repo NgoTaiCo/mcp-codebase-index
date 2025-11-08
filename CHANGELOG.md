@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.10] - 2025-11-08
+
+### Fixed
+- **CRITICAL: Checkpoint resume system not working correctly**
+  - **Root cause**: FileWatcher.scanForChanges() updated hashes for ALL scanned files during scan, not just indexed files
+  - **Issue**: After indexing 30 files and restarting, scan found 0 changed files because metadata contained hashes for all 470 files
+  - **Solution**: Only update file hashes AFTER successful indexing via new `updateFileHash()` method
+  - Metadata now contains hashes only for actually indexed files
+  - Resume now correctly detects remaining files that need indexing
+
+### Changed
+- FileWatcher.scanForChanges() no longer updates hashes during scan
+- Added FileWatcher.updateFileHash() method called after successful indexing
+- Server now calls updateFileHash() for each indexed file to maintain accurate metadata
+- Checkpoint resume now works as designed: Index 30 files → Stop → Restart → Index remaining 440 files
+
+### Technical Details
+- Before: scanForChanges() did `this.fileHashes.set(filePath, hash)` for all files
+- After: scanForChanges() only detects changes, updateFileHash() stores hash after indexing
+- This ensures metadata (index-metadata.json) only contains hashes for indexed files
+- Fixes scenario: "qdrant empty → index 30 → stop → restart → shows 0 changed files"
+
+## [1.4.9] - 2025-11-08
+
+### Fixed
+- **Checkpoint system appearing to work but not resuming correctly**
+  - Added double-check with `getVectorCount()` to query actual Qdrant data
+  - Fixed Case 1b in checkAndFixSync() to distinguish between:
+    - Collection truly deleted (actualCount = 0) → Clear and re-index
+    - Valid checkpoint (actualCount > 0) → Resume from checkpoint
+  - Previous logic relied on collection metadata which could be stale
+
+### Added
+- QdrantVectorStore.getVectorCount() method to query actual point count
+- Better logging for checkpoint resume vs collection deleted scenarios
+
+## [1.4.2] - 2025-11-08
+
+### Added
+- **Debug logging for file scanning**
+  - Shows total source files scanned
+  - Shows number of changed files detected
+  - Shows number of ignored directories
+  - Helps diagnose why some files aren't being indexed
+
+### Fixed
+- Improved directory ignore logic with better pattern matching
+  - Now checks directory basename directly
+  - Better handling of nested ignore patterns
+  - More accurate path separator matching
+
 ## [1.4.1] - 2025-11-08
 
 ### Fixed

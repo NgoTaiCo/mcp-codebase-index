@@ -178,4 +178,16 @@ export class QdrantVectorStore {
     async getCollections(): Promise<any> {
         return await this.client.getCollections();
     }
+
+    /**
+     * Get actual vector count in collection
+     */
+    async getVectorCount(): Promise<number> {
+        try {
+            const info = await this.client.getCollection(this.collectionName);
+            return info.points_count || info.vectors_count || 0;
+        } catch (error) {
+            return 0;
+        }
+    }
 }

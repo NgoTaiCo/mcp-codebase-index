@@ -56,6 +56,7 @@ export class CodebaseIndexMCPServer {
     };
     private recentErrors: IndexingError[] = [];
     private readonly MAX_ERRORS_STORED = 10;
+    private readonly CHECKPOINT_INTERVAL = 10; // Save progress every 10 files
 
     constructor(config: IndexerConfig) {
         this.config = config;
@@ -607,18 +608,37 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                 ...categorization.modifiedFiles
             ];
 
+            // Resume: Filter out files already indexed (checkpoint recovery)
+            const remainingFiles = priorityFiles.filter(filePath => {
+                const relativePath = path.relative(this.config.repoPath, filePath);
+                const metadata = this.indexState.indexedFiles.get(relativePath);
+                
+                // Skip if already indexed AND hash matches (no changes since checkpoint)
+                if (metadata && metadata.status === 'indexed') {
+                    const currentHash = this.indexer.calculateFileHash(filePath);
+                    if (currentHash === metadata.hash) {
+                        return false; // Already indexed, skip
+                    }
+                }
+                return true; // Need to index
+            });
+
+            if (remainingFiles.length < priorityFiles.length) {
+                console.log(`[Resume] Skipping ${priorityFiles.length - remainingFiles.length} already-indexed files from previous run`);
+            }
+
             // Process priority files
             let processedChunks = 0;
             const filesToProcess: string[] = [];
 
-            for (const filePath of priorityFiles) {
+            for (const filePath of remainingFiles) {
                 // Check quota before processing
                 if (!this.hasQuotaRemaining(processedChunks)) {
                     console.log(`\n⚠️  Daily quota reached (${this.indexState.dailyQuota.chunksIndexed}/${this.DAILY_QUOTA_LIMIT})`);
-                    console.log(`   Remaining files queued for tomorrow: ${priorityFiles.length - filesToProcess.length}`);
+                    console.log(`   Remaining files queued for tomorrow: ${remainingFiles.length - filesToProcess.length}`);
                     
                     // Add remaining files to pending queue
-                    this.indexState.pendingQueue = priorityFiles.slice(filesToProcess.length)
+                    this.indexState.pendingQueue = remainingFiles.slice(filesToProcess.length)
                         .map(fp => path.relative(this.config.repoPath, fp));
                     break;
                 }
@@ -628,7 +648,8 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
 
             console.log(`\n[Indexing] Processing ${filesToProcess.length} files...`);
 
-            // Index files
+            // Index files with checkpoint system
+            let filesProcessedSinceCheckpoint = 0;
             for (const filePath of filesToProcess) {
                 try {
                     const relativePath = path.relative(this.config.repoPath, filePath);
@@ -645,6 +666,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                     if (chunks.length === 0) {
                         this.indexingProgress.processedFiles++;
                         this.updateProgressMetrics();
+                        filesProcessedSinceCheckpoint++;
                         continue;
                     }
 
@@ -670,6 +692,9 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                         status: 'indexed'
                     });
 
+                    // Update file hash in watcher (for metadata persistence)
+                    this.watcher.updateFileHash(filePath, fileHash);
+
                     // Update quota
                     this.indexState.dailyQuota.chunksIndexed += chunks.length;
                     processedChunks += chunks.length;
@@ -678,8 +703,17 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                     // Update progress
                     this.indexingProgress.processedFiles++;
                     this.updateProgressMetrics();
+                    filesProcessedSinceCheckpoint++;
 
                     console.log(`  ✓ ${relativePath} (${chunks.length} chunks)`);
+
+                    // Checkpoint: Save progress every N files
+                    if (filesProcessedSinceCheckpoint >= this.CHECKPOINT_INTERVAL) {
+                        this.saveIndexState();
+                        this.watcher.saveIndexMetadata(path.join(this.config.codebaseMemoryPath, 'index-metadata.json'));
+                        console.log(`[Checkpoint] Progress saved (${this.indexingProgress.processedFiles}/${this.indexingProgress.totalFiles} files)`);
+                        filesProcessedSinceCheckpoint = 0;
+                    }
                 } catch (error) {
                     console.error(`  ✗ Error indexing ${filePath}:`, error);
                     
@@ -692,10 +726,11 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                     
                     this.indexingProgress.processedFiles++;
                     this.updateProgressMetrics();
+                    filesProcessedSinceCheckpoint++;
                 }
             }
 
-            // Save state
+            // Final save
             this.saveIndexState();
 
             console.log(`\n[Complete] Indexed ${processedChunks} chunks`);
@@ -781,17 +816,20 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      * Initialize and start server
      */
     async start(): Promise<void> {
+        // Log version
+        console.log('[MCP] Version: 1.4.10');
+        
         // Initialize vector store
         await this.vectorStore.initializeCollection();
 
         // Load incremental index state
         this.loadIndexState();
 
-        // Check sync between Qdrant and memory state
-        await this.checkAndFixSync();
-
-        // Load previous index metadata (for backward compatibility with FileWatcher)
+        // Load previous index metadata BEFORE sync check (for backward compatibility with FileWatcher)
         this.watcher.loadIndexMetadata(path.join(this.config.codebaseMemoryPath, 'index-metadata.json'));
+
+        // Check sync between Qdrant and memory state (will clear hashes if needed)
+        await this.checkAndFixSync();
 
         // Start MCP server FIRST (non-blocking)
         const transport = new StdioServerTransport();
@@ -820,13 +858,18 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                 collections.collections?.[0]?.points_count || 0;
             
             const indexedFilesCount = this.indexState.indexedFiles.size;
+            const fileHashesCount = this.watcher['fileHashes'].size;
 
-            // Case 1: Collection empty but memory has indexed files
-            if (vectorCount === 0 && indexedFilesCount > 0) {
+            // Case 1: Qdrant empty but we have file hashes (metadata exists)
+            // This means collection was deleted but metadata wasn't cleaned up
+            // HOWEVER: If we have indexed files in state, this might be mid-indexing checkpoint
+            // Check: If we have indexed files but Qdrant is empty AND has no vectors, force clear
+            if (vectorCount === 0 && fileHashesCount > 0 && indexedFilesCount === 0) {
                 console.log(`\n⚠️  [Sync Check] Mismatch detected!`);
                 console.log(`   Qdrant vectors: ${vectorCount}`);
+                console.log(`   File hashes in memory: ${fileHashesCount}`);
                 console.log(`   Memory state: ${indexedFilesCount} indexed files`);
-                console.log(`   → Collection was likely deleted. Marking all files for re-indexing...\n`);
+                console.log(`   → Collection was likely deleted. Clearing metadata for fresh indexing...\n`);
                 
                 // Clear indexed files state - force full re-index
                 this.indexState.indexedFiles.clear();
@@ -847,21 +890,60 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                 
                 // Clear file watcher hashes to force re-scan
                 this.watcher.clearFileHashes();
+                console.log(`[Sync Check] After clear: ${this.watcher['fileHashes'].size} hashes remaining`);
                 
                 this.saveIndexState();
                 console.log(`✅ [Sync Check] State reset. Will re-index all files.\n`);
+            }
+            // Case 1b: Qdrant empty AND we have indexed files - Collection deleted after checkpoint!
+            // BUT: Only clear if Qdrant truly has NO vectors at all
+            // During checkpoint, vectors ARE being added, so check actual count
+            else if (vectorCount === 0 && indexedFilesCount > 0) {
+                // Double-check: Query Qdrant for actual point count
+                const actualCount = await this.vectorStore.getVectorCount();
+                
+                if (actualCount === 0) {
+                    console.log(`\n⚠️  [Sync Check] CRITICAL: Qdrant collection empty but memory shows ${indexedFilesCount} indexed files!`);
+                    console.log(`   This means the collection was deleted. Forcing complete re-index...\n`);
+                    
+                    // Force clear everything
+                    this.indexState.indexedFiles.clear();
+                    this.indexState.stats = {
+                        newFiles: 0,
+                        modifiedFiles: 0,
+                        unchangedFiles: 0,
+                        deletedFiles: 0
+                    };
+                    
+                    const today = this.getTodayString();
+                    this.indexState.dailyQuota = {
+                        date: today,
+                        chunksIndexed: 0,
+                        limit: this.DAILY_QUOTA_LIMIT
+                    };
+                    
+                    this.watcher.clearFileHashes();
+                    console.log(`[Sync Check] After clear: ${this.watcher['fileHashes'].size} hashes remaining`);
+                    
+                    this.saveIndexState();
+                    console.log(`✅ [Sync Check] State reset. Will re-index all ${fileHashesCount} files.\n`);
+                } else {
+                    // Qdrant has data, checkpoint is valid
+                    console.log(`[Sync Check] ⚡ Resuming from checkpoint: ${indexedFilesCount} files indexed, ${actualCount} vectors in Qdrant`);
+                    console.log(`[Sync Check] Will continue indexing remaining files`);
+                }
             }
             // Case 2: Both in sync
             else if (vectorCount > 0 && indexedFilesCount > 0) {
                 console.log(`[Sync Check] ✅ Qdrant (${vectorCount} vectors) and memory (${indexedFilesCount} files) are in sync`);
             }
-            // Case 3: Both empty (fresh start)
-            else if (vectorCount === 0 && indexedFilesCount === 0) {
+            // Case 3: Both empty (true fresh start)
+            else if (vectorCount === 0 && indexedFilesCount === 0 && fileHashesCount === 0) {
                 console.log(`[Sync Check] Fresh start - no data in Qdrant or memory`);
             }
             // Case 4: Memory empty but Qdrant has data (unusual but okay)
             else {
-                console.log(`[Sync Check] Qdrant has ${vectorCount} vectors, memory tracking ${indexedFilesCount} files`);
+                console.log(`[Sync Check] Qdrant: ${vectorCount} vectors, Memory: ${indexedFilesCount} files, Hashes: ${fileHashesCount}`);
             }
         } catch (error) {
             console.error('[Sync Check] Error checking sync:', error);

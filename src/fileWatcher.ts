@@ -23,6 +23,9 @@ export class FileWatcher {
             if (fs.existsSync(metadataPath)) {
                 const data = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
                 this.fileHashes = new Map(Object.entries(data));
+                console.log(`[FileWatcher] Loaded ${this.fileHashes.size} file hashes from metadata`);
+            } else {
+                console.log('[FileWatcher] No metadata file found - fresh start');
             }
         } catch (error) {
             console.error('Error loading metadata:', error);
@@ -38,18 +41,21 @@ export class FileWatcher {
     }
 
     /**
-     * Save file hashes for next run
+     * Save current file hashes to metadata file
      */
     saveIndexMetadata(metadataPath: string): void {
         try {
+            const hashesObj = Object.fromEntries(this.fileHashes);
             const dir = path.dirname(metadataPath);
+            
+            // Ensure directory exists
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
-            const metadata = Object.fromEntries(this.fileHashes);
-            fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+            
+            fs.writeFileSync(metadataPath, JSON.stringify(hashesObj, null, 2), 'utf-8');
         } catch (error) {
-            console.error('Error saving metadata:', error);
+            console.error('[FileWatcher] Error saving metadata:', error);
         }
     }
 
@@ -90,6 +96,9 @@ export class FileWatcher {
      */
     async scanForChanges(): Promise<string[]> {
         const changed: string[] = [];
+        let totalScanned = 0;
+        let ignoredCount = 0;
+        
         const walk = (dir: string) => {
             const files = fs.readdirSync(dir);
 
@@ -101,19 +110,26 @@ export class FileWatcher {
 
                     if (stat.isDirectory()) {
                         // Check if directory should be ignored
+                        const dirName = path.basename(filePath);
                         const shouldIgnore = this.ignorePaths.some(pattern =>
-                            filePath.includes(path.sep + pattern)
+                            dirName === pattern ||
+                            filePath.includes(path.sep + pattern + path.sep) ||
+                            filePath.endsWith(path.sep + pattern)
                         );
-                        if (!shouldIgnore) {
+                        if (shouldIgnore) {
+                            ignoredCount++;
+                        } else {
                             walk(filePath);
                         }
                     } else if (this.shouldWatch(filePath)) {
+                        totalScanned++;
                         const hash = this.getFileHash(filePath);
                         const storedHash = this.fileHashes.get(filePath);
 
                         if (!storedHash || storedHash !== hash) {
                             changed.push(filePath);
-                            this.fileHashes.set(filePath, hash);
+                            // Don't update hash yet - only update after successful indexing
+                            // This prevents metadata from containing hashes for unindexed files
                         }
                     }
                 } catch (error) {
@@ -124,7 +140,15 @@ export class FileWatcher {
         };
 
         walk(this.repoPath);
+        console.log(`[FileWatcher] Scanned ${totalScanned} source files, found ${changed.length} changed, ignored ${ignoredCount} directories`);
         return changed;
+    }
+
+    /**
+     * Update hash for a file after successful indexing
+     */
+    updateFileHash(filePath: string, hash: string): void {
+        this.fileHashes.set(filePath, hash);
     }
 
     /**

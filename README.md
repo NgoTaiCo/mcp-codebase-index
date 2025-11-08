@@ -8,7 +8,8 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 
 - 🔍 **Semantic Search**: Find code by meaning, not just keywords
 - 🎯 **Smart Chunking**: Automatically splits code into logical functions/classes
-- 🔄 **Incremental Indexing**: Only re-indexes changed files, saves 90%+ quota
+- 🔄 **Incremental Indexing**: Only re-indexes changed files, saves 90%+ time
+- 💾 **Auto-save Checkpoints**: Saves progress every 10 files, resume anytime
 - 📊 **Real-time Progress**: Track indexing status with ETA and performance metrics
 - ⚡ **Parallel Processing**: 25x faster indexing with batch parallel execution
 - 🔄 **Real-time Watch**: Monitors file changes and updates index automatically
@@ -114,9 +115,18 @@ You can customize the embedding model and output dimension:
 - ✅ Automatic retry with exponential backoff
 - ✅ No daily quota limits (unlimited indexing)
 
+**⏱️ Indexing Speed:**
+- **~25 files/minute** (2-2.5 seconds per file average)
+- **Small project (50-100 files)**: 2-4 minutes
+- **Medium project (200-400 files)**: 8-16 minutes  
+- **Large project (500+ files)**: 20-25 minutes
+- Speed varies based on file size, complexity, and API latency
+
 **Incremental Indexing:**
-- First run: Indexes entire codebase
-- Subsequent runs: Only changed files (90%+ quota savings)
+- ✅ **First run**: Indexes entire codebase (~20 mins for 500 files)
+- ✅ **Subsequent runs**: Only changed files (90%+ time savings)
+- ✅ **Auto-save checkpoint**: Every 10 files (safe to interrupt)
+- ✅ **Resume on restart**: Continues from last checkpoint
 - Automatic queue management for large codebases
 - Persistent state tracking with MD5 hashing
 
@@ -125,6 +135,7 @@ You can customize the embedding model and output dimension:
 - Performance metrics (files/sec, avg time)
 - Error tracking with timestamps
 - Queue visibility for pending files
+- Checkpoint progress indicators
 
 ### Restart VS Code
 
@@ -218,29 +229,54 @@ Python • TypeScript • JavaScript • Dart • Go • Rust • Java • Kotli
        │
        ▼
 ┌─────────────────┐
-│  File Watcher   │  Monitors changes
+│  File Watcher   │  Monitors changes (MD5 hashing)
 └──────┬──────────┘
        │
        ▼
 ┌─────────────────┐
-│  Code Parser    │  Splits into chunks
+│  Code Parser    │  Splits into chunks (functions/classes)
 └──────┬──────────┘
        │
        ▼
 ┌─────────────────┐
-│  Gemini API     │  Creates embeddings
+│  Gemini API     │  Creates embeddings (768-dim vectors)
 └──────┬──────────┘
        │
        ▼
 ┌─────────────────┐
-│  Qdrant Cloud   │  Stores vectors
+│  Qdrant Cloud   │  Stores vectors + metadata
 └──────┬──────────┘
        │
        ▼
 ┌─────────────────┐
-│  Copilot Chat   │  Semantic queries
+│  Checkpoint     │  Auto-saves every 10 files
+└──────┬──────────┘
+       │
+       ▼
+┌─────────────────┐
+│  Copilot Chat   │  Semantic search queries
 └─────────────────┘
 ```
+
+### Incremental Indexing & Checkpoints
+
+**Smart Change Detection:**
+- Tracks file hashes (MD5) to detect changes
+- Only indexes new/modified files on subsequent runs
+- Automatically deletes vectors for removed files
+
+**Auto-save Checkpoints:**
+- Saves progress every 10 files during indexing
+- Safe to stop VS Code anytime (Ctrl+C, close window)
+- Resumes from last checkpoint on restart
+- Memory stored in `{repo}/memory/`:
+  - `incremental_state.json` - Indexed files list, quota tracking
+  - `index-metadata.json` - MD5 hashes for change detection
+
+**Sync Recovery:**
+- Auto-detects if Qdrant collection was deleted
+- Clears stale memory and re-indexes from scratch
+- Validates checkpoint integrity on startup
 
 ## 🐛 Troubleshooting
 
