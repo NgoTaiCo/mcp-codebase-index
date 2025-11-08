@@ -575,7 +575,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
         this.loadIndexState();
 
         // Load previous index metadata (for backward compatibility with FileWatcher)
-        this.watcher.loadIndexMetadata(this.config.codebaseMemoryPath);
+        this.watcher.loadIndexMetadata(path.join(this.config.codebaseMemoryPath, 'index-metadata.json'));
 
         // Start MCP server FIRST (non-blocking)
         const transport = new StdioServerTransport();
