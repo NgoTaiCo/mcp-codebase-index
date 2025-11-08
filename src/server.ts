@@ -255,6 +255,9 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
             // Calculate storage size estimate (rough: 768 dim * 4 bytes per float + metadata)
             const estimatedSize = vectorCount * (768 * 4 + 500); // ~3.5KB per vector
 
+            // Get quota usage from embedder
+            const quotaUsage = this.embedder.getQuotaUsage();
+
             const status = {
                 isIndexing: this.isIndexing,
                 queuedFiles: this.indexingQueue.size,
@@ -266,7 +269,8 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                 progress: this.indexingProgress,
                 performance: this.performanceMetrics,
                 recentErrors: this.recentErrors,
-                storageSize: estimatedSize
+                storageSize: estimatedSize,
+                quotaUsage: quotaUsage
             };
 
             // Build status message
@@ -293,13 +297,27 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                 message += `\n`;
             }
 
-            // Quota usage
+            // API Quota usage (RPM, TPM, RPD)
+            message += `**📈 API Quota Usage:**\n`;
+            message += `- **RPM:** ${status.quotaUsage.rpm.current}/${status.quotaUsage.rpm.limit} (${status.quotaUsage.rpm.percentage.toFixed(1)}%)\n`;
+            message += `- **TPM:** ${status.quotaUsage.tpm.current.toLocaleString()}/${status.quotaUsage.tpm.limit.toLocaleString()} (${status.quotaUsage.tpm.percentage.toFixed(1)}%)\n`;
+
+            if (status.quotaUsage.rpd.limit > 0) {
+                message += `- **RPD:** ${status.quotaUsage.rpd.current}/${status.quotaUsage.rpd.limit} (${status.quotaUsage.rpd.percentage.toFixed(1)}%)\n`;
+            } else {
+                message += `- **RPD:** ${status.quotaUsage.rpd.current} (no daily limit)\n`;
+            }
+
+            message += `- **Tier:** ${status.quotaUsage.tier.charAt(0).toUpperCase() + status.quotaUsage.tier.slice(1)}\n`;
+            message += `- **Model:** ${status.quotaUsage.model}\n`;
+            message += `\n`;
+
+            // Daily chunks quota (for spreading work)
             const quotaUsagePercent = ((status.dailyQuota.chunksIndexed / status.dailyQuota.limit) * 100).toFixed(1);
-            message += `**📈 Daily Quota (${status.dailyQuota.date}):**\n`;
+            message += `**📊 Daily Chunks Quota (${status.dailyQuota.date}):**\n`;
             message += `- Used: ${status.dailyQuota.chunksIndexed} / ${status.dailyQuota.limit} chunks\n`;
             message += `- Remaining: ${status.dailyQuota.limit - status.dailyQuota.chunksIndexed} chunks\n`;
             message += `- Usage: ${quotaUsagePercent}%\n`;
-            message += `- Rate Limit: ${this.RPM_LIMIT} RPM (text-embedding-004)\n`;
             message += `\n`;
 
             // Storage stats

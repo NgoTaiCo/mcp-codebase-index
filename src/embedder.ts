@@ -1,6 +1,6 @@
 // src/embedder.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { CodeChunk } from './types.js';
+import { CodeChunk, QuotaUsage } from './types.js';
 
 const SUPPORTED_MODELS = ['text-embedding-004', 'gemini-embedding-001'] as const;
 type SupportedModel = typeof SUPPORTED_MODELS[number];
@@ -11,10 +11,23 @@ const MODEL_DEFAULT_DIMENSIONS: Record<SupportedModel, number> = {
     'gemini-embedding-001': 3072  // Flexible dimension 768-3072 (not recommended for free tier)
 };
 
+// Rate limits per model (free tier)
+const MODEL_RATE_LIMITS: Record<SupportedModel, { rpm: number; tpm: number; rpd: number | null }> = {
+    'text-embedding-004': { rpm: 1500, tpm: 1000000, rpd: null }, // No daily limit
+    'gemini-embedding-001': { rpm: 90, tpm: 27000, rpd: 950 }     // Has daily limit
+};
+
 export class CodeEmbedder {
     private genAI: GoogleGenerativeAI;
     private model: SupportedModel;
     private outputDimension: number;
+
+    // Quota tracking
+    private requestsThisMinute: number = 0;
+    private tokensThisMinute: number = 0;
+    private requestsToday: number = 0;
+    private currentMinuteStart: number = Date.now();
+    private currentDayStart: string = this.getTodayString();
 
     constructor(apiKey: string, model?: string, outputDimension?: number) {
         this.genAI = new GoogleGenerativeAI(apiKey);
@@ -66,10 +79,91 @@ export class CodeEmbedder {
     }
 
     /**
+     * Get today's date string (YYYY-MM-DD)
+     */
+    private getTodayString(): string {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    /**
+     * Reset minute counters if a new minute has started
+     */
+    private resetMinuteCountersIfNeeded(): void {
+        const now = Date.now();
+        const minuteElapsed = now - this.currentMinuteStart;
+
+        if (minuteElapsed >= 60000) {
+            this.requestsThisMinute = 0;
+            this.tokensThisMinute = 0;
+            this.currentMinuteStart = now;
+        }
+    }
+
+    /**
+     * Reset daily counters if a new day has started
+     */
+    private resetDailyCountersIfNeeded(): void {
+        const today = this.getTodayString();
+
+        if (this.currentDayStart !== today) {
+            this.requestsToday = 0;
+            this.currentDayStart = today;
+        }
+    }
+
+    /**
+     * Track a request and estimate tokens
+     */
+    private trackRequest(text: string): void {
+        this.resetMinuteCountersIfNeeded();
+        this.resetDailyCountersIfNeeded();
+
+        this.requestsThisMinute++;
+        this.requestsToday++;
+
+        // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
+        const estimatedTokens = Math.ceil(text.length / 4);
+        this.tokensThisMinute += estimatedTokens;
+    }
+
+    /**
+     * Get current quota usage
+     */
+    getQuotaUsage(): QuotaUsage {
+        this.resetMinuteCountersIfNeeded();
+        this.resetDailyCountersIfNeeded();
+
+        const limits = MODEL_RATE_LIMITS[this.model];
+
+        return {
+            rpm: {
+                current: this.requestsThisMinute,
+                limit: limits.rpm,
+                percentage: (this.requestsThisMinute / limits.rpm) * 100
+            },
+            tpm: {
+                current: this.tokensThisMinute,
+                limit: limits.tpm,
+                percentage: (this.tokensThisMinute / limits.tpm) * 100
+            },
+            rpd: {
+                current: this.requestsToday,
+                limit: limits.rpd || 0,
+                percentage: limits.rpd ? (this.requestsToday / limits.rpd) * 100 : 0
+            },
+            tier: 'free', // Assuming free tier for now
+            model: this.model
+        };
+    }
+
+    /**
      * Embed a code chunk
      */
     async embedChunk(chunk: CodeChunk): Promise<number[]> {
         try {
+            // Track request before making API call
+            this.trackRequest(chunk.content);
+
             const embeddingModel = this.genAI.getGenerativeModel({ model: this.model });
 
             // For gemini-embedding-001, specify output dimension and task type
@@ -212,6 +306,9 @@ export class CodeEmbedder {
      */
     async embedQuery(query: string): Promise<number[]> {
         try {
+            // Track request before making API call
+            this.trackRequest(query);
+
             const embeddingModel = this.genAI.getGenerativeModel({ model: this.model });
 
             // For gemini-embedding-001, specify output dimension and task type for queries

@@ -49,6 +49,26 @@ export interface PerformanceMetrics {
     chunksProcessed: number;
 }
 
+export interface QuotaUsage {
+    rpm: {
+        current: number;      // Requests in current minute
+        limit: number;        // Requests per minute limit
+        percentage: number;   // Usage percentage
+    };
+    tpm: {
+        current: number;      // Tokens in current minute
+        limit: number;        // Tokens per minute limit
+        percentage: number;   // Usage percentage
+    };
+    rpd: {
+        current: number;      // Requests today
+        limit: number;        // Requests per day limit (if applicable)
+        percentage: number;   // Usage percentage
+    };
+    tier: 'free' | 'paid';   // API tier
+    model: string;            // Embedding model name
+}
+
 export interface IncrementalIndexState {
     version: string; // State format version
     lastUpdated: number; // Timestamp
