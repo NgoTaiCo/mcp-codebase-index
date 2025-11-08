@@ -23,8 +23,7 @@ if (!process.env.QDRANT_API_KEY) {
 
 const server = new CodebaseIndexMCPServer({
     repoPath: process.env.REPO_PATH || process.cwd(),
-    codebaseMemoryPath: process.env.MEMORY_FILE_PATH || './memory/index-metadata.json',
-    vectorStoreType: 'cloud',
+    codebaseMemoryPath: process.env.MEMORY_FILE_PATH || './memory',
     qdrant: {
         url: process.env.QDRANT_URL,
         apiKey: process.env.QDRANT_API_KEY,
@@ -32,8 +31,8 @@ const server = new CodebaseIndexMCPServer({
     },
     embedding: {
         apiKey: process.env.GEMINI_API_KEY,
-        model: 'text-embedding-004',
-        dimension: 768
+        model: process.env.EMBEDDING_MODEL || 'text-embedding-004',
+        dimension: parseInt(process.env.EMBEDDING_DIMENSION || '768')
     },
     watchMode: process.env.WATCH_MODE !== 'false',
     batchSize: parseInt(process.env.BATCH_SIZE || '50'),

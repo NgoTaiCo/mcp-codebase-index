@@ -19,6 +19,33 @@ export interface IndexedFile {
     lastIndexed: number;
 }
 
+export interface FileMetadata {
+    path: string;
+    hash: string; // MD5 of file content
+    lastIndexed: number;
+    chunkCount: number;
+    status: 'indexed' | 'pending' | 'failed';
+}
+
+export interface IncrementalIndexState {
+    version: string; // State format version
+    lastUpdated: number; // Timestamp
+    totalFiles: number;
+    indexedFiles: Map<string, FileMetadata>; // path -> metadata
+    pendingQueue: string[]; // Files waiting to be indexed
+    dailyQuota: {
+        date: string; // YYYY-MM-DD
+        chunksIndexed: number;
+        limit: number; // 950 (safe limit)
+    };
+    stats: {
+        newFiles: number;
+        modifiedFiles: number;
+        unchangedFiles: number;
+        deletedFiles: number;
+    };
+}
+
 export interface SearchResult {
     id: string;
     chunk: CodeChunk;
@@ -34,14 +61,13 @@ export interface QdrantConfig {
 
 export interface EmbeddingConfig {
     apiKey: string;
-    model: string; // "text-embedding-004"
-    dimension: number; // 768
+    model: string; // "text-embedding-004" (recommended) or "gemini-embedding-001"
+    dimension: number; // 768 for text-embedding-004, 768-3072 for gemini-embedding-001
 }
 
 export interface IndexerConfig {
     repoPath: string;
     codebaseMemoryPath: string; // Path to store index metadata
-    vectorStoreType: 'qdrant' | 'memory' | 'cloud'; // Type of vector store
     qdrant: QdrantConfig;
     embedding: EmbeddingConfig;
     watchMode: boolean;

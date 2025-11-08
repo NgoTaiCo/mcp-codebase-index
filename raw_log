@@ -1,0 +1,580 @@
+2025-11-08 12:58:49.212 [info] Starting server codebase
+2025-11-08 12:58:49.213 [info] Connection state: Starting
+2025-11-08 12:58:49.213 [info] Starting server from LocalProcess extension host
+2025-11-08 12:58:49.215 [info] Connection state: Starting
+2025-11-08 12:58:49.215 [info] Connection state: Running
+2025-11-08 12:58:53.697 [warning] Failed to parse message: "[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }\n"
+2025-11-08 12:58:53.699 [warning] Failed to parse message: "[Embedder] Using embedding model: gemini-embedding-001 (dimension: 3072)\n"
+2025-11-08 12:58:53.699 [warning] Failed to parse message: "[VectorStore] Using Qdrant\n"
+2025-11-08 12:58:54.220 [info] Waiting for server to respond to `initialize` request...
+2025-11-08 12:58:56.040 [warning] Failed to parse message: "[Qdrant] Created collection: test-gemini-embedding-001\n"
+2025-11-08 12:58:56.359 [warning] Failed to parse message: "[Qdrant] Created payload index for 'filePath'\n"
+2025-11-08 12:58:56.362 [warning] Failed to parse message: "[MCP] Server started and listening...\n"
+2025-11-08 12:58:56.362 [warning] Failed to parse message: "[Init] Scanning for changes...\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "[FileWatcher] Watching /Users/ngotaico/Projects/openim-flutter-nfca\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "[Init] Found 36 changed files\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "[Incremental Indexer] Processing 36 files...\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "[Categorization]\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "  ✨ New: 36\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "  📝 Modified: 0\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "  ✅ Unchanged: 0\n"
+2025-11-08 12:58:56.501 [warning] Failed to parse message: "  🗑️  Deleted: 0\n"
+2025-11-08 12:58:56.502 [warning] Failed to parse message: "\n"
+2025-11-08 12:58:56.502 [warning] Failed to parse message: "[Indexing] Processing 36 files...\n"
+2025-11-08 12:58:56.507 [info] Discovered 2 tools
+2025-11-08 12:58:56.752 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/common_widget/nfca_chat_background_bottom_sheet.dart\n"
+2025-11-08 12:58:56.754 [warning] Failed to parse message: "[Embedder] Processing 5 chunks sequentially (rate-limited model)...\n"
+2025-11-08 12:59:05.680 [warning] Failed to parse message: "[Embedder] Processed 5/5 chunks\n"
+2025-11-08 12:59:07.087 [warning] Failed to parse message: "[Qdrant] Upserted 5 vectors\n"
+2025-11-08 12:59:07.088 [warning] Failed to parse message: "  ✓ lib/common_widget/nfca_chat_background_bottom_sheet.dart (5 chunks)\n"
+2025-11-08 12:59:07.369 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/common_widget/nfca_font_size_bottom_sheet.dart\n"
+2025-11-08 12:59:07.371 [warning] Failed to parse message: "[Embedder] Processing 5 chunks sequentially (rate-limited model)...\n"
+2025-11-08 12:59:16.167 [warning] Failed to parse message: "[Embedder] Processed 5/5 chunks\n"
+2025-11-08 12:59:16.948 [warning] Failed to parse message: "[Qdrant] Upserted 5 vectors\n"
+2025-11-08 12:59:16.949 [warning] Failed to parse message: "  ✓ lib/common_widget/nfca_font_size_bottom_sheet.dart (5 chunks)\n"
+2025-11-08 12:59:17.207 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/common_widget/nfca_group_info_bottom_sheets.dart\n"
+2025-11-08 12:59:17.210 [warning] Failed to parse message: "[Embedder] Processing 16 chunks sequentially (rate-limited model)...\n"
+2025-11-08 12:59:26.061 [warning] Failed to parse message: "[Embedder] Processed 5/16 chunks\n"
+2025-11-08 12:59:36.283 [warning] Failed to parse message: "[Embedder] Processed 10/16 chunks\n"
+2025-11-08 12:59:46.287 [warning] Failed to parse message: "[Embedder] Processed 15/16 chunks\n"
+2025-11-08 12:59:48.143 [warning] Failed to parse message: "[Embedder] Processed 16/16 chunks\n"
+2025-11-08 12:59:50.440 [warning] Failed to parse message: "[Qdrant] Upserted 16 vectors\n"
+2025-11-08 12:59:50.441 [warning] Failed to parse message: "  ✓ lib/common_widget/nfca_group_info_bottom_sheets.dart (16 chunks)\n"
+2025-11-08 12:59:50.709 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/common_widget/nfca_qr_code_bottom_sheet.dart\n"
+2025-11-08 12:59:50.710 [warning] Failed to parse message: "[Embedder] Processing 3 chunks sequentially (rate-limited model)...\n"
+2025-11-08 12:59:55.239 [warning] Failed to parse message: "[Embedder] Processed 3/3 chunks\n"
+2025-11-08 12:59:55.614 [warning] Failed to parse message: "[Qdrant] Upserted 3 vectors\n"
+2025-11-08 12:59:55.615 [warning] Failed to parse message: "  ✓ lib/common_widget/nfca_qr_code_bottom_sheet.dart (3 chunks)\n"
+2025-11-08 12:59:55.890 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/common_widget/nfca_report_bottom_sheets.dart\n"
+2025-11-08 12:59:55.891 [warning] Failed to parse message: "[Embedder] Processing 7 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:00:04.203 [warning] Failed to parse message: "[Embedder] Processed 5/7 chunks\n"
+2025-11-08 13:00:08.289 [warning] Failed to parse message: "[Embedder] Processed 7/7 chunks\n"
+2025-11-08 13:00:10.144 [warning] Failed to parse message: "[Qdrant] Upserted 7 vectors\n"
+2025-11-08 13:00:10.147 [warning] Failed to parse message: "  ✓ lib/common_widget/nfca_report_bottom_sheets.dart (7 chunks)\n"
+2025-11-08 13:00:10.409 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/config/localization/chinese.dart\n"
+2025-11-08 13:00:10.413 [warning] Failed to parse message: "[Embedder] Processing 6 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:00:19.119 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:00:19.120 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:00:19.120 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:00:19.120 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:00:19.120 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:00:19.120 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:00:19.120 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:00:19.120 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:00:19.121 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:00:19.121 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:00:19.121 [warning] [server stderr]   status: 429,
+2025-11-08 13:00:19.121 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:00:19.121 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:00:19.121 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:00:19.121 [warning] [server stderr]   ]
+2025-11-08 13:00:19.121 [warning] [server stderr] }
+2025-11-08 13:00:19.121 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/chinese.dart:0:0_part4: Retry 1/5 after 5000ms
+2025-11-08 13:00:24.548 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:00:24.549 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:00:24.549 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:00:24.549 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:00:24.549 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:00:24.549 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:00:24.549 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:00:24.549 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:00:24.550 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:00:24.550 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:00:24.550 [warning] [server stderr]   status: 429,
+2025-11-08 13:00:24.550 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:00:24.550 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:00:24.550 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:00:24.550 [warning] [server stderr]   ]
+2025-11-08 13:00:24.550 [warning] [server stderr] }
+2025-11-08 13:00:24.551 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/chinese.dart:0:0_part4: Retry 2/5 after 10000ms
+2025-11-08 13:00:34.989 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:00:34.989 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:00:34.989 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:00:34.990 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:00:34.990 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:00:34.990 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:00:34.990 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:00:34.990 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:00:34.990 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:00:34.991 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:00:34.991 [warning] [server stderr]   status: 429,
+2025-11-08 13:00:34.991 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:00:34.991 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:00:34.991 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:00:34.991 [warning] [server stderr]   ]
+2025-11-08 13:00:34.991 [warning] [server stderr] }
+2025-11-08 13:00:34.991 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/chinese.dart:0:0_part4: Retry 3/5 after 20000ms
+2025-11-08 13:00:55.390 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:00:55.390 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:00:55.390 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:00:55.391 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:00:55.391 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:00:55.391 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:00:55.391 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:00:55.391 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:00:55.391 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:00:55.393 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:00:55.394 [warning] [server stderr]   status: 429,
+2025-11-08 13:00:55.394 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:00:55.394 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:00:55.394 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:00:55.394 [warning] [server stderr]   ]
+2025-11-08 13:00:55.394 [warning] [server stderr] }
+2025-11-08 13:00:55.394 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/chinese.dart:0:0_part4: Retry 4/5 after 40000ms
+2025-11-08 13:01:36.734 [warning] Failed to parse message: "[Embedder] Processed 5/6 chunks\n"
+2025-11-08 13:01:38.926 [warning] Failed to parse message: "[Embedder] Processed 6/6 chunks\n"
+2025-11-08 13:01:41.838 [warning] Failed to parse message: "[Qdrant] Upserted 6 vectors\n"
+2025-11-08 13:01:41.843 [warning] Failed to parse message: "  ✓ lib/config/localization/chinese.dart (6 chunks)\n"
+2025-11-08 13:01:42.242 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/config/localization/english.dart\n"
+2025-11-08 13:01:42.246 [warning] Failed to parse message: "[Embedder] Processing 6 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:01:49.421 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:01:49.422 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:01:49.422 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:01:49.422 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:01:49.422 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:01:49.422 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:01:49.422 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:01:49.422 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:01:49.423 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:01:49.423 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:01:49.423 [warning] [server stderr]   status: 429,
+2025-11-08 13:01:49.423 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:01:49.423 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:01:49.423 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:01:49.423 [warning] [server stderr]   ]
+2025-11-08 13:01:49.423 [warning] [server stderr] }
+2025-11-08 13:01:49.424 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/english.dart:0:0_part3: Retry 1/5 after 5000ms
+2025-11-08 13:01:54.870 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:01:54.871 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:01:54.871 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:01:54.871 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:01:54.871 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:01:54.871 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:01:54.871 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:01:54.872 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:01:54.872 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:01:54.872 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:01:54.872 [warning] [server stderr]   status: 429,
+2025-11-08 13:01:54.872 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:01:54.872 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:01:54.872 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:01:54.872 [warning] [server stderr]   ]
+2025-11-08 13:01:54.872 [warning] [server stderr] }
+2025-11-08 13:01:54.872 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/english.dart:0:0_part3: Retry 2/5 after 10000ms
+2025-11-08 13:02:07.783 [warning] Failed to parse message: "[Embedder] Processed 5/6 chunks\n"
+2025-11-08 13:02:09.878 [warning] Failed to parse message: "[Embedder] Processed 6/6 chunks\n"
+2025-11-08 13:02:11.835 [warning] Failed to parse message: "[Qdrant] Upserted 6 vectors\n"
+2025-11-08 13:02:11.837 [warning] Failed to parse message: "  ✓ lib/config/localization/english.dart (6 chunks)\n"
+2025-11-08 13:02:12.087 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/config/localization/localization_manager.dart\n"
+2025-11-08 13:02:12.092 [warning] Failed to parse message: "[Embedder] Processing 9 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:02:18.415 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:02:18.416 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:02:18.416 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:02:18.416 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:02:18.416 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:02:18.416 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:02:18.417 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:02:18.417 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:02:18.417 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:02:18.417 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:02:18.417 [warning] [server stderr]   status: 429,
+2025-11-08 13:02:18.417 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:02:18.418 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:02:18.418 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:02:18.418 [warning] [server stderr]   ]
+2025-11-08 13:02:18.418 [warning] [server stderr] }
+2025-11-08 13:02:18.418 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/localization_manager.dart:8:1_part2: Retry 1/5 after 5000ms
+2025-11-08 13:02:23.861 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:02:23.861 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:02:23.861 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:02:23.861 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:02:23.861 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:02:23.862 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:02:23.862 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:02:23.862 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:02:23.862 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:02:23.862 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:02:23.862 [warning] [server stderr]   status: 429,
+2025-11-08 13:02:23.862 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:02:23.862 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:02:23.862 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:02:23.862 [warning] [server stderr]   ]
+2025-11-08 13:02:23.862 [warning] [server stderr] }
+2025-11-08 13:02:23.863 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/localization_manager.dart:8:1_part2: Retry 2/5 after 10000ms
+2025-11-08 13:02:34.152 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:02:34.152 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:02:34.152 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:02:34.152 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:02:34.153 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:02:34.153 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:02:34.153 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:02:34.153 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:02:34.153 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:02:34.153 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:02:34.153 [warning] [server stderr]   status: 429,
+2025-11-08 13:02:34.153 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:02:34.153 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:02:34.153 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:02:34.153 [warning] [server stderr]   ]
+2025-11-08 13:02:34.153 [warning] [server stderr] }
+2025-11-08 13:02:34.153 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/localization_manager.dart:8:1_part2: Retry 3/5 after 20000ms
+2025-11-08 13:02:54.631 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:02:54.632 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:02:54.632 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:02:54.632 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:02:54.632 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:02:54.632 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:02:54.632 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:02:54.633 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:02:54.633 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:02:54.633 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:02:54.633 [warning] [server stderr]   status: 429,
+2025-11-08 13:02:54.633 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:02:54.633 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:02:54.633 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:02:54.633 [warning] [server stderr]   ]
+2025-11-08 13:02:54.634 [warning] [server stderr] }
+2025-11-08 13:02:54.634 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/config/localization/localization_manager.dart:8:1_part2: Retry 4/5 after 40000ms
+2025-11-08 13:03:37.690 [warning] Failed to parse message: "[Embedder] Processed 5/9 chunks\n"
+2025-11-08 13:03:46.132 [warning] Failed to parse message: "[Embedder] Processed 9/9 chunks\n"
+2025-11-08 13:03:48.174 [warning] Failed to parse message: "[Qdrant] Upserted 9 vectors\n"
+2025-11-08 13:03:48.178 [warning] Failed to parse message: "  ✓ lib/config/localization/localization_manager.dart (9 chunks)\n"
+2025-11-08 13:03:48.444 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/core/controllers/auth_controller.dart\n"
+2025-11-08 13:03:48.444 [warning] Failed to parse message: "[Embedder] Processing 14 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:03:54.591 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:03:54.591 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:03:54.592 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:03:54.592 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:03:54.592 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:03:54.593 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:03:54.593 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:03:54.593 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:03:54.593 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:03:54.593 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:03:54.593 [warning] [server stderr]   status: 429,
+2025-11-08 13:03:54.594 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:03:54.594 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:03:54.594 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:03:54.594 [warning] [server stderr]   ]
+2025-11-08 13:03:54.594 [warning] [server stderr] }
+2025-11-08 13:03:54.594 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/core/controllers/auth_controller.dart:76:3: Retry 1/5 after 5000ms
+2025-11-08 13:03:59.991 [warning] [server stderr] Embedding error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/usage?tab=rate-limit.  [{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]
+2025-11-08 13:03:59.991 [warning] [server stderr]     at handleResponseNotOk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+2025-11-08 13:03:59.992 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:03:59.992 [warning] [server stderr]     at async makeRequest (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+2025-11-08 13:03:59.992 [warning] [server stderr]     at async embedContent (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@google/generative-ai/dist/index.mjs:1313:22)
+2025-11-08 13:03:59.992 [warning] [server stderr]     at async CodeEmbedder.embedChunk (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:56:26)
+2025-11-08 13:03:59.993 [warning] [server stderr]     at async CodeEmbedder.delayedEmbedWithRetry (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:138:24)
+2025-11-08 13:03:59.993 [warning] [server stderr]     at async CodeEmbedder.embedChunksSequential (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/embedder.js:118:32)
+2025-11-08 13:03:59.993 [warning] [server stderr]     at async CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:454:40)
+2025-11-08 13:03:59.993 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:03:59.993 [warning] [server stderr]   status: 429,
+2025-11-08 13:03:59.993 [warning] [server stderr]   statusText: 'Too Many Requests',
+2025-11-08 13:03:59.993 [warning] [server stderr]   errorDetails: [
+2025-11-08 13:03:59.994 [warning] [server stderr]     { '@type': 'type.googleapis.com/google.rpc.Help', links: [Array] }
+2025-11-08 13:03:59.994 [warning] [server stderr]   ]
+2025-11-08 13:03:59.994 [warning] [server stderr] }
+2025-11-08 13:03:59.994 [warning] [server stderr] [Rate Limit] /Users/ngotaico/Projects/openim-flutter-nfca/lib/core/controllers/auth_controller.dart:76:3: Retry 2/5 after 10000ms
+2025-11-08 13:04:12.709 [warning] Failed to parse message: "[Embedder] Processed 5/14 chunks\n"
+2025-11-08 13:04:22.432 [warning] Failed to parse message: "[Embedder] Processed 10/14 chunks\n"
+2025-11-08 13:04:30.016 [warning] Failed to parse message: "[Embedder] Processed 14/14 chunks\n"
+2025-11-08 13:04:32.208 [warning] Failed to parse message: "[Qdrant] Upserted 14 vectors\n"
+2025-11-08 13:04:32.210 [warning] Failed to parse message: "  ✓ lib/core/controllers/auth_controller.dart (14 chunks)\n"
+2025-11-08 13:04:32.462 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/pages/nfca_chat_page.dart\n"
+2025-11-08 13:04:32.472 [warning] Failed to parse message: "[Embedder] Processing 47 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:04:40.833 [warning] Failed to parse message: "[Embedder] Processed 5/47 chunks\n"
+2025-11-08 13:04:50.906 [warning] Failed to parse message: "[Embedder] Processed 10/47 chunks\n"
+2025-11-08 13:05:00.746 [warning] Failed to parse message: "[Embedder] Processed 15/47 chunks\n"
+2025-11-08 13:05:11.051 [warning] Failed to parse message: "[Embedder] Processed 20/47 chunks\n"
+2025-11-08 13:05:20.652 [warning] Failed to parse message: "[Embedder] Processed 25/47 chunks\n"
+2025-11-08 13:05:30.275 [warning] Failed to parse message: "[Embedder] Processed 30/47 chunks\n"
+2025-11-08 13:05:40.267 [warning] Failed to parse message: "[Embedder] Processed 35/47 chunks\n"
+2025-11-08 13:05:50.190 [warning] Failed to parse message: "[Embedder] Processed 40/47 chunks\n"
+2025-11-08 13:06:00.133 [warning] Failed to parse message: "[Embedder] Processed 45/47 chunks\n"
+2025-11-08 13:06:04.122 [warning] Failed to parse message: "[Embedder] Processed 47/47 chunks\n"
+2025-11-08 13:06:07.777 [warning] Failed to parse message: "[Qdrant] Upserted 47 vectors\n"
+2025-11-08 13:06:07.784 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/pages/nfca_chat_page.dart (47 chunks)\n"
+2025-11-08 13:06:08.045 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/pages/nfca_media_gallery_page.dart\n"
+2025-11-08 13:06:08.050 [warning] Failed to parse message: "[Embedder] Processing 21 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:06:16.090 [warning] Failed to parse message: "[Embedder] Processed 5/21 chunks\n"
+2025-11-08 13:06:26.287 [warning] Failed to parse message: "[Embedder] Processed 10/21 chunks\n"
+2025-11-08 13:06:35.992 [warning] Failed to parse message: "[Embedder] Processed 15/21 chunks\n"
+2025-11-08 13:06:45.492 [warning] Failed to parse message: "[Embedder] Processed 20/21 chunks\n"
+2025-11-08 13:06:47.402 [warning] Failed to parse message: "[Embedder] Processed 21/21 chunks\n"
+2025-11-08 13:06:55.621 [warning] Failed to parse message: "[Qdrant] Upserted 21 vectors\n"
+2025-11-08 13:06:55.623 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/pages/nfca_media_gallery_page.dart (21 chunks)\n"
+2025-11-08 13:06:55.871 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/pages/nfca_video_player_page.dart\n"
+2025-11-08 13:06:55.873 [warning] Failed to parse message: "[Embedder] Processing 16 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:07:04.226 [warning] Failed to parse message: "[Embedder] Processed 5/16 chunks\n"
+2025-11-08 13:07:13.632 [warning] Failed to parse message: "[Embedder] Processed 10/16 chunks\n"
+2025-11-08 13:07:23.996 [warning] Failed to parse message: "[Embedder] Processed 15/16 chunks\n"
+2025-11-08 13:07:25.947 [warning] Failed to parse message: "[Embedder] Processed 16/16 chunks\n"
+2025-11-08 13:07:28.403 [warning] Failed to parse message: "[Qdrant] Upserted 16 vectors\n"
+2025-11-08 13:07:28.405 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/pages/nfca_video_player_page.dart (16 chunks)\n"
+2025-11-08 13:07:28.657 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/widgets/nfca_contact_card_bubble.dart\n"
+2025-11-08 13:07:28.658 [warning] Failed to parse message: "[Embedder] Processing 3 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:07:33.112 [warning] Failed to parse message: "[Embedder] Processed 3/3 chunks\n"
+2025-11-08 13:07:33.468 [warning] Failed to parse message: "[Qdrant] Upserted 3 vectors\n"
+2025-11-08 13:07:33.469 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/widgets/nfca_contact_card_bubble.dart (3 chunks)\n"
+2025-11-08 13:07:33.723 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/widgets/nfca_file_bubble.dart\n"
+2025-11-08 13:07:33.724 [warning] Failed to parse message: "[Embedder] Processing 5 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:07:42.338 [warning] Failed to parse message: "[Embedder] Processed 5/5 chunks\n"
+2025-11-08 13:07:42.808 [warning] Failed to parse message: "[Qdrant] Upserted 5 vectors\n"
+2025-11-08 13:07:42.809 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/widgets/nfca_file_bubble.dart (5 chunks)\n"
+2025-11-08 13:07:43.164 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/widgets/nfca_image_preview_dialog.dart\n"
+2025-11-08 13:07:43.165 [warning] Failed to parse message: "[Embedder] Processing 7 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:07:51.646 [warning] Failed to parse message: "[Embedder] Processed 5/7 chunks\n"
+2025-11-08 13:07:55.537 [warning] Failed to parse message: "[Embedder] Processed 7/7 chunks\n"
+2025-11-08 13:07:57.374 [warning] Failed to parse message: "[Qdrant] Upserted 7 vectors\n"
+2025-11-08 13:07:57.374 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/widgets/nfca_image_preview_dialog.dart (7 chunks)\n"
+2025-11-08 13:07:57.635 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/widgets/nfca_modern_chat_input.dart\n"
+2025-11-08 13:07:57.645 [warning] Failed to parse message: "[Embedder] Processing 38 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:08:05.777 [warning] Failed to parse message: "[Embedder] Processed 5/38 chunks\n"
+2025-11-08 13:08:15.357 [warning] Failed to parse message: "[Embedder] Processed 10/38 chunks\n"
+2025-11-08 13:08:24.824 [warning] Failed to parse message: "[Embedder] Processed 15/38 chunks\n"
+2025-11-08 13:08:34.556 [warning] Failed to parse message: "[Embedder] Processed 20/38 chunks\n"
+2025-11-08 13:08:44.378 [warning] Failed to parse message: "[Embedder] Processed 25/38 chunks\n"
+2025-11-08 13:08:54.304 [warning] Failed to parse message: "[Embedder] Processed 30/38 chunks\n"
+2025-11-08 13:09:04.052 [warning] Failed to parse message: "[Embedder] Processed 35/38 chunks\n"
+2025-11-08 13:09:09.848 [warning] Failed to parse message: "[Embedder] Processed 38/38 chunks\n"
+2025-11-08 13:09:12.953 [warning] Failed to parse message: "[Qdrant] Upserted 38 vectors\n"
+2025-11-08 13:09:12.956 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/widgets/nfca_modern_chat_input.dart (38 chunks)\n"
+2025-11-08 13:09:13.257 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/presentation/widgets/nfca_video_thumbnail.dart\n"
+2025-11-08 13:09:13.257 [warning] Failed to parse message: "[Embedder] Processing 9 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:09:21.422 [warning] Failed to parse message: "[Embedder] Processed 5/9 chunks\n"
+2025-11-08 13:09:29.230 [warning] Failed to parse message: "[Embedder] Processed 9/9 chunks\n"
+2025-11-08 13:09:31.205 [warning] Failed to parse message: "[Qdrant] Upserted 9 vectors\n"
+2025-11-08 13:09:31.206 [warning] Failed to parse message: "  ✓ lib/features/chat/presentation/widgets/nfca_video_thumbnail.dart (9 chunks)\n"
+2025-11-08 13:09:31.600 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat/services/audio_recorder_service.dart\n"
+2025-11-08 13:09:31.601 [warning] Failed to parse message: "[Embedder] Processing 4 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:09:38.042 [warning] Failed to parse message: "[Embedder] Processed 4/4 chunks\n"
+2025-11-08 13:09:38.438 [warning] Failed to parse message: "[Qdrant] Upserted 4 vectors\n"
+2025-11-08 13:09:38.438 [warning] Failed to parse message: "  ✓ lib/features/chat/services/audio_recorder_service.dart (4 chunks)\n"
+2025-11-08 13:09:38.755 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat_search/presentation/controllers/chat_search_controller.dart\n"
+2025-11-08 13:09:38.756 [warning] Failed to parse message: "[Embedder] Processing 20 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:09:46.959 [warning] Failed to parse message: "[Embedder] Processed 5/20 chunks\n"
+2025-11-08 13:09:56.722 [warning] Failed to parse message: "[Embedder] Processed 10/20 chunks\n"
+2025-11-08 13:10:06.714 [warning] Failed to parse message: "[Embedder] Processed 15/20 chunks\n"
+2025-11-08 13:10:16.077 [warning] Failed to parse message: "[Embedder] Processed 20/20 chunks\n"
+2025-11-08 13:10:18.542 [warning] Failed to parse message: "[Qdrant] Upserted 20 vectors\n"
+2025-11-08 13:10:18.544 [warning] Failed to parse message: "  ✓ lib/features/chat_search/presentation/controllers/chat_search_controller.dart (20 chunks)\n"
+2025-11-08 13:10:18.797 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/chat_search/presentation/widgets/files_tab.dart\n"
+2025-11-08 13:10:18.798 [warning] Failed to parse message: "[Embedder] Processing 12 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:10:26.781 [warning] Failed to parse message: "[Embedder] Processed 5/12 chunks\n"
+2025-11-08 13:10:36.695 [warning] Failed to parse message: "[Embedder] Processed 10/12 chunks\n"
+2025-11-08 13:10:40.659 [warning] Failed to parse message: "[Embedder] Processed 12/12 chunks\n"
+2025-11-08 13:10:42.671 [warning] Failed to parse message: "[Qdrant] Upserted 12 vectors\n"
+2025-11-08 13:10:42.672 [warning] Failed to parse message: "  ✓ lib/features/chat_search/presentation/widgets/files_tab.dart (12 chunks)\n"
+2025-11-08 13:10:42.925 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/contacts/controllers/contacts_controller.dart\n"
+2025-11-08 13:10:42.933 [warning] Failed to parse message: "[Embedder] Processing 21 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:10:51.064 [warning] Failed to parse message: "[Embedder] Processed 5/21 chunks\n"
+2025-11-08 13:11:00.410 [warning] Failed to parse message: "[Embedder] Processed 10/21 chunks\n"
+2025-11-08 13:11:09.716 [warning] Failed to parse message: "[Embedder] Processed 15/21 chunks\n"
+2025-11-08 13:11:19.110 [warning] Failed to parse message: "[Embedder] Processed 20/21 chunks\n"
+2025-11-08 13:11:20.955 [warning] Failed to parse message: "[Embedder] Processed 21/21 chunks\n"
+2025-11-08 13:11:23.327 [warning] Failed to parse message: "[Qdrant] Upserted 21 vectors\n"
+2025-11-08 13:11:23.328 [warning] Failed to parse message: "  ✓ lib/features/contacts/controllers/contacts_controller.dart (21 chunks)\n"
+2025-11-08 13:11:23.584 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/contacts/controllers/friend_list_controller.dart\n"
+2025-11-08 13:11:23.586 [warning] Failed to parse message: "[Embedder] Processing 17 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:11:31.741 [warning] Failed to parse message: "[Embedder] Processed 5/17 chunks\n"
+2025-11-08 13:11:41.310 [warning] Failed to parse message: "[Embedder] Processed 10/17 chunks\n"
+2025-11-08 13:11:50.909 [warning] Failed to parse message: "[Embedder] Processed 15/17 chunks\n"
+2025-11-08 13:11:54.595 [warning] Failed to parse message: "[Embedder] Processed 17/17 chunks\n"
+2025-11-08 13:11:56.858 [warning] Failed to parse message: "[Qdrant] Upserted 17 vectors\n"
+2025-11-08 13:11:56.859 [warning] Failed to parse message: "  ✓ lib/features/contacts/controllers/friend_list_controller.dart (17 chunks)\n"
+2025-11-08 13:11:57.122 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/contacts/controllers/group_requests_controller.dart\n"
+2025-11-08 13:11:57.124 [warning] Failed to parse message: "[Embedder] Processing 22 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:12:05.187 [warning] Failed to parse message: "[Embedder] Processed 5/22 chunks\n"
+2025-11-08 13:12:14.812 [warning] Failed to parse message: "[Embedder] Processed 10/22 chunks\n"
+2025-11-08 13:12:24.466 [warning] Failed to parse message: "[Embedder] Processed 15/22 chunks\n"
+2025-11-08 13:12:34.178 [warning] Failed to parse message: "[Embedder] Processed 20/22 chunks\n"
+2025-11-08 13:12:37.964 [warning] Failed to parse message: "[Embedder] Processed 22/22 chunks\n"
+2025-11-08 13:12:42.234 [warning] Failed to parse message: "[Qdrant] Upserted 22 vectors\n"
+2025-11-08 13:12:42.236 [warning] Failed to parse message: "  ✓ lib/features/contacts/controllers/group_requests_controller.dart (22 chunks)\n"
+2025-11-08 13:12:42.489 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/conversation/controllers/qr_scanner_controller.dart\n"
+2025-11-08 13:12:42.490 [warning] Failed to parse message: "[Embedder] Processing 7 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:12:51.177 [warning] Failed to parse message: "[Embedder] Processed 5/7 chunks\n"
+2025-11-08 13:12:55.305 [warning] Failed to parse message: "[Embedder] Processed 7/7 chunks\n"
+2025-11-08 13:12:57.119 [warning] Failed to parse message: "[Qdrant] Upserted 7 vectors\n"
+2025-11-08 13:12:57.121 [warning] Failed to parse message: "  ✓ lib/features/conversation/controllers/qr_scanner_controller.dart (7 chunks)\n"
+2025-11-08 13:12:57.381 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/dashboard/controller/dashboard_controller.dart\n"
+2025-11-08 13:12:57.386 [warning] Failed to parse message: "[Embedder] Processing 34 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:13:05.943 [warning] Failed to parse message: "[Embedder] Processed 5/34 chunks\n"
+2025-11-08 13:13:15.545 [warning] Failed to parse message: "[Embedder] Processed 10/34 chunks\n"
+2025-11-08 13:13:24.830 [warning] Failed to parse message: "[Embedder] Processed 15/34 chunks\n"
+2025-11-08 13:13:34.487 [warning] Failed to parse message: "[Embedder] Processed 20/34 chunks\n"
+2025-11-08 13:13:44.450 [warning] Failed to parse message: "[Embedder] Processed 25/34 chunks\n"
+2025-11-08 13:13:54.060 [warning] Failed to parse message: "[Embedder] Processed 30/34 chunks\n"
+2025-11-08 13:14:01.503 [warning] Failed to parse message: "[Embedder] Processed 34/34 chunks\n"
+2025-11-08 13:14:04.371 [warning] Failed to parse message: "[Qdrant] Upserted 34 vectors\n"
+2025-11-08 13:14:04.372 [warning] Failed to parse message: "  ✓ lib/features/dashboard/controller/dashboard_controller.dart (34 chunks)\n"
+2025-11-08 13:14:04.637 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/global_search/controllers/global_search_controller.dart\n"
+2025-11-08 13:14:04.641 [warning] Failed to parse message: "[Embedder] Processing 29 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:14:12.948 [warning] Failed to parse message: "[Embedder] Processed 5/29 chunks\n"
+2025-11-08 13:14:22.723 [warning] Failed to parse message: "[Embedder] Processed 10/29 chunks\n"
+2025-11-08 13:14:32.572 [warning] Failed to parse message: "[Embedder] Processed 15/29 chunks\n"
+2025-11-08 13:14:42.279 [warning] Failed to parse message: "[Embedder] Processed 20/29 chunks\n"
+2025-11-08 13:14:51.704 [warning] Failed to parse message: "[Embedder] Processed 25/29 chunks\n"
+2025-11-08 13:14:59.305 [warning] Failed to parse message: "[Embedder] Processed 29/29 chunks\n"
+2025-11-08 13:15:02.100 [warning] Failed to parse message: "[Qdrant] Upserted 29 vectors\n"
+2025-11-08 13:15:02.104 [warning] Failed to parse message: "  ✓ lib/features/global_search/controllers/global_search_controller.dart (29 chunks)\n"
+2025-11-08 13:15:02.365 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/mine/account_setup/controllers/account_setup_controller.dart\n"
+2025-11-08 13:15:02.369 [warning] Failed to parse message: "[Embedder] Processing 8 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:15:10.845 [warning] Failed to parse message: "[Embedder] Processed 5/8 chunks\n"
+2025-11-08 13:15:16.992 [warning] Failed to parse message: "[Embedder] Processed 8/8 chunks\n"
+2025-11-08 13:15:18.916 [warning] Failed to parse message: "[Qdrant] Upserted 8 vectors\n"
+2025-11-08 13:15:18.917 [warning] Failed to parse message: "  ✓ lib/features/mine/account_setup/controllers/account_setup_controller.dart (8 chunks)\n"
+2025-11-08 13:15:19.165 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/mine/account_setup/controllers/change_password_controller.dart\n"
+2025-11-08 13:15:19.167 [warning] Failed to parse message: "[Embedder] Processing 11 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:15:27.288 [warning] Failed to parse message: "[Embedder] Processed 5/11 chunks\n"
+2025-11-08 13:15:37.064 [warning] Failed to parse message: "[Embedder] Processed 10/11 chunks\n"
+2025-11-08 13:15:39.010 [warning] Failed to parse message: "[Embedder] Processed 11/11 chunks\n"
+2025-11-08 13:15:41.087 [warning] Failed to parse message: "[Qdrant] Upserted 11 vectors\n"
+2025-11-08 13:15:41.088 [warning] Failed to parse message: "  ✓ lib/features/mine/account_setup/controllers/change_password_controller.dart (11 chunks)\n"
+2025-11-08 13:15:41.350 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/controller/login_controller.dart\n"
+2025-11-08 13:15:41.352 [warning] Failed to parse message: "[Embedder] Processing 22 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:15:49.557 [warning] Failed to parse message: "[Embedder] Processed 5/22 chunks\n"
+2025-11-08 13:15:59.184 [warning] Failed to parse message: "[Embedder] Processed 10/22 chunks\n"
+2025-11-08 13:16:08.910 [warning] Failed to parse message: "[Embedder] Processed 15/22 chunks\n"
+2025-11-08 13:16:18.260 [warning] Failed to parse message: "[Embedder] Processed 20/22 chunks\n"
+2025-11-08 13:16:22.259 [warning] Failed to parse message: "[Embedder] Processed 22/22 chunks\n"
+2025-11-08 13:16:25.086 [warning] Failed to parse message: "[Qdrant] Upserted 22 vectors\n"
+2025-11-08 13:16:25.086 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/controller/login_controller.dart (22 chunks)\n"
+2025-11-08 13:16:25.344 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/controller/register_controller.dart\n"
+2025-11-08 13:16:25.348 [warning] Failed to parse message: "[Embedder] Processing 24 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:16:33.487 [warning] Failed to parse message: "[Embedder] Processed 5/24 chunks\n"
+2025-11-08 13:16:43.114 [warning] Failed to parse message: "[Embedder] Processed 10/24 chunks\n"
+2025-11-08 13:16:53.251 [warning] Failed to parse message: "[Embedder] Processed 15/24 chunks\n"
+2025-11-08 13:17:02.810 [warning] Failed to parse message: "[Embedder] Processed 20/24 chunks\n"
+2025-11-08 13:17:10.359 [warning] Failed to parse message: "[Embedder] Processed 24/24 chunks\n"
+2025-11-08 13:17:12.964 [warning] Failed to parse message: "[Qdrant] Upserted 24 vectors\n"
+2025-11-08 13:17:12.965 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/controller/register_controller.dart (24 chunks)\n"
+2025-11-08 13:17:13.219 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/pages/appeal_page.dart\n"
+2025-11-08 13:17:13.219 [warning] Failed to parse message: "[Embedder] Processing 2 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:17:15.406 [warning] Failed to parse message: "[Embedder] Processed 2/2 chunks\n"
+2025-11-08 13:17:15.724 [warning] Failed to parse message: "[Qdrant] Upserted 2 vectors\n"
+2025-11-08 13:17:15.725 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/pages/appeal_page.dart (2 chunks)\n"
+2025-11-08 13:17:15.989 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/pages/gateway_switcher_page.dart\n"
+2025-11-08 13:17:15.989 [warning] Failed to parse message: "[Embedder] Processing 5 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:17:24.221 [warning] Failed to parse message: "[Embedder] Processed 5/5 chunks\n"
+2025-11-08 13:17:24.661 [warning] Failed to parse message: "[Qdrant] Upserted 5 vectors\n"
+2025-11-08 13:17:24.661 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/pages/gateway_switcher_page.dart (5 chunks)\n"
+2025-11-08 13:17:24.995 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/pages/privacy_policy_page.dart\n"
+2025-11-08 13:17:24.996 [warning] Failed to parse message: "[Embedder] Processing 2 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:17:27.252 [warning] Failed to parse message: "[Embedder] Processed 2/2 chunks\n"
+2025-11-08 13:17:27.570 [warning] Failed to parse message: "[Qdrant] Upserted 2 vectors\n"
+2025-11-08 13:17:27.570 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/pages/privacy_policy_page.dart (2 chunks)\n"
+2025-11-08 13:17:27.862 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/pages/terms_conditions_page.dart\n"
+2025-11-08 13:17:27.862 [warning] Failed to parse message: "[Embedder] Processing 2 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:17:30.139 [warning] Failed to parse message: "[Embedder] Processed 2/2 chunks\n"
+2025-11-08 13:17:30.452 [warning] Failed to parse message: "[Qdrant] Upserted 2 vectors\n"
+2025-11-08 13:17:30.452 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/pages/terms_conditions_page.dart (2 chunks)\n"
+2025-11-08 13:17:30.705 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/profile/controllers/profile_controller.dart\n"
+2025-11-08 13:17:30.708 [warning] Failed to parse message: "[Embedder] Processing 19 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:17:38.736 [warning] Failed to parse message: "[Embedder] Processed 5/19 chunks\n"
+2025-11-08 13:17:48.139 [warning] Failed to parse message: "[Embedder] Processed 10/19 chunks\n"
+2025-11-08 13:17:57.931 [warning] Failed to parse message: "[Embedder] Processed 15/19 chunks\n"
+2025-11-08 13:18:05.884 [warning] Failed to parse message: "[Embedder] Processed 19/19 chunks\n"
+2025-11-08 13:18:13.457 [warning] Failed to parse message: "[Qdrant] Upserted 19 vectors\n"
+2025-11-08 13:18:13.457 [warning] Failed to parse message: "  ✓ lib/features/profile/controllers/profile_controller.dart (19 chunks)\n"
+2025-11-08 13:18:13.704 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/navigation/app_pages.dart\n"
+2025-11-08 13:18:13.706 [warning] Failed to parse message: "[Embedder] Processing 4 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:18:20.707 [warning] Failed to parse message: "[Embedder] Processed 4/4 chunks\n"
+2025-11-08 13:18:21.344 [warning] Failed to parse message: "[Qdrant] Upserted 4 vectors\n"
+2025-11-08 13:18:21.346 [warning] Failed to parse message: "  ✓ lib/navigation/app_pages.dart (4 chunks)\n"
+2025-11-08 13:18:21.365 [warning] [server stderr] [State] Failed to save: Error: ENOTDIR: not a directory, open 'memory/index-metadata.json/incremental_state.json'
+2025-11-08 13:18:21.365 [warning] [server stderr]     at Module.writeFileSync (node:fs:2410:20)
+2025-11-08 13:18:21.365 [warning] [server stderr]     at CodebaseIndexMCPServer.saveIndexState (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:294:16)
+2025-11-08 13:18:21.365 [warning] [server stderr]     at CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:476:18)
+2025-11-08 13:18:21.365 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-11-08 13:18:21.365 [warning] [server stderr]     at async CodebaseIndexMCPServer.startBackgroundIndexing (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:539:13) {
+2025-11-08 13:18:21.365 [warning] [server stderr]   errno: -20,
+2025-11-08 13:18:21.366 [warning] [server stderr]   code: 'ENOTDIR',
+2025-11-08 13:18:21.366 [warning] [server stderr]   syscall: 'open',
+2025-11-08 13:18:21.366 [warning] [server stderr]   path: 'memory/index-metadata.json/incremental_state.json'
+2025-11-08 13:18:21.366 [warning] [server stderr] }
+2025-11-08 13:18:21.366 [warning] Failed to parse message: "\n"
+2025-11-08 13:18:21.366 [warning] Failed to parse message: "[Complete] Indexed 482 chunks\n"
+2025-11-08 13:18:21.366 [warning] Failed to parse message: "[Quota] Used 482/950 (50.7%)\n"
+2025-11-08 13:23:31.280 [warning] Failed to parse message: "\n"
+2025-11-08 13:23:31.281 [warning] Failed to parse message: "[Incremental Indexer] Processing 1 files...\n"
+2025-11-08 13:23:31.283 [warning] Failed to parse message: "[Categorization]\n"
+2025-11-08 13:23:31.283 [warning] Failed to parse message: "  ✨ New: 0\n"
+2025-11-08 13:23:31.283 [warning] Failed to parse message: "  📝 Modified: 1\n"
+2025-11-08 13:23:31.283 [warning] Failed to parse message: "  ✅ Unchanged: 0\n"
+2025-11-08 13:23:31.283 [warning] Failed to parse message: "  🗑️  Deleted: 0\n"
+2025-11-08 13:23:31.283 [warning] Failed to parse message: "\n"
+2025-11-08 13:23:31.283 [warning] Failed to parse message: "[Indexing] Processing 1 files...\n"
+2025-11-08 13:23:33.304 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/core/controllers/auth_controller.dart\n"
+2025-11-08 13:23:33.333 [warning] Failed to parse message: "[Embedder] Processing 14 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:23:42.209 [warning] Failed to parse message: "[Embedder] Processed 5/14 chunks\n"
+2025-11-08 13:23:51.750 [warning] Failed to parse message: "[Embedder] Processed 10/14 chunks\n"
+2025-11-08 13:23:59.267 [warning] Failed to parse message: "[Embedder] Processed 14/14 chunks\n"
+2025-11-08 13:24:01.552 [warning] Failed to parse message: "[Qdrant] Upserted 14 vectors\n"
+2025-11-08 13:24:01.553 [warning] Failed to parse message: "  ✓ lib/core/controllers/auth_controller.dart (14 chunks)\n"
+2025-11-08 13:24:01.553 [warning] [server stderr] [State] Failed to save: Error: ENOTDIR: not a directory, open 'memory/index-metadata.json/incremental_state.json'
+2025-11-08 13:24:01.554 [warning] [server stderr]     at Module.writeFileSync (node:fs:2410:20)
+2025-11-08 13:24:01.554 [warning] [server stderr]     at CodebaseIndexMCPServer.saveIndexState (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:294:16)
+2025-11-08 13:24:01.554 [warning] [server stderr]     at CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:476:18)
+2025-11-08 13:24:01.554 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+2025-11-08 13:24:01.555 [warning] [server stderr]   errno: -20,
+2025-11-08 13:24:01.555 [warning] [server stderr]   code: 'ENOTDIR',
+2025-11-08 13:24:01.555 [warning] [server stderr]   syscall: 'open',
+2025-11-08 13:24:01.555 [warning] [server stderr]   path: 'memory/index-metadata.json/incremental_state.json'
+2025-11-08 13:24:01.555 [warning] [server stderr] }
+2025-11-08 13:24:01.555 [warning] Failed to parse message: "\n"
+2025-11-08 13:24:01.556 [warning] Failed to parse message: "[Complete] Indexed 14 chunks\n"
+2025-11-08 13:24:01.556 [warning] Failed to parse message: "[Quota] Used 496/950 (52.2%)\n"
+2025-11-08 13:24:17.075 [warning] Failed to parse message: "\n"
+2025-11-08 13:24:17.075 [warning] Failed to parse message: "[Incremental Indexer] Processing 2 files...\n"
+2025-11-08 13:24:17.075 [warning] Failed to parse message: "[Categorization]\n"
+2025-11-08 13:24:17.075 [warning] Failed to parse message: "  ✨ New: 0\n"
+2025-11-08 13:24:17.076 [warning] Failed to parse message: "  📝 Modified: 1\n"
+2025-11-08 13:24:17.076 [warning] Failed to parse message: "  ✅ Unchanged: 1\n"
+2025-11-08 13:24:17.076 [warning] Failed to parse message: "  🗑️  Deleted: 0\n"
+2025-11-08 13:24:17.076 [warning] Failed to parse message: "\n"
+2025-11-08 13:24:17.076 [warning] Failed to parse message: "[Indexing] Processing 1 files...\n"
+2025-11-08 13:24:17.829 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/controller/login_controller.dart\n"
+2025-11-08 13:24:17.831 [warning] Failed to parse message: "[Embedder] Processing 22 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:24:26.048 [warning] Failed to parse message: "[Embedder] Processed 5/22 chunks\n"
+2025-11-08 13:24:35.437 [warning] Failed to parse message: "[Embedder] Processed 10/22 chunks\n"
+2025-11-08 13:24:45.005 [warning] Failed to parse message: "[Embedder] Processed 15/22 chunks\n"
+2025-11-08 13:24:54.355 [warning] Failed to parse message: "[Embedder] Processed 20/22 chunks\n"
+2025-11-08 13:24:58.325 [warning] Failed to parse message: "[Embedder] Processed 22/22 chunks\n"
+2025-11-08 13:25:00.810 [warning] Failed to parse message: "[Qdrant] Upserted 22 vectors\n"
+2025-11-08 13:25:00.812 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/controller/login_controller.dart (22 chunks)\n"
+2025-11-08 13:25:00.813 [warning] [server stderr] [State] Failed to save: Error: ENOTDIR: not a directory, open 'memory/index-metadata.json/incremental_state.json'
+2025-11-08 13:25:00.813 [warning] [server stderr]     at Module.writeFileSync (node:fs:2410:20)
+2025-11-08 13:25:00.814 [warning] [server stderr]     at CodebaseIndexMCPServer.saveIndexState (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:294:16)
+2025-11-08 13:25:00.814 [warning] [server stderr]     at CodebaseIndexMCPServer.processIndexingQueue (file:///Users/ngotaico/.npm/_npx/9d5591f2919e779a/node_modules/@ngotaico/mcp-codebase-index/dist/server.js:476:18)
+2025-11-08 13:25:00.814 [warning] [server stderr]     at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+2025-11-08 13:25:00.814 [warning] [server stderr]   errno: -20,
+2025-11-08 13:25:00.814 [warning] [server stderr]   code: 'ENOTDIR',
+2025-11-08 13:25:00.814 [warning] [server stderr]   syscall: 'open',
+2025-11-08 13:25:00.814 [warning] [server stderr]   path: 'memory/index-metadata.json/incremental_state.json'
+2025-11-08 13:25:00.815 [warning] [server stderr] }
+2025-11-08 13:25:00.815 [warning] Failed to parse message: "\n"
+2025-11-08 13:25:00.815 [warning] Failed to parse message: "[Complete] Indexed 22 chunks\n"
+2025-11-08 13:25:00.815 [warning] Failed to parse message: "[Quota] Used 518/950 (54.5%)\n"
+2025-11-08 13:25:08.399 [warning] Failed to parse message: "\n"
+2025-11-08 13:25:08.399 [warning] Failed to parse message: "[Incremental Indexer] Processing 2 files...\n"
+2025-11-08 13:25:08.400 [warning] Failed to parse message: "[Categorization]\n"
+2025-11-08 13:25:08.400 [warning] Failed to parse message: "  ✨ New: 0\n"
+2025-11-08 13:25:08.400 [warning] Failed to parse message: "  📝 Modified: 2\n"
+2025-11-08 13:25:08.400 [warning] Failed to parse message: "  ✅ Unchanged: 0\n"
+2025-11-08 13:25:08.400 [warning] Failed to parse message: "  🗑️  Deleted: 0\n"
+2025-11-08 13:25:08.400 [warning] Failed to parse message: "\n"
+2025-11-08 13:25:08.400 [warning] Failed to parse message: "[Indexing] Processing 2 files...\n"
+2025-11-08 13:25:08.658 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/onboarding/presentation/controller/register_controller.dart\n"
+2025-11-08 13:25:08.659 [warning] Failed to parse message: "[Embedder] Processing 24 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:25:16.825 [warning] Failed to parse message: "[Embedder] Processed 5/24 chunks\n"
+2025-11-08 13:25:26.185 [warning] Failed to parse message: "[Embedder] Processed 10/24 chunks\n"
+2025-11-08 13:25:36.119 [warning] Failed to parse message: "[Embedder] Processed 15/24 chunks\n"
+2025-11-08 13:25:45.542 [warning] Failed to parse message: "[Embedder] Processed 20/24 chunks\n"
+2025-11-08 13:25:53.120 [warning] Failed to parse message: "[Embedder] Processed 24/24 chunks\n"
+2025-11-08 13:25:55.850 [warning] Failed to parse message: "[Qdrant] Upserted 24 vectors\n"
+2025-11-08 13:25:55.850 [warning] Failed to parse message: "  ✓ lib/features/onboarding/presentation/controller/register_controller.dart (24 chunks)\n"
+2025-11-08 13:25:56.109 [warning] Failed to parse message: "[Qdrant] Deleted vectors for lib/features/profile/controllers/profile_controller.dart\n"
+2025-11-08 13:25:56.110 [warning] Failed to parse message: "[Embedder] Processing 19 chunks sequentially (rate-limited model)...\n"
+2025-11-08 13:26:04.096 [warning] Failed to parse message: "[Embedder] Processed 5/19 chunks\n"

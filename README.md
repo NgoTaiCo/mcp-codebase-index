@@ -2,7 +2,7 @@
 
 > AI-powered semantic search for your codebase in GitHub Copilot
 
-A Model Context Protocol (MCP) server that enables GitHub Copilot to search and understand your codebase using Google's Gemini embeddings and Qdrant Cloud vector storage.
+A Model Context Protocol (MCP) server that enables GitHub Copilot to search and understand your codebase using Google's Gemini embeddings and Qdrant vector storage.
 
 ## ✨ Features
 
@@ -10,7 +10,7 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 - 🎯 **Smart Chunking**: Automatically splits code into logical functions/classes
 - 🔄 **Real-time Watch**: Monitors file changes and updates index automatically
 - 🌐 **Multi-language**: Supports 15+ programming languages
-- ☁️ **Cloud Storage**: Uses Qdrant Cloud for persistent vector storage
+- ☁️ **Vector Storage**: Uses Qdrant for persistent vector storage
 - 📦 **Simple Setup**: Just 4 environment variables to get started
 
 ## 🚀 Quick Start
@@ -66,7 +66,7 @@ Add this to your `mcp.json`:
 
 ### Optional Configuration
 
-You can customize the embedding model by adding the `EMBEDDING_MODEL` variable:
+You can customize the embedding model and output dimension:
 
 ```json
 {
@@ -75,14 +75,40 @@ You can customize the embedding model by adding the `EMBEDDING_MODEL` variable:
     "GEMINI_API_KEY": "AIzaSyC...",
     "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
     "QDRANT_API_KEY": "eyJhbGci...",
-    "EMBEDDING_MODEL": "text-embedding-004"
+    "EMBEDDING_MODEL": "text-embedding-004",
+    "EMBEDDING_DIMENSION": "768"
   }
 }
 ```
 
-**Supported models:**
-- `text-embedding-004` (default) - Latest model with improved performance
-- `gemini-embedding-001` - Earlier model for compatibility
+**Supported embedding models:**
+- `text-embedding-004` (✅ **RECOMMENDED** - default) - Best for all users, especially free tier
+  - Dimension: 768 (fixed)
+  - Excellent for code search and documentation
+  - Works reliably with free tier Gemini API
+  - Optimized performance and accuracy
+- `gemini-embedding-001` (⚠️ **NOT RECOMMENDED for free tier**)
+  - Flexible dimensions: 768-3072
+  - ❌ May not work with free tier accounts due to quota/rate limits
+  - Only use if you have paid Gemini API access
+
+**Environment Variables:**
+- `EMBEDDING_MODEL`: Choose embedding model (default: `text-embedding-004`)
+- `EMBEDDING_DIMENSION`: Output dimension size (optional, auto-detected from model)
+  - `text-embedding-004`: 768 (fixed)
+  - `gemini-embedding-001`: 768-3072 (configurable, but not recommended for free tier)
+
+**💡 Recommendation:**
+- **All users (especially free tier)**: Use `text-embedding-004` with 768 dimensions (default)
+- **Paid API users only**: Consider `gemini-embedding-001` for multilingual projects
+- **Large codebases (>10k files)**: Stick with 768 dimensions to save storage
+
+**⚡ Rate Limiting:**
+The indexer automatically handles Gemini API rate limits:
+- 700ms delay between requests
+- Exponential backoff for 429 errors (2s, 4s, 8s)
+- 2s delay between batches of 50 chunks
+- Automatic retries up to 3 times
 
 ### Restart VS Code
 
@@ -136,7 +162,7 @@ Ask GitHub Copilot to search your codebase:
 | `QDRANT_COLLECTION` | `codebase` | Collection name in Qdrant |
 | `WATCH_MODE` | `true` | Auto-update on file changes |
 | `BATCH_SIZE` | `50` | Embedding batch size |
-| `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` or `gemini-embedding-001`) |
+| `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` recommended, `gemini-embedding-001` not recommended for free tier) |
 
 ## 🔧 Setup Guides
 
@@ -213,6 +239,14 @@ Should return JSON with collections list.
 - Large repos (1000+ files) take 5-10 minutes initially
 - Reduce `BATCH_SIZE` if hitting rate limits
 - Check Gemini API quota: [aistudio.google.com](https://aistudio.google.com)
+
+### Embedding errors with gemini-embedding-001?
+
+If you see errors like "quota exceeded" or "model not available":
+- ⚠️ `gemini-embedding-001` often doesn't work with free tier accounts
+- ✅ **Solution**: Switch to `text-embedding-004` (recommended for all users)
+- Update your config: `"EMBEDDING_MODEL": "text-embedding-004"`
+- Reload VS Code and re-index
 
 ## 📊 Performance
 

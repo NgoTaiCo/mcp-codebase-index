@@ -5,15 +5,16 @@ import { CodeChunk, QdrantConfig } from './types.js';
 export class QdrantVectorStore {
     public client: QdrantClient;
     private collectionName: string;
-    private vectorSize = 768;
+    private vectorSize: number;
 
-    constructor(config: QdrantConfig) {
+    constructor(config: QdrantConfig, vectorSize: number = 768) {
         this.client = new QdrantClient({
             url: config.url,
             apiKey: config.apiKey,
             timeout: 60000
         });
         this.collectionName = config.collectionName;
+        this.vectorSize = vectorSize;
     }
 
     /**
@@ -172,7 +173,7 @@ export class QdrantVectorStore {
     }
 
     /**
-     * Get collections (for compatibility with SimpleVectorStore)
+     * Get collections
      */
     async getCollections(): Promise<any> {
         return await this.client.getCollections();
