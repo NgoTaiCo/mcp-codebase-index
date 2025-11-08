@@ -19,7 +19,7 @@ Your Codebase
       ↓
 [MCP Server - StdIO]
       ↓
-Copilot / Cursor / Augment / Roo Code
+GitHub Copilot (via VS Code settings.json)
 ```
 
 **Key Features:**
@@ -28,7 +28,7 @@ Copilot / Cursor / Augment / Roo Code
 - ✅ Index only changed files (incremental)
 - ✅ Push embeddings to Qdrant automatically
 - ✅ Search tool integrated in MCP
-- ✅ Works with Copilot, Cursor, Augment, Roo Code
+- ✅ Works with GitHub Copilot in VS Code
 
 ---
 
@@ -1058,13 +1058,23 @@ BATCH_SIZE=50
 
 ---
 
-## Step 10: Configuration for Different IDEs
+## Step 10: Configuration for GitHub Copilot
 
-### Copilot / Cursor / Augment Config
+### Access MCP Configuration
+
+**Via Copilot Chat (Recommended):**
+1. Open Copilot Chat (sidebar or `Ctrl+Alt+I` / `Cmd+Alt+I`)
+2. Click **Settings** (⚙️ gear icon at top-right)
+3. Select **MCP Servers**
+4. Click **MCP Configuration (JSON)** button
+
+This opens: `~/Library/Application Support/Code/User/mcp.json`
+
+### Add Configuration
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "codebase-index": {
       "command": "npx",
       "args": [
@@ -1083,21 +1093,28 @@ BATCH_SIZE=50
 }
 ```
 
-### Roo Code Config
+### Debug & Verify
 
-```json
-{
-  "tools": {
-    "codebase-search": {
-      "enabled": true,
-      "tool": "npx @yourorg/mcp-codebase-index",
-      "config": {
-        "cwd": "/path/to/your/repo",
-        "env": {
-          "GEMINI_API_KEY": "$GEMINI_API_KEY",
-          "QDRANT_URL": "http://localhost:6333"
-        }
-      }
+**Check Server Status:**
+1. Copilot Chat → Settings → MCP Servers
+2. Find `codebase-index` server
+3. Status should show "Connected"
+
+**View Logs:**
+1. Click **More (...)** next to server name
+2. Select **Show Output**
+3. Check for indexing progress and errors
+
+### Usage in VS Code
+
+1. Reload VS Code: `Cmd+Shift+P` → "Developer: Reload Window"
+2. Open GitHub Copilot Chat (`Ctrl+Alt+I` or `Cmd+Alt+I`)
+3. Use `@codebase` to query your indexed codebase:
+   ```
+   @codebase search for authentication logic
+   @codebase find database connection code
+   @codebase show me error handling patterns
+   ```
     }
   }
 }
@@ -1173,13 +1190,14 @@ pm2 save
 
 **Tại sao điều này khả thi:**
 
+
 1. ✅ **MCP StdIO Transport** - Node.js có support đầy đủ
 2. ✅ **File Watching** - chokidar là production-ready
 3. ✅ **Incremental Indexing** - MD5 hashing + file watching
 4. ✅ **Batch Processing** - Gemini batch API support
 5. ✅ **Qdrant Integration** - Node client ổn định
 6. ✅ **npm Distribution** - `npx` package mechanism
-7. ✅ **Works Everywhere** - Copilot, Cursor, Augment, Roo Code
+7. ✅ **Works with GitHub Copilot** - VS Code MCP integration
 8. ✅ **Keep Updated** - Real-time file watcher
 
 **Chi phí** khoảng $0-50/tháng tùy query volume.
@@ -1193,6 +1211,8 @@ pm2 save
 3. Setup Qdrant locally (Docker)
 4. Test embed + search locally
 5. Publish to npm
-6. Configure trong các IDE
+6. Configure trong VS Code settings.json
 
 **Bạn cần gì để bắt đầu?**
+
+```

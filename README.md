@@ -1,8 +1,8 @@
 # MCP Codebase Index Server
 
-> AI-powered semantic search for your codebase in Claude Desktop
+> AI-powered semantic search for your codebase in GitHub Copilot
 
-A Model Context Protocol (MCP) server that enables Claude to search and understand your codebase using Google's Gemini embeddings and Qdrant Cloud vector storage.
+A Model Context Protocol (MCP) server that enables GitHub Copilot to search and understand your codebase using Google's Gemini embeddings and Qdrant Cloud vector storage.
 
 ## ✨ Features
 
@@ -22,11 +22,22 @@ A Model Context Protocol (MCP) server that enables Claude to search and understa
 
 ### Installation
 
-Add to your `claude_desktop_config.json`:
+**Step 1: Open MCP Configuration**
+
+1. Open GitHub Copilot Chat (click Copilot icon in sidebar or press `Ctrl+Alt+I` / `Cmd+Alt+I`)
+2. Click the **Settings** icon (gear icon at top-right of chat panel)
+3. Select **MCP Servers**
+4. Click **MCP Configuration (JSON)** button
+
+This will open `~/Library/Application Support/Code/User/mcp.json` (macOS) or equivalent on your OS.
+
+**Step 2: Add Configuration**
+
+Add this to your `mcp.json`:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "codebase": {
       "command": "npx",
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
@@ -35,11 +46,14 @@ Add to your `claude_desktop_config.json`:
         "GEMINI_API_KEY": "AIzaSyC...",
         "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
         "QDRANT_API_KEY": "eyJhbGci..."
-      }
+      },
+      "type": "stdio"
     }
   }
 }
 ```
+
+> **Note**: If you already have other servers in `mcp.json`, just add the `"codebase"` entry inside the existing `"servers"` object.
 
 **All 4 variables are required:**
 
@@ -50,7 +64,7 @@ Add to your `claude_desktop_config.json`:
 | `QDRANT_URL` | Qdrant Cloud cluster URL | `https://xxx.gcp.cloud.qdrant.io:6333` |
 | `QDRANT_API_KEY` | Qdrant Cloud API key | `eyJhbGci...` |
 
-### Restart Claude Desktop
+### Restart VS Code
 
 The server will automatically:
 1. Connect to your Qdrant Cloud cluster
@@ -60,7 +74,7 @@ The server will automatically:
 
 ## 📖 Usage
 
-Ask Claude to search your codebase:
+Ask GitHub Copilot to search your codebase:
 
 ```
 "Find the authentication logic"
@@ -141,20 +155,22 @@ Python • TypeScript • JavaScript • Dart • Go • Rust • Java • Kotli
        │
        ▼
 ┌─────────────────┐
-│  Claude Search  │  Semantic queries
+│  Copilot Chat   │  Semantic queries
 └─────────────────┘
 ```
 
 ## 🐛 Troubleshooting
 
-### Server not appearing in Claude?
+### Server not appearing in Copilot?
 
-Check Claude logs:
-```bash
-tail -f ~/Library/Logs/Claude/mcp*.log
-```
+**Check server status:**
+1. Open Copilot Chat
+2. Click **Settings** (gear icon) → **MCP Servers**
+3. Find your `codebase` server
+4. Click **More (...)** → **Show Output**
+5. Check the logs for errors
 
-Common issues:
+**Common issues:**
 - ❌ `REPO_PATH` must be absolute path
 - ❌ All 4 env variables must be set
 - ❌ Qdrant URL must include `:6333` port

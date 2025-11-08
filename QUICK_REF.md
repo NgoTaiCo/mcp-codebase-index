@@ -4,13 +4,27 @@ One-page cheat sheet for fast setup and troubleshooting.
 
 ---
 
+## Quick Setup
+
+**3 Steps to Get Started:**
+
+1. **Open MCP Config**
+   - Copilot Chat → Settings (⚙️) → MCP Servers → MCP Configuration (JSON)
+
+2. **Add Configuration** (see below)
+
+3. **Reload VS Code**
+   - `Cmd+Shift+P` → "Developer: Reload Window"
+
+---
+
 ## Required Config
 
 **All 4 variables are mandatory:**
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "codebase": {
       "command": "npx",
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
@@ -19,7 +33,8 @@ One-page cheat sheet for fast setup and troubleshooting.
         "GEMINI_API_KEY": "AIzaSyC...",
         "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
         "QDRANT_API_KEY": "eyJhbGci..."
-      }
+      },
+      "type": "stdio"
     }
   }
 }
@@ -60,20 +75,14 @@ One-page cheat sheet for fast setup and troubleshooting.
 
 ## Config File Location
 
-**macOS:**
-```bash
-~/Library/Application Support/Claude/claude_desktop_config.json
-```
+**Quick Access via Copilot:**
+1. Open Copilot Chat
+2. Settings (⚙️) → MCP Servers → MCP Configuration (JSON)
 
-**Windows:**
-```
-%APPDATA%\Claude\claude_desktop_config.json
-```
-
-**Linux:**
-```bash
-~/.config/Claude/claude_desktop_config.json
-```
+**Direct File Paths:**
+- macOS: `~/Library/Application Support/Code/User/mcp.json`
+- Windows: `%APPDATA%\Code\User\mcp.json`
+- Linux: `~/.config/Code/User/mcp.json`
 
 ---
 
@@ -107,10 +116,25 @@ curl -H "api-key: YOUR_KEY" \
 
 ### Common Issues
 
+---
+
+## Debug / Check Logs
+
+**View Server Output:**
+1. Copilot Chat → Settings → MCP Servers
+2. Find `codebase` server
+3. Click **More (...)** → **Show Output**
+4. Check logs for errors or indexing progress
+
+---
+
+## Troubleshooting
+
 ✅ **Server not appearing?**
-- Restart Claude Desktop
+- Reload VS Code: `Cmd+Shift+P` → "Developer: Reload Window"
 - Check all 4 env variables are set
 - Verify `REPO_PATH` is absolute path
+- View server logs (see above)
 
 ✅ **Can't connect to Qdrant?**
 - Check URL includes `:6333` port

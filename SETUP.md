@@ -1,6 +1,6 @@
 # Setup Guide
 
-Complete walkthrough to get MCP Codebase Index Server running with Claude Desktop.
+Complete walkthrough to get MCP Codebase Index Server running with GitHub Copilot.
 
 ## Prerequisites
 
@@ -34,30 +34,30 @@ After cluster is created:
 
 ## Installation
 
-### Step 1: Find Claude Config
+### Step 1: Open MCP Configuration File
 
-**macOS:**
-```bash
-~/Library/Application Support/Claude/claude_desktop_config.json
-```
+**Option A: Via Copilot Chat (Recommended)**
+1. Open GitHub Copilot Chat
+   - Click Copilot icon in sidebar, OR
+   - Press `Ctrl+Alt+I` (Windows/Linux) or `Cmd+Alt+I` (macOS)
+2. Click **Settings** icon (⚙️ gear icon at top-right)
+3. Select **MCP Servers**
+4. Click **MCP Configuration (JSON)** button
 
-**Windows:**
-```
-%APPDATA%\Claude\claude_desktop_config.json
-```
+**Option B: Direct File Access**
 
-**Linux:**
-```bash
-~/.config/Claude/claude_desktop_config.json
-```
+The file location is:
+- **macOS**: `~/Library/Application Support/Code/User/mcp.json`
+- **Windows**: `%APPDATA%\Code\User\mcp.json`
+- **Linux**: `~/.config/Code/User/mcp.json`
 
-### Step 2: Edit Config
+### Step 2: Add Server Configuration
 
-Open the file and add:
+Add this to your `mcp.json`:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "codebase": {
       "command": "npx",
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
@@ -66,7 +66,34 @@ Open the file and add:
         "GEMINI_API_KEY": "AIzaSyC...",
         "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
         "QDRANT_API_KEY": "eyJhbGci..."
-      }
+      },
+      "type": "stdio"
+    }
+  }
+}
+```
+
+**If you already have other servers:**
+
+Just add the `"codebase"` entry inside the existing `"servers"` object:
+
+```json
+{
+  "servers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    "codebase": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "REPO_PATH": "/Users/you/Projects/your-project",
+        "GEMINI_API_KEY": "AIzaSyC...",
+        "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
+        "QDRANT_API_KEY": "eyJhbGci..."
+      },
+      "type": "stdio"
     }
   }
 }
@@ -78,31 +105,47 @@ Replace:
 - `QDRANT_URL`: Your Qdrant cluster URL
 - `QDRANT_API_KEY`: Your Qdrant API key
 
-### Step 3: Restart Claude Desktop
+### Step 3: Reload VS Code
 
-1. Quit Claude completely
-2. Reopen Claude Desktop
+**Option 1: Reload Window**
+- Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
+- Type "Developer: Reload Window"
+- Press Enter
+
+**Option 2: Restart VS Code**
+1. Close all VS Code windows
+2. Reopen VS Code
 3. Wait 30-60 seconds for indexing to start
 
 ## Verification
 
 ### Check Server is Running
 
-1. Open Claude Desktop
-2. Look for the 🔌 icon (bottom right)
-3. You should see "codebase" server listed
+1. Open Copilot Chat (`Ctrl+Alt+I` or `Cmd+Alt+I`)
+2. Click **Settings** (⚙️ gear icon)
+3. Select **MCP Servers**
+4. Look for `codebase` server in the list
+5. Status should show as "Connected" or "Running"
 
-### Check Logs
+### View Server Logs (Debug)
 
-**macOS/Linux:**
-```bash
-tail -f ~/Library/Logs/Claude/mcp*.log
-```
+**To check if server is working correctly:**
 
-**Windows:**
-```powershell
-Get-Content "$env:APPDATA\Claude\logs\mcp*.log" -Wait
-```
+1. In MCP Servers list, find your `codebase` server
+2. Click **More (...)** button next to the server
+3. Select **Show Output**
+4. Check the logs for:
+   ```
+   [Qdrant] Collection exists: codebase
+   [FileWatcher] Scanning for changes...
+   [Indexer] Found 150 chunks to index
+   [Embedder] Processing batch 1/3...
+   ```
+
+**If you see errors:**
+- Red text indicates problems
+- Common: API key invalid, Qdrant connection failed, path not found
+- Fix the issue in `mcp.json` and reload window
 
 You should see:
 ```
@@ -114,7 +157,7 @@ You should see:
 
 ### Test Search
 
-Ask Claude:
+Ask GitHub Copilot:
 ```
 Search my codebase for "authentication"
 ```
@@ -127,11 +170,18 @@ If working, you'll see relevant code chunks.
 
 ```json
 {
-  "env": {
-    "REPO_PATH": "/path/to/project",
-    "GEMINI_API_KEY": "AIzaSy...",
-    "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
-    "QDRANT_API_KEY": "eyJhbGci..."
+  "servers": {
+    "codebase": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "REPO_PATH": "/path/to/project",
+        "GEMINI_API_KEY": "AIzaSy...",
+        "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
+        "QDRANT_API_KEY": "eyJhbGci..."
+      },
+      "type": "stdio"
+    }
   }
 }
 ```
@@ -140,14 +190,21 @@ If working, you'll see relevant code chunks.
 
 ```json
 {
-  "env": {
-    "REPO_PATH": "/path/to/project",
-    "GEMINI_API_KEY": "AIzaSy...",
-    "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
-    "QDRANT_API_KEY": "eyJhbGci...",
-    "QDRANT_COLLECTION": "my_project",
-    "WATCH_MODE": "true",
-    "BATCH_SIZE": "50"
+  "servers": {
+    "codebase": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "REPO_PATH": "/path/to/project",
+        "GEMINI_API_KEY": "AIzaSy...",
+        "QDRANT_URL": "https://xxx.gcp.cloud.qdrant.io:6333",
+        "QDRANT_API_KEY": "eyJhbGci...",
+        "QDRANT_COLLECTION": "my_project",
+        "WATCH_MODE": "true",
+        "BATCH_SIZE": "50"
+      },
+      "type": "stdio"
+    }
   }
 }
 ```
@@ -251,7 +308,7 @@ Add multiple servers in config:
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "frontend": {
       "command": "npx",
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
@@ -261,7 +318,8 @@ Add multiple servers in config:
         "QDRANT_URL": "...",
         "QDRANT_API_KEY": "...",
         "QDRANT_COLLECTION": "frontend"
-      }
+      },
+      "type": "stdio"
     },
     "backend": {
       "command": "npx",
@@ -272,7 +330,8 @@ Add multiple servers in config:
         "QDRANT_URL": "...",
         "QDRANT_API_KEY": "...",
         "QDRANT_COLLECTION": "backend"
-      }
+      },
+      "type": "stdio"
     }
   }
 }

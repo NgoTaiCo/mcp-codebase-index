@@ -61,13 +61,18 @@ Expected response:
 
 ### Step 4: Configure MCP Server
 
-**Claude Desktop Config:**
+**Open MCP Configuration:**
+1. Open Copilot Chat (sidebar or `Ctrl+Alt+I` / `Cmd+Alt+I`)
+2. Click **Settings** (⚙️) → **MCP Servers**
+3. Click **MCP Configuration (JSON)**
 
-File: `~/Library/Application Support/Claude/claude_desktop_config.json`
+This opens: `~/Library/Application Support/Code/User/mcp.json`
+
+**Add Configuration:**
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "codebase-index": {
       "command": "npx",
       "args": ["-y", "@ngotaico/mcp-codebase-index"],
@@ -78,7 +83,8 @@ File: `~/Library/Application Support/Claude/claude_desktop_config.json`
         "QDRANT_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.ajP06MkSp4hThyqkzyfRaZUisw2zyCesBZMhasm_qLw",
         "QDRANT_COLLECTION": "codebase",
         "GEMINI_API_KEY": "your-gemini-api-key"
-      }
+      },
+      "type": "stdio"
     }
   }
 }
@@ -95,19 +101,26 @@ QDRANT_COLLECTION=codebase
 
 ### Step 5: Restart & Verify
 
-```bash
-# Restart Claude Desktop
+**Reload VS Code:**
+- Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
+- Type "Developer: Reload Window"
+- Press Enter
 
-# Check logs
-tail -f ~/Library/Logs/Claude/mcp*.log
-```
+**Check Server Status:**
+1. Open Copilot Chat
+2. Settings (⚙️) → MCP Servers
+3. Find `codebase-index` server
+4. Status should show "Connected" or "Running"
 
-Expected output:
-```
-[VectorStore] Using Qdrant
-[Qdrant] Collection exists: codebase
-[Init] Scanning for changes...
-```
+**View Logs (Debug):**
+1. In MCP Servers list, find `codebase-index`
+2. Click **More (...)** → **Show Output**
+3. Check for:
+   ```
+   [VectorStore] Using Qdrant
+   [Qdrant] Collection exists: codebase
+   [Init] Scanning for changes...
+   ```
 
 ---
 
@@ -124,13 +137,22 @@ docker run -d -p 6333:6333 -p 6334:6334 \
 
 ### Step 2: Configure
 
+Open MCP config via Copilot Chat (Settings → MCP Servers → MCP Configuration):
+
 ```json
 {
-  "env": {
-    "VECTOR_STORE_TYPE": "qdrant",
-    "QDRANT_URL": "http://localhost:6333",
-    "REPO_PATH": "/path/to/project",
-    "GEMINI_API_KEY": "your-key"
+  "servers": {
+    "codebase": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "VECTOR_STORE_TYPE": "qdrant",
+        "QDRANT_URL": "http://localhost:6333",
+        "REPO_PATH": "/path/to/project",
+        "GEMINI_API_KEY": "your-key"
+      },
+      "type": "stdio"
+    }
   }
 }
 ```

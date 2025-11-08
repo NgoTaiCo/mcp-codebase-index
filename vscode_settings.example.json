@@ -1,14 +1,18 @@
 {
-  "mcpServers": {
+  "servers": {
     "codebase": {
       "command": "npx",
-      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "args": [
+        "-y",
+        "@ngotaico/mcp-codebase-index"
+      ],
       "env": {
         "REPO_PATH": "/Users/you/Projects/your-project",
         "GEMINI_API_KEY": "AIzaSyC...",
         "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
         "QDRANT_API_KEY": "eyJhbGci..."
-      }
+      },
+      "type": "stdio"
     }
   }
 }
