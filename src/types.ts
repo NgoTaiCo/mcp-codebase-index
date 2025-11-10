@@ -116,3 +116,63 @@ export interface IndexerConfig {
     batchSize: number; // Default: 50
     ignorePaths: string[]; // e.g., [".git", "node_modules", ".venv"]
 }
+
+// Backup and Export types
+export interface VectorExport {
+    id: string;
+    vector: number[];
+    payload: {
+        id: string;
+        content: string;
+        type: string;
+        name: string;
+        filePath: string;
+        startLine: number;
+        endLine: number;
+        language: string;
+        complexity: number;
+    };
+}
+
+export interface BackupMetadata {
+    version: string;
+    exportedAt: string;
+    model: string;
+    dimensions: number;
+    totalVectors: number;
+    collectionName: string;
+    fileCount: number;
+}
+
+export interface BackupFile {
+    metadata: BackupMetadata;
+    vectors: VectorExport[];
+}
+
+export interface BackupInfo {
+    name: string;
+    path: string;
+    metadata: BackupMetadata;
+    size: number;
+    compressed: boolean;
+}
+
+export interface ExportStats {
+    totalVectors: number;
+    totalFiles: number;
+    outputPath: string;
+    compressed: boolean;
+    fileSize: number;
+    duration: number;
+}
+
+export interface ImportStats {
+    totalVectors: number;
+    newVectors: number;
+    updatedVectors: number;
+    skippedVectors: number;
+    duration: number;
+    conflicts: number;
+}
+
+export type ConflictStrategy = 'skip' | 'overwrite' | 'merge';
