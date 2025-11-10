@@ -22,6 +22,7 @@ import { CodeIndexer } from '../core/indexer.js';
 import { CodeEmbedder } from '../core/embedder.js';
 import { QdrantVectorStore } from '../storage/qdrantClient.js';
 import { PromptEnhancer } from '../enhancement/promptEnhancer.js';
+import { VectorVisualizer, isVisualizationAvailable, VisualizationExporter } from '../visualization/index.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -32,6 +33,7 @@ export class CodebaseIndexMCPServer {
     private embedder: CodeEmbedder;
     private vectorStore: QdrantVectorStore;
     private promptEnhancer: PromptEnhancer | null = null;
+    private visualizer: VectorVisualizer | null = null;
     private config: IndexerConfig;
     private indexingQueue: Set<string> = new Set();
     private isIndexing = false;
@@ -40,7 +42,7 @@ export class CodebaseIndexMCPServer {
     // We use a conservative daily limit to spread indexing over time for large codebases
     private readonly DAILY_QUOTA_LIMIT = 10000; // Conservative limit for spreading work
     private readonly RPM_LIMIT = 1500; // Requests per minute (enforced by embedder)
-    
+
     // Enhanced status tracking
     private indexingProgress: IndexingProgress = {
         totalFiles: 0,
@@ -122,6 +124,18 @@ export class CodebaseIndexMCPServer {
             console.log('[Server] Prompt enhancement enabled');
         }
 
+        // Initialize VectorVisualizer if available
+        if (isVisualizationAvailable()) {
+            this.visualizer = new VectorVisualizer(
+                this.vectorStore.client,
+                config.qdrant.collectionName,
+                this.embedder
+            );
+            console.log('[Server] Vector visualization enabled');
+        } else {
+            console.log('[Server] Vector visualization not available. Install with: npm install umap-js');
+        }
+
         this.setupHandlers();
     }
 
@@ -151,34 +165,34 @@ export class CodebaseIndexMCPServer {
                     required: ['query']
                 }
             },
-                {
-                    name: 'indexing_status',
-                    description: 'Check the current indexing status and progress.',
-                    inputSchema: {
-                        type: 'object',
-                        properties: {
-                            verbose: {
-                                type: 'boolean',
-                                description: 'Show detailed logs including all errors (default: false)',
-                                default: false
-                            }
+            {
+                name: 'indexing_status',
+                description: 'Check the current indexing status and progress.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        verbose: {
+                            type: 'boolean',
+                            description: 'Show detailed logs including all errors (default: false)',
+                            default: false
                         }
                     }
-                },
-                {
-                    name: 'check_index',
-                    description: 'Verify index health and detect issues like missing files, orphaned vectors, and dimension mismatches.',
-                    inputSchema: {
-                        type: 'object',
-                        properties: {
-                            deepScan: {
-                                type: 'boolean',
-                                description: 'Perform deep scan (slower but more thorough, default: false)',
-                                default: false
-                            }
+                }
+            },
+            {
+                name: 'check_index',
+                description: 'Verify index health and detect issues like missing files, orphaned vectors, and dimension mismatches.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        deepScan: {
+                            type: 'boolean',
+                            description: 'Perform deep scan (slower but more thorough, default: false)',
+                            default: false
                         }
                     }
-                },
+                }
+            },
             {
                 name: 'repair_index',
                 description: 'Repair detected index issues by re-indexing missing files and removing orphaned vectors.',
@@ -248,6 +262,78 @@ export class CodebaseIndexMCPServer {
             });
         }
 
+        // Add visualization tools if available
+        if (this.visualizer) {
+            tools.push({
+                name: 'visualize_collection',
+                description: 'Visualize the entire vector database in 2D/3D space using UMAP dimensionality reduction. Shows document clustering, distribution, and relationships.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        dimensions: {
+                            type: 'number',
+                            description: 'Number of dimensions for visualization: 2 or 3 (default: 2)',
+                            enum: [2, 3]
+                        },
+                        enableClustering: {
+                            type: 'boolean',
+                            description: 'Enable k-means clustering to group similar documents (default: false)'
+                        },
+                        numClusters: {
+                            type: 'number',
+                            description: 'Number of clusters (default: auto-detect based on data)'
+                        },
+                        maxVectors: {
+                            type: 'number',
+                            description: 'Maximum number of vectors to visualize (default: 1000, max: 5000)'
+                        },
+                        format: {
+                            type: 'string',
+                            description: 'Output format: "json" (default), "summary", or "plotly"',
+                            enum: ['json', 'summary', 'plotly']
+                        }
+                    }
+                }
+            });
+
+            tools.push({
+                name: 'visualize_query',
+                description: 'Visualize a search query and its retrieved documents in the vector space. Shows query position, retrieved documents, and their relationships.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'The search query to visualize'
+                        },
+                        topK: {
+                            type: 'number',
+                            description: 'Number of top results to retrieve and highlight (default: 5)'
+                        },
+                        dimensions: {
+                            type: 'number',
+                            description: 'Number of dimensions for visualization: 2 or 3 (default: 2)',
+                            enum: [2, 3]
+                        },
+                        enableClustering: {
+                            type: 'boolean',
+                            description: 'Enable k-means clustering (default: false)'
+                        },
+                        maxVectors: {
+                            type: 'number',
+                            description: 'Maximum number of background vectors to show (default: 1000)'
+                        },
+                        format: {
+                            type: 'string',
+                            description: 'Output format: "json" (default), "summary", or "plotly"',
+                            enum: ['json', 'summary', 'plotly']
+                        }
+                    },
+                    required: ['query']
+                }
+            });
+        }
+
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
             tools
         }));
@@ -271,6 +357,12 @@ export class CodebaseIndexMCPServer {
             }
             if (request.params.name === 'enhancement_telemetry') {
                 return await this.handleEnhancementTelemetry(request.params.arguments);
+            }
+            if (request.params.name === 'visualize_collection') {
+                return await this.handleVisualizeCollection(request.params.arguments);
+            }
+            if (request.params.name === 'visualize_query') {
+                return await this.handleVisualizeQuery(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -477,7 +569,7 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
         try {
             // Parse verbose flag
             const verbose = args?.verbose === true || args?.verbose === 'true';
-            
+
             const collections = await this.vectorStore.getCollections();
             const vectorCount = collections.collections?.[0]?.vectors_count ||
                 collections.collections?.[0]?.points_count || 0;
@@ -510,7 +602,7 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
             if (status.isIndexing && status.progress.totalFiles > 0) {
                 message += `**Progress:** ${status.progress.percentage}% (${status.progress.processedFiles}/${status.progress.totalFiles} files)\n`;
                 message += `**Current File:** \`${status.progress.currentFile || 'Processing...'}\`\n`;
-                
+
                 if (status.progress.estimatedTimeRemaining !== null) {
                     message += `**ETA:** ${this.formatDuration(status.progress.estimatedTimeRemaining)}\n`;
                 }
@@ -569,12 +661,12 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
             if (status.recentErrors.length > 0) {
                 message += `**⚠️ Recent Errors (${status.recentErrors.length}):**\n`;
                 const errorsToShow = verbose ? status.recentErrors : status.recentErrors.slice(0, 3);
-                
+
                 for (const error of errorsToShow) {
                     const timeAgo = this.formatTimeAgo(Date.now() - error.timestamp);
                     message += `- \`${error.filePath}\`: ${error.error} (${timeAgo})\n`;
                 }
-                
+
                 if (!verbose && status.recentErrors.length > 3) {
                     message += `  _...and ${status.recentErrors.length - 3} more (use verbose:true to see all)_\n`;
                 }
@@ -588,8 +680,8 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
             }
 
             // Overall status
-            message += status.isIndexing ? 
-                '⏳ **Status:** Indexing in progress...' : 
+            message += status.isIndexing ?
+                '⏳ **Status:** Indexing in progress...' :
                 '✅ **Status:** Ready for search';
 
             if (status.queuedFiles > 0) {
@@ -1001,17 +1093,17 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
      */
     private loadIndexState(): void {
         const statePath = path.join(this.config.codebaseMemoryPath, 'incremental_state.json');
-        
+
         try {
             if (fs.existsSync(statePath)) {
                 const data = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
-                
+
                 // Convert indexed files from object to Map
                 this.indexState = {
                     ...data,
                     indexedFiles: new Map(Object.entries(data.indexedFiles || {}))
                 };
-                
+
                 console.log(`[State] Loaded: ${this.indexState.indexedFiles.size} indexed files`);
             }
         } catch (error) {
@@ -1024,7 +1116,7 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
      */
     private saveIndexState(): void {
         const statePath = path.join(this.config.codebaseMemoryPath, 'incremental_state.json');
-        
+
         try {
             // Ensure directory exists
             if (!fs.existsSync(this.config.codebaseMemoryPath)) {
@@ -1224,7 +1316,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             const remainingFiles = priorityFiles.filter(filePath => {
                 const relativePath = path.relative(this.config.repoPath, filePath);
                 const metadata = this.indexState.indexedFiles.get(relativePath);
-                
+
                 // Skip if already indexed AND hash matches (no changes since checkpoint)
                 if (metadata && metadata.status === 'indexed') {
                     const currentHash = this.indexer.calculateFileHash(filePath);
@@ -1248,7 +1340,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                 if (!this.hasQuotaRemaining(processedChunks)) {
                     console.log(`\n⚠️  Daily quota reached (${this.indexState.dailyQuota.chunksIndexed}/${this.DAILY_QUOTA_LIMIT})`);
                     console.log(`   Remaining files queued for tomorrow: ${remainingFiles.length - filesToProcess.length}`);
-                    
+
                     // Add remaining files to pending queue
                     this.indexState.pendingQueue = remainingFiles.slice(filesToProcess.length)
                         .map(fp => path.relative(this.config.repoPath, fp));
@@ -1265,7 +1357,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             for (const filePath of filesToProcess) {
                 try {
                     const relativePath = path.relative(this.config.repoPath, filePath);
-                    
+
                     // Update current file being processed
                     this.indexingProgress.currentFile = relativePath;
                     this.updateProgressMetrics();
@@ -1328,14 +1420,14 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                     }
                 } catch (error) {
                     console.error(`  ✗ Error indexing ${filePath}:`, error);
-                    
+
                     // Track error
                     this.addError({
                         filePath: path.relative(this.config.repoPath, filePath),
                         error: error instanceof Error ? error.message : String(error),
                         timestamp: Date.now()
                     });
-                    
+
                     this.indexingProgress.processedFiles++;
                     this.updateProgressMetrics();
                     filesProcessedSinceCheckpoint++;
@@ -1373,25 +1465,25 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
     private updateProgressMetrics(): void {
         const now = Date.now();
         const elapsed = now - this.indexingProgress.startTime;
-        
+
         this.performanceMetrics.totalDuration = elapsed;
-        
+
         if (this.indexingProgress.processedFiles > 0) {
             // Calculate average time per file
             this.performanceMetrics.averageTimePerFile = elapsed / this.indexingProgress.processedFiles;
-            
+
             // Calculate files per second
             this.performanceMetrics.filesPerSecond = (this.indexingProgress.processedFiles / elapsed) * 1000;
-            
+
             // Calculate percentage
             this.indexingProgress.percentage = Math.round(
                 (this.indexingProgress.processedFiles / this.indexingProgress.totalFiles) * 100
             );
-            
+
             // Calculate ETA
             const remainingFiles = this.indexingProgress.totalFiles - this.indexingProgress.processedFiles;
             if (remainingFiles > 0) {
-                this.indexingProgress.estimatedTimeRemaining = 
+                this.indexingProgress.estimatedTimeRemaining =
                     remainingFiles * this.performanceMetrics.averageTimePerFile;
             } else {
                 this.indexingProgress.estimatedTimeRemaining = 0;
@@ -1415,7 +1507,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
     private formatDuration(ms: number): string {
         if (ms < 1000) return `${Math.round(ms)}ms`;
         if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-        
+
         const minutes = Math.floor(ms / 60000);
         const seconds = Math.round((ms % 60000) / 1000);
         return `${minutes}m ${seconds}s`;
@@ -1436,7 +1528,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
     async start(): Promise<void> {
         // Log version
         console.log('[MCP] Version: 1.5.3');
-        
+
         // Initialize vector store
         await this.vectorStore.initializeCollection();
 
@@ -1474,7 +1566,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             const collections = await this.vectorStore.getCollections();
             const vectorCount = collections.collections?.[0]?.vectors_count ||
                 collections.collections?.[0]?.points_count || 0;
-            
+
             const indexedFilesCount = this.indexState.indexedFiles.size;
             const fileHashesCount = this.watcher['fileHashes'].size;
 
@@ -1488,7 +1580,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                 console.log(`   File hashes in memory: ${fileHashesCount}`);
                 console.log(`   Memory state: ${indexedFilesCount} indexed files`);
                 console.log(`   → Collection was likely deleted. Clearing metadata for fresh indexing...\n`);
-                
+
                 // Clear indexed files state - force full re-index
                 this.indexState.indexedFiles.clear();
                 this.indexState.stats = {
@@ -1497,7 +1589,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                     unchangedFiles: 0,
                     deletedFiles: 0
                 };
-                
+
                 // Reset quota for fresh start
                 const today = this.getTodayString();
                 this.indexState.dailyQuota = {
@@ -1505,11 +1597,11 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                     chunksIndexed: 0,
                     limit: this.DAILY_QUOTA_LIMIT
                 };
-                
+
                 // Clear file watcher hashes to force re-scan
                 this.watcher.clearFileHashes();
                 console.log(`[Sync Check] After clear: ${this.watcher['fileHashes'].size} hashes remaining`);
-                
+
                 this.saveIndexState();
                 console.log(`✅ [Sync Check] State reset. Will re-index all files.\n`);
             }
@@ -1519,11 +1611,11 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             else if (vectorCount === 0 && indexedFilesCount > 0) {
                 // Double-check: Query Qdrant for actual point count
                 const actualCount = await this.vectorStore.getVectorCount();
-                
+
                 if (actualCount === 0) {
                     console.log(`\n⚠️  [Sync Check] CRITICAL: Qdrant collection empty but memory shows ${indexedFilesCount} indexed files!`);
                     console.log(`   This means the collection was deleted. Forcing complete re-index...\n`);
-                    
+
                     // Force clear everything
                     this.indexState.indexedFiles.clear();
                     this.indexState.stats = {
@@ -1532,17 +1624,17 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
                         unchangedFiles: 0,
                         deletedFiles: 0
                     };
-                    
+
                     const today = this.getTodayString();
                     this.indexState.dailyQuota = {
                         date: today,
                         chunksIndexed: 0,
                         limit: this.DAILY_QUOTA_LIMIT
                     };
-                    
+
                     this.watcher.clearFileHashes();
                     console.log(`[Sync Check] After clear: ${this.watcher['fileHashes'].size} hashes remaining`);
-                    
+
                     this.saveIndexState();
                     console.log(`✅ [Sync Check] State reset. Will re-index all ${fileHashesCount} files.\n`);
                 } else {
@@ -1574,16 +1666,16 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      */
     private async startBackgroundIndexing(): Promise<void> {
         console.log('[Init] Scanning for changes...');
-        
+
         // Process pending queue from previous run first
         if (this.indexState.pendingQueue.length > 0) {
             console.log(`[Queue] Found ${this.indexState.pendingQueue.length} pending files from previous run`);
-            
+
             for (const relativePath of this.indexState.pendingQueue) {
                 const fullPath = path.join(this.config.repoPath, relativePath);
                 this.indexingQueue.add(fullPath);
             }
-            
+
             // Clear pending queue
             this.indexState.pendingQueue = [];
         }
@@ -1604,6 +1696,172 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             await this.processIndexingQueue();
         } else {
             console.log('[Init] No files to index. Codebase is up to date! ✅');
+        }
+    }
+
+    /**
+     * Handle visualize_collection tool
+     */
+    private async handleVisualizeCollection(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        if (!this.visualizer) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: 'Vector visualization is not available. Install with: npm install umap-js'
+                    }
+                ]
+            };
+        }
+
+        const schema = z.object({
+            dimensions: z.number().int().min(2).max(3).default(2),
+            enableClustering: z.boolean().default(false),
+            numClusters: z.number().int().min(2).max(20).optional(),
+            maxVectors: z.number().int().min(100).max(5000).default(1000),
+            format: z.enum(['json', 'summary', 'plotly']).default('json')
+        });
+
+        try {
+            const validated = schema.parse(args);
+
+            console.log(`[VisualizeCollection] Starting visualization (${validated.dimensions}D, clustering: ${validated.enableClustering})`);
+
+            const startTime = Date.now();
+
+            // Visualize collection
+            const vizData = await this.visualizer.visualizeCollection({
+                dimensions: validated.dimensions as 2 | 3,
+                enableClustering: validated.enableClustering,
+                numClusters: validated.numClusters,
+                maxVectors: validated.maxVectors,
+                cacheProjections: true
+            });
+
+            const duration = Date.now() - startTime;
+            console.log(`[VisualizeCollection] Completed in ${duration}ms`);
+
+            // Format output based on requested format
+            let output: string;
+            if (validated.format === 'summary') {
+                output = VisualizationExporter.exportSummary(vizData);
+            } else if (validated.format === 'plotly') {
+                const plotlyData = VisualizationExporter.exportToPlotlyFormat(vizData);
+                output = JSON.stringify(plotlyData, null, 2);
+            } else {
+                output = VisualizationExporter.exportToCompactJSON(vizData);
+            }
+
+            // Check size limit
+            const sizeBytes = VisualizationExporter.getExportSize(output);
+            const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
+
+            if (sizeBytes > 1024 * 1024) {
+                console.warn(`[VisualizeCollection] Warning: Output size (${sizeMB}MB) exceeds 1MB limit`);
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: output
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[VisualizeCollection] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Visualization failed: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle visualize_query tool
+     */
+    private async handleVisualizeQuery(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        if (!this.visualizer) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: 'Vector visualization is not available. Install with: npm install umap-js'
+                    }
+                ]
+            };
+        }
+
+        const schema = z.object({
+            query: z.string(),
+            topK: z.number().int().min(1).max(50).default(5),
+            dimensions: z.number().int().min(2).max(3).default(2),
+            enableClustering: z.boolean().default(false),
+            maxVectors: z.number().int().min(100).max(5000).default(1000),
+            format: z.enum(['json', 'summary', 'plotly']).default('json')
+        });
+
+        try {
+            const validated = schema.parse(args);
+
+            console.log(`[VisualizeQuery] Visualizing query: "${validated.query}"`);
+
+            const startTime = Date.now();
+
+            // Visualize query
+            const vizData = await this.visualizer.visualizeQuery({
+                query: validated.query,
+                topK: validated.topK,
+                dimensions: validated.dimensions as 2 | 3,
+                enableClustering: validated.enableClustering,
+                maxVectors: validated.maxVectors,
+                cacheProjections: true
+            });
+
+            const duration = Date.now() - startTime;
+            console.log(`[VisualizeQuery] Completed in ${duration}ms`);
+
+            // Format output based on requested format
+            let output: string;
+            if (validated.format === 'summary') {
+                output = VisualizationExporter.exportSummary(vizData);
+            } else if (validated.format === 'plotly') {
+                const plotlyData = VisualizationExporter.exportToPlotlyFormat(vizData);
+                output = JSON.stringify(plotlyData, null, 2);
+            } else {
+                output = VisualizationExporter.exportToCompactJSON(vizData);
+            }
+
+            // Check size limit
+            const sizeBytes = VisualizationExporter.getExportSize(output);
+            const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
+
+            if (sizeBytes > 1024 * 1024) {
+                console.warn(`[VisualizeQuery] Warning: Output size (${sizeMB}MB) exceeds 1MB limit`);
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: output
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[VisualizeQuery] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Visualization failed: ${error.message || error}`
+                    }
+                ]
+            };
         }
     }
 }
