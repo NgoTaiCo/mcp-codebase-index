@@ -115,4 +115,46 @@ export interface IndexerConfig {
     watchMode: boolean;
     batchSize: number; // Default: 50
     ignorePaths: string[]; // e.g., [".git", "node_modules", ".venv"]
+    promptEnhancement?: boolean; // Enable prompt enhancement feature
+}
+
+// Prompt Enhancement Types
+
+export interface EnhancementTemplate {
+    name: string;
+    description: string;
+    systemPrompt: string;
+    userPromptTemplate: string;
+}
+
+export interface CodebaseContext {
+    languages: string[]; // e.g., ["TypeScript", "Python", "Dart"]
+    frameworks: string[]; // e.g., ["React", "Flutter", "Express"]
+    patterns: string[]; // e.g., ["MVC", "Repository Pattern", "Singleton"]
+    fileCount: number;
+    totalLines: number;
+    mainLanguage: string;
+    projectType: string; // e.g., "Web Application", "Mobile App", "Library"
+    lastAnalyzed: number; // Timestamp
+}
+
+export interface EnhancementConfig {
+    model: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+    maxTokens?: number;
+    temperature?: number;
+}
+
+export interface EnhancePromptInput {
+    query: string;
+    customPrompts?: string[];
+    template?: string;
+    model?: 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+}
+
+export interface EnhancePromptResult {
+    enhancedQuery: string;
+    originalQuery: string;
+    template: string;
+    model: string;
+    tokensUsed?: number;
 }

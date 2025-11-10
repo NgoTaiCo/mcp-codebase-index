@@ -1,8 +1,8 @@
-// src/indexer.ts
+// src/core/indexer.ts
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { CodeChunk, FileMetadata } from './types.js';
+import { CodeChunk, FileMetadata } from '../types/index.js';
 
 export class CodeIndexer {
     constructor(private repoPath: string) { }

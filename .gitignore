@@ -1,11 +1,15 @@
 node_modules/
 dist/
 .env
-memory/
 *.log
 .DS_Store
 .vscode/
 .idea/
 vscode_settings.local.json
 claude_desktop_config.local.json
-github-issues/*
+
+# Runtime data
+.data/
+memory/
+vector_storage/
+docs/visual-enhancement/*
