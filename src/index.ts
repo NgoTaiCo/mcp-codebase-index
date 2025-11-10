@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // src/index.ts
 import { config } from 'dotenv';
-import { CodebaseIndexMCPServer } from './server.js';
+import { CodebaseIndexMCPServer } from './mcp/server.js';
 
 config();
 

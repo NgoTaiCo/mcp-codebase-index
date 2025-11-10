@@ -1,6 +1,6 @@
-// src/embedder.ts
+// src/core/embedder.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { CodeChunk, QuotaUsage } from './types.js';
+import { CodeChunk, QuotaUsage } from '../types/index.js';
 
 const SUPPORTED_MODELS = ['text-embedding-004', 'gemini-embedding-001'] as const;
 type SupportedModel = typeof SUPPORTED_MODELS[number];

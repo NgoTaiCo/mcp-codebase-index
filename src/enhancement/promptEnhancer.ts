@@ -1,4 +1,4 @@
-// src/promptEnhancer.ts
+// src/enhancement/promptEnhancer.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,7 +9,7 @@ import {
     EnhancePromptResult,
     IncrementalIndexState,
     FileMetadata
-} from './types.js';
+} from '../types/index.js';
 import { getTemplate, formatTemplate } from './templates.js';
 
 const SUPPORTED_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'] as const;

@@ -1,6 +1,6 @@
-// src/qdrantClient.ts
+// src/storage/qdrantClient.ts
 import { QdrantClient } from '@qdrant/js-client-rest';
-import { CodeChunk, QdrantConfig } from './types.js';
+import { CodeChunk, QdrantConfig } from '../types/index.js';
 
 export class QdrantVectorStore {
     public client: QdrantClient;

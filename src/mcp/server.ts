@@ -1,4 +1,4 @@
-// src/server.ts
+// src/mcp/server.ts
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -16,12 +16,12 @@ import {
     IndexingError,
     IndexingProgress,
     PerformanceMetrics
-} from './types.js';
-import { FileWatcher } from './fileWatcher.js';
-import { CodeIndexer } from './indexer.js';
-import { CodeEmbedder } from './embedder.js';
-import { QdrantVectorStore } from './qdrantClient.js';
-import { PromptEnhancer } from './promptEnhancer.js';
+} from '../types/index.js';
+import { FileWatcher } from '../core/fileWatcher.js';
+import { CodeIndexer } from '../core/indexer.js';
+import { CodeEmbedder } from '../core/embedder.js';
+import { QdrantVectorStore } from '../storage/qdrantClient.js';
+import { PromptEnhancer } from '../enhancement/promptEnhancer.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

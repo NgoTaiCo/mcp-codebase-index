@@ -1,5 +1,5 @@
-// src/templates.ts
-import { EnhancementTemplate } from './types.js';
+// src/enhancement/templates.ts
+import { EnhancementTemplate } from '../types/index.js';
 
 /**
  * Built-in prompt enhancement templates
