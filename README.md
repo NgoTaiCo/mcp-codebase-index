@@ -15,6 +15,7 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 - 🔄 **Real-time Watch**: Monitors file changes and updates index automatically
 - 🌐 **Multi-language**: Supports 15+ programming languages
 - ☁️ **Vector Storage**: Uses Qdrant for persistent vector storage
+- 🤖 **Prompt Enhancement**: AI-powered query enhancement with Gemini 2.5 Flash (optional)
 - 📦 **Simple Setup**: Just 4 environment variables to get started
 
 ## 🚀 Quick Start
@@ -153,9 +154,41 @@ Ask GitHub Copilot to search your codebase:
 
 ```
 "Find the authentication logic"
-"Show me how database connections are handled"  
+"Show me how database connections are handled"
 "Where is error logging implemented?"
 "Find all API endpoint definitions"
+```
+
+### Enhance Your Queries (Optional)
+
+If you enabled prompt enhancement (`PROMPT_ENHANCEMENT=true`), you can enhance vague queries before searching:
+
+```
+"Enhance and search for: authentication"
+"Enhance this query: error handling"
+```
+
+**How it works:**
+1. Analyzes your codebase context (languages, frameworks, patterns)
+2. Uses Gemini 2.5 Flash to expand your query with technical details
+3. Returns an enhanced query that finds more relevant results
+
+**Example:**
+- **Before**: `"authentication"`
+- **After**: `"Find authentication implementation including login, logout, token management in TypeScript using JWT tokens and Express middleware"`
+
+**Available templates:**
+- `general` - General purpose enhancement (default)
+- `find_implementation` - Find code implementations
+- `find_usage` - Find where code is used
+- `find_bug` - Find potential bugs or issues
+- `explain_code` - Find code that needs explanation
+
+**Usage:**
+```
+"Enhance: authentication"
+"Enhance with template find_implementation: user login"
+"Enhance and search: error handling"
 ```
 
 ### Check Indexing Status
@@ -198,7 +231,8 @@ Use the `indexing_status` tool to monitor progress:
     "QDRANT_COLLECTION": "my_project",
     "WATCH_MODE": "true",
     "BATCH_SIZE": "50",
-    "EMBEDDING_MODEL": "text-embedding-004"
+    "EMBEDDING_MODEL": "text-embedding-004",
+    "PROMPT_ENHANCEMENT": "true"
   }
 }
 ```
@@ -209,6 +243,38 @@ Use the `indexing_status` tool to monitor progress:
 | `WATCH_MODE` | `true` | Auto-update on file changes |
 | `BATCH_SIZE` | `50` | Embedding batch size |
 | `EMBEDDING_MODEL` | `text-embedding-004` | Gemini embedding model (`text-embedding-004` recommended, `gemini-embedding-001` not recommended for free tier) |
+| `PROMPT_ENHANCEMENT` | `false` | Enable AI-powered query enhancement with Gemini 2.5 Flash |
+
+### Prompt Enhancement Configuration
+
+To enable prompt enhancement, add `PROMPT_ENHANCEMENT=true` to your configuration:
+
+```json
+{
+  "servers": {
+    "codebase": {
+      "command": "npx",
+      "args": ["-y", "@ngotaico/mcp-codebase-index"],
+      "env": {
+        "REPO_PATH": "/absolute/path/to/your/project",
+        "GEMINI_API_KEY": "AIzaSyC...",
+        "QDRANT_URL": "https://your-cluster.gcp.cloud.qdrant.io:6333",
+        "QDRANT_API_KEY": "eyJhbGci...",
+        "PROMPT_ENHANCEMENT": "true"
+      },
+      "type": "stdio"
+    }
+  }
+}
+```
+
+**What it does:**
+- Analyzes your codebase to extract context (languages, frameworks, patterns)
+- Caches context for fast reuse (refreshed every hour)
+- Uses Gemini 2.5 Flash to enhance vague queries with technical details
+- Supports custom templates for different search intents
+
+**Cost:** ~$0.0007 per enhancement (~$0.70 for 1000 queries/month)
 
 ## 🔧 Setup Guides
 

@@ -41,7 +41,8 @@ const server = new CodebaseIndexMCPServer({
         '.env', 'build', 'dist', '.next', 'target',
         'vendor', 'coverage', '.pytest_cache',
         '.fvm', '.dart_tool', 'ios/Pods', 'android/.gradle'
-    ]
+    ],
+    promptEnhancement: process.env.PROMPT_ENHANCEMENT === 'true'
 });
 
 server.start().catch(console.error);

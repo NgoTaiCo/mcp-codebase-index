@@ -9,18 +9,19 @@ import {
     McpError
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { 
-    IndexerConfig, 
-    IncrementalIndexState, 
-    FileMetadata, 
+import {
+    IndexerConfig,
+    IncrementalIndexState,
+    FileMetadata,
     IndexingError,
     IndexingProgress,
-    PerformanceMetrics 
+    PerformanceMetrics
 } from './types.js';
 import { FileWatcher } from './fileWatcher.js';
 import { CodeIndexer } from './indexer.js';
 import { CodeEmbedder } from './embedder.js';
 import { QdrantVectorStore } from './qdrantClient.js';
+import { PromptEnhancer } from './promptEnhancer.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -30,6 +31,7 @@ export class CodebaseIndexMCPServer {
     private indexer: CodeIndexer;
     private embedder: CodeEmbedder;
     private vectorStore: QdrantVectorStore;
+    private promptEnhancer: PromptEnhancer | null = null;
     private config: IndexerConfig;
     private indexingQueue: Set<string> = new Set();
     private isIndexing = false;
@@ -111,6 +113,15 @@ export class CodebaseIndexMCPServer {
             this.onFileDelete.bind(this)
         );
 
+        // Initialize PromptEnhancer if enabled
+        if (config.promptEnhancement) {
+            this.promptEnhancer = new PromptEnhancer(
+                config.embedding.apiKey,
+                config.codebaseMemoryPath
+            );
+            console.log('[Server] Prompt enhancement enabled');
+        }
+
         this.setupHandlers();
     }
 
@@ -119,28 +130,27 @@ export class CodebaseIndexMCPServer {
      */
     private setupHandlers(): void {
         // List available tools
-        this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-            tools: [
-                {
-                    name: 'search_codebase',
-                    description: 'Search your codebase using natural language queries. Returns relevant code snippets with file paths and line numbers.',
-                    inputSchema: {
-                        type: 'object',
-                        properties: {
-                            query: {
-                                type: 'string',
-                                description: 'Your question about the codebase (e.g., "How is authentication implemented?")'
-                            },
-                            limit: {
-                                type: 'number',
-                                description: 'Maximum number of results to return (default: 5, max: 20)',
-                                minimum: 1,
-                                maximum: 20
-                            }
+        const tools: any[] = [
+            {
+                name: 'search_codebase',
+                description: 'Search your codebase using natural language queries. Returns relevant code snippets with file paths and line numbers.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'Your question about the codebase (e.g., "How is authentication implemented?")'
                         },
-                        required: ['query']
-                    }
-                },
+                        limit: {
+                            type: 'number',
+                            description: 'Maximum number of results to return (default: 5, max: 20)',
+                            minimum: 1,
+                            maximum: 20
+                        }
+                    },
+                    required: ['query']
+                }
+            },
                 {
                     name: 'indexing_status',
                     description: 'Check the current indexing status and progress.',
@@ -169,29 +179,67 @@ export class CodebaseIndexMCPServer {
                         }
                     }
                 },
-                {
-                    name: 'repair_index',
-                    description: 'Repair detected index issues by re-indexing missing files and removing orphaned vectors.',
-                    inputSchema: {
-                        type: 'object',
-                        properties: {
-                            issues: {
-                                type: 'array',
-                                description: 'Array of issue types to fix: "missing_files", "orphaned_vectors" (default: all)',
-                                items: {
-                                    type: 'string',
-                                    enum: ['missing_files', 'orphaned_vectors']
-                                }
-                            },
-                            autoFix: {
-                                type: 'boolean',
-                                description: 'Automatically fix all detected issues (default: false)',
-                                default: false
+            {
+                name: 'repair_index',
+                description: 'Repair detected index issues by re-indexing missing files and removing orphaned vectors.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        issues: {
+                            type: 'array',
+                            description: 'Array of issue types to fix: "missing_files", "orphaned_vectors" (default: all)',
+                            items: {
+                                type: 'string',
+                                enum: ['missing_files', 'orphaned_vectors']
                             }
+                        },
+                        autoFix: {
+                            type: 'boolean',
+                            description: 'Automatically fix all detected issues (default: false)',
+                            default: false
                         }
                     }
                 }
-            ]
+            }
+        ];
+
+        // Add enhance_prompt tool if prompt enhancement is enabled
+        if (this.promptEnhancer) {
+            tools.push({
+                name: 'enhance_prompt',
+                description: 'Enhance a search query by adding codebase context and technical details. Use this before searching to improve query quality for vague or short queries.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'The search query to enhance (e.g., "authentication", "error handling")'
+                        },
+                        customPrompts: {
+                            type: 'array',
+                            description: 'Optional additional instructions for enhancement (e.g., ["focus on JWT tokens", "include error handling"])',
+                            items: {
+                                type: 'string'
+                            }
+                        },
+                        template: {
+                            type: 'string',
+                            description: 'Enhancement template to use: "general" (default), "find_implementation", "find_usage", "find_bug", "explain_code"',
+                            enum: ['general', 'find_implementation', 'find_usage', 'find_bug', 'explain_code']
+                        },
+                        model: {
+                            type: 'string',
+                            description: 'Gemini model to use: "gemini-2.5-flash" (default) or "gemini-2.5-flash-lite"',
+                            enum: ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
+                        }
+                    },
+                    required: ['query']
+                }
+            });
+        }
+
+        this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
+            tools
         }));
 
         // Handle tool calls
@@ -207,6 +255,9 @@ export class CodebaseIndexMCPServer {
             }
             if (request.params.name === 'repair_index') {
                 return await this.handleRepairIndex(request.params.arguments);
+            }
+            if (request.params.name === 'enhance_prompt') {
+                return await this.handleEnhancePrompt(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -277,6 +328,62 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                     {
                         type: 'text',
                         text: `Search failed: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle enhance_prompt tool
+     */
+    private async handleEnhancePrompt(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        // Check if prompt enhancement is enabled
+        if (!this.promptEnhancer) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: 'Prompt enhancement is not enabled. Set PROMPT_ENHANCEMENT=true in your MCP configuration to enable this feature.'
+                    }
+                ]
+            };
+        }
+
+        const schema = z.object({
+            query: z.string(),
+            customPrompts: z.array(z.string()).optional(),
+            template: z.enum(['general', 'find_implementation', 'find_usage', 'find_bug', 'explain_code']).optional(),
+            model: z.enum(['gemini-2.5-flash', 'gemini-2.5-flash-lite']).optional()
+        });
+
+        try {
+            const validated = schema.parse(args);
+
+            console.log(`[EnhancePrompt] Enhancing query: "${validated.query}"`);
+
+            // Enhance the query
+            const result = await this.promptEnhancer.enhance(validated, this.indexState);
+
+            console.log(`[EnhancePrompt] Enhanced: "${result.enhancedQuery}"`);
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: result.enhancedQuery
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[EnhancePrompt] Error:', error);
+
+            // Fallback: return original query
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: args.query || 'Enhancement failed. Please try again.'
                     }
                 ]
             };
