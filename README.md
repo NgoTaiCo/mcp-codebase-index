@@ -42,6 +42,7 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 - 🌐 **Multi-language** - Supports 15+ programming languages
 - ☁️ **Vector Storage** - Uses Qdrant for persistent storage
 - 🤖 **Prompt Enhancement** - AI-powered query improvement (optional)
+- 📊 **Vector Visualization** - Visualize your codebase in 2D/3D space (optional)
 - 📦 **Simple Setup** - Just 4 environment variables
 
 ---
@@ -107,6 +108,29 @@ Ask GitHub Copilot:
 "Check indexing status"
 "Show me detailed indexing progress"
 ```
+
+### Visualize Your Codebase (Optional)
+
+> **Note:** Requires `npm install umap-js` to enable visualization features.
+
+Visualize your entire vector database in 2D/3D space:
+```
+"Visualize my codebase"
+"Show me the vector space in 3D with clustering"
+```
+
+Visualize a search query and its results:
+```
+"Visualize query: authentication logic"
+"Show me where authentication code is in the vector space"
+```
+
+**Features:**
+- 🎨 2D/3D UMAP projections
+- 🔍 Query visualization with retrieved documents
+- 📊 K-means clustering for grouping similar code
+- 📈 Multiple export formats (JSON, summary, Plotly)
+- ⚡ Performance optimized (<15s for 1000 vectors)
 
 **📖 More examples:** [Testing Guide](./docs/guides/TEST_SEARCH.md)
 
