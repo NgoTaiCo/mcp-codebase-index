@@ -15,12 +15,14 @@ import {
     FileMetadata, 
     IndexingError,
     IndexingProgress,
-    PerformanceMetrics 
+    PerformanceMetrics,
+    ConflictStrategy
 } from './types.js';
 import { FileWatcher } from './fileWatcher.js';
 import { CodeIndexer } from './indexer.js';
 import { CodeEmbedder } from './embedder.js';
 import { QdrantVectorStore } from './qdrantClient.js';
+import { BackupManager } from './backupManager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -30,6 +32,7 @@ export class CodebaseIndexMCPServer {
     private indexer: CodeIndexer;
     private embedder: CodeEmbedder;
     private vectorStore: QdrantVectorStore;
+    private backupManager: BackupManager;
     private config: IndexerConfig;
     private indexingQueue: Set<string> = new Set();
     private isIndexing = false;
@@ -103,6 +106,16 @@ export class CodebaseIndexMCPServer {
         // Always use Qdrant
         console.log('[VectorStore] Using Qdrant');
         this.vectorStore = new QdrantVectorStore(config.qdrant, vectorDimension);
+
+        // Initialize backup manager
+        const backupDir = path.join(config.codebaseMemoryPath, 'backups');
+        this.backupManager = new BackupManager(
+            this.vectorStore,
+            backupDir,
+            config.qdrant.collectionName,
+            config.embedding.model,
+            vectorDimension
+        );
 
         this.watcher = new FileWatcher(
             config.repoPath,
@@ -190,6 +203,72 @@ export class CodebaseIndexMCPServer {
                             }
                         }
                     }
+                },
+                {
+                    name: 'export_index',
+                    description: 'Export all vectors and metadata to a local backup file. Supports compression for space efficiency.',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            outputPath: {
+                                type: 'string',
+                                description: 'Optional custom output path for the backup file (default: auto-generated in backups folder)'
+                            },
+                            compress: {
+                                type: 'boolean',
+                                description: 'Compress the backup using gzip (default: true)',
+                                default: true
+                            }
+                        }
+                    }
+                },
+                {
+                    name: 'import_index',
+                    description: 'Import vectors and metadata from a backup file. Restores data to Qdrant with conflict resolution.',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            inputPath: {
+                                type: 'string',
+                                description: 'Path to the backup file to import'
+                            },
+                            conflictStrategy: {
+                                type: 'string',
+                                description: 'How to handle existing files: "skip" (keep existing), "overwrite" (replace), "merge" (combine)',
+                                enum: ['skip', 'overwrite', 'merge'],
+                                default: 'skip'
+                            }
+                        },
+                        required: ['inputPath']
+                    }
+                },
+                {
+                    name: 'list_backups',
+                    description: 'List all available backup files with metadata (date, vector count, size).',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {}
+                    }
+                },
+                {
+                    name: 'restore_backup',
+                    description: 'Restore index from a specific backup file by name. Convenience wrapper around import_index.',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            backupName: {
+                                type: 'string',
+                                description: 'Name of the backup file (from list_backups)'
+                            },
+                            conflictStrategy: {
+                                type: 'string',
+                                description: 'How to handle existing files: "skip" (keep existing), "overwrite" (replace), "merge" (combine)',
+                                enum: ['skip', 'overwrite', 'merge'],
+                                default: 'overwrite'
+                            }
+                        },
+                        required: ['backupName']
+                    }
                 }
             ]
         }));
@@ -207,6 +286,18 @@ export class CodebaseIndexMCPServer {
             }
             if (request.params.name === 'repair_index') {
                 return await this.handleRepairIndex(request.params.arguments);
+            }
+            if (request.params.name === 'export_index') {
+                return await this.handleExportIndex(request.params.arguments);
+            }
+            if (request.params.name === 'import_index') {
+                return await this.handleImportIndex(request.params.arguments);
+            }
+            if (request.params.name === 'list_backups') {
+                return await this.handleListBackups(request.params.arguments);
+            }
+            if (request.params.name === 'restore_backup') {
+                return await this.handleRestoreBackup(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -769,6 +860,252 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                     {
                         type: 'text',
                         text: `❌ Failed to repair index: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle export_index tool
+     */
+    private async handleExportIndex(args?: any): Promise<any> {
+        try {
+            const outputPath = args?.outputPath;
+            const compress = args?.compress !== false; // default true
+
+            console.log('[ExportIndex] Starting export...');
+
+            const stats = await this.backupManager.exportIndex(outputPath, compress);
+
+            const compressionRatio = compress ? '~10x' : '1x';
+            let report = `📦 **Index Export Complete**\n\n`;
+            report += `**Export Statistics:**\n`;
+            report += `- Vectors exported: ${stats.totalVectors.toLocaleString()}\n`;
+            report += `- Files: ${stats.totalFiles.toLocaleString()}\n`;
+            report += `- Output: \`${stats.outputPath}\`\n`;
+            report += `- File size: ${this.formatBytes(stats.fileSize)}\n`;
+            report += `- Compressed: ${compress ? 'Yes' : 'No'} (${compressionRatio})\n`;
+            report += `- Duration: ${this.formatDuration(stats.duration)}\n\n`;
+            report += `✅ Your index has been backed up and can be restored using \`import_index\` or \`restore_backup\`.`;
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: report
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[ExportIndex] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `❌ Failed to export index: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle import_index tool
+     */
+    private async handleImportIndex(args?: any): Promise<any> {
+        try {
+            if (!args?.inputPath) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: '❌ Error: inputPath parameter is required'
+                        }
+                    ]
+                };
+            }
+
+            const inputPath = args.inputPath;
+            const conflictStrategy: ConflictStrategy = args?.conflictStrategy || 'skip';
+
+            // Validate conflict strategy
+            if (!['skip', 'overwrite', 'merge'].includes(conflictStrategy)) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `❌ Error: Invalid conflict strategy "${conflictStrategy}". Must be: skip, overwrite, or merge`
+                        }
+                    ]
+                };
+            }
+
+            console.log('[ImportIndex] Starting import...');
+
+            const stats = await this.backupManager.importIndex(inputPath, conflictStrategy);
+
+            let report = `📥 **Index Import Complete**\n\n`;
+            report += `**Import Statistics:**\n`;
+            report += `- Total vectors: ${stats.totalVectors.toLocaleString()}\n`;
+            report += `- New vectors: ${stats.newVectors.toLocaleString()}\n`;
+            report += `- Updated vectors: ${stats.updatedVectors.toLocaleString()}\n`;
+            report += `- Skipped vectors: ${stats.skippedVectors.toLocaleString()}\n`;
+            report += `- Conflicts detected: ${stats.conflicts}\n`;
+            report += `- Duration: ${this.formatDuration(stats.duration)}\n`;
+            report += `- Strategy: ${conflictStrategy}\n\n`;
+            
+            if (stats.conflicts > 0) {
+                report += `⚠️ **Note:** ${stats.conflicts} file conflicts were resolved using "${conflictStrategy}" strategy.\n\n`;
+            }
+            
+            report += `✅ Index has been restored from backup.`;
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: report
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[ImportIndex] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `❌ Failed to import index: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle list_backups tool
+     */
+    private async handleListBackups(args?: any): Promise<any> {
+        try {
+            const backups = this.backupManager.listBackups();
+
+            if (backups.length === 0) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: '📦 **No Backups Found**\n\nYou don\'t have any backups yet. Use `export_index` to create your first backup.'
+                        }
+                    ]
+                };
+            }
+
+            let report = `📦 **Available Backups (${backups.length})**\n\n`;
+
+            for (let i = 0; i < backups.length; i++) {
+                const backup = backups[i];
+                const date = new Date(backup.metadata.exportedAt);
+                const timeAgo = this.formatTimeAgo(Date.now() - date.getTime());
+
+                report += `**${i + 1}. ${backup.name}**\n`;
+                report += `   - Date: ${date.toLocaleString()} (${timeAgo})\n`;
+                report += `   - Vectors: ${backup.metadata.totalVectors.toLocaleString()}\n`;
+                report += `   - Files: ${backup.metadata.fileCount.toLocaleString()}\n`;
+                report += `   - Model: ${backup.metadata.model}\n`;
+                report += `   - Dimensions: ${backup.metadata.dimensions}\n`;
+                report += `   - Size: ${this.formatBytes(backup.size)}${backup.compressed ? ' (compressed)' : ''}\n`;
+                report += `   - Path: \`${backup.path}\`\n\n`;
+            }
+
+            report += `💡 **Tip:** Use \`restore_backup\` with the backup name to restore, or \`import_index\` with the full path.`;
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: report
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[ListBackups] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `❌ Failed to list backups: ${error.message || error}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle restore_backup tool
+     */
+    private async handleRestoreBackup(args?: any): Promise<any> {
+        try {
+            if (!args?.backupName) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: '❌ Error: backupName parameter is required'
+                        }
+                    ]
+                };
+            }
+
+            const backupName = args.backupName;
+            const conflictStrategy: ConflictStrategy = args?.conflictStrategy || 'overwrite';
+
+            // Validate conflict strategy
+            if (!['skip', 'overwrite', 'merge'].includes(conflictStrategy)) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `❌ Error: Invalid conflict strategy "${conflictStrategy}". Must be: skip, overwrite, or merge`
+                        }
+                    ]
+                };
+            }
+
+            console.log('[RestoreBackup] Starting restore...');
+
+            const stats = await this.backupManager.restoreBackup(backupName, conflictStrategy);
+
+            let report = `🔄 **Backup Restored**\n\n`;
+            report += `**Restore Statistics:**\n`;
+            report += `- Total vectors: ${stats.totalVectors.toLocaleString()}\n`;
+            report += `- New vectors: ${stats.newVectors.toLocaleString()}\n`;
+            report += `- Updated vectors: ${stats.updatedVectors.toLocaleString()}\n`;
+            report += `- Skipped vectors: ${stats.skippedVectors.toLocaleString()}\n`;
+            report += `- Conflicts detected: ${stats.conflicts}\n`;
+            report += `- Duration: ${this.formatDuration(stats.duration)}\n`;
+            report += `- Strategy: ${conflictStrategy}\n\n`;
+            
+            if (stats.conflicts > 0) {
+                report += `⚠️ **Note:** ${stats.conflicts} file conflicts were resolved using "${conflictStrategy}" strategy.\n\n`;
+            }
+            
+            report += `✅ Index has been restored from backup: \`${backupName}\``;
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: report
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[RestoreBackup] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `❌ Failed to restore backup: ${error.message || error}`
                     }
                 ]
             };
