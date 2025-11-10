@@ -12,3 +12,4 @@ claude_desktop_config.local.json
 .data/
 memory/
 vector_storage/
+docs/visual-enhancement/*
