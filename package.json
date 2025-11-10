@@ -1,6 +1,6 @@
 {
   "name": "@ngotaico/mcp-codebase-index",
-  "version": "1.5.4",
+  "version": "1.5.3",
   "description": "MCP server for AI-powered codebase indexing with auto-save checkpoints, incremental updates, real-time progress tracking, and index verification tools",
   "type": "module",
   "main": "dist/index.js",
@@ -51,8 +51,5 @@
     "nodemon": "^3.1.10",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
-  },
-  "optionalDependencies": {
-    "umap-js": "^1.4.0"
   }
 }
