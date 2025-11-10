@@ -67,7 +67,11 @@ export class DimensionalityReducer {
                 random: this.config.random
             });
 
-            await this.umapTransformer.fit(embeddings);
+            // Use fitAsync for async operation with progress callback
+            await this.umapTransformer.fitAsync(embeddings, (epochNumber: number) => {
+                // Continue fitting, return true to continue
+                return true;
+            });
 
             const elapsed = Date.now() - startTime;
             console.log(`[Reducer] UMAP fitting completed in ${elapsed}ms`);
@@ -89,7 +93,8 @@ export class DimensionalityReducer {
             console.log(`[Reducer] Transforming ${embeddings.length} vectors...`);
             const startTime = Date.now();
 
-            const projections = await this.umapTransformer.transform(embeddings);
+            // transform() is synchronous in umap-js, not async
+            const projections = this.umapTransformer.transform(embeddings);
 
             const elapsed = Date.now() - startTime;
             console.log(`[Reducer] Transformation completed in ${elapsed}ms`);
@@ -230,7 +235,7 @@ export class KMeansClustering {
      */
     private initializeCentroids(points: number[][]): number[][] {
         const centroids: number[][] = [];
-        
+
         // First centroid: random point
         const firstIdx = Math.floor(Math.random() * points.length);
         centroids.push([...points[firstIdx]]);
@@ -279,7 +284,7 @@ export class KMeansClustering {
      * Update centroids based on assignments
      */
     private updateCentroids(points: number[][], assignments: number[]): void {
-        const newCentroids: number[][] = Array(this.k).fill(null).map(() => 
+        const newCentroids: number[][] = Array(this.k).fill(null).map(() =>
             Array(points[0].length).fill(0)
         );
         const counts = Array(this.k).fill(0);
