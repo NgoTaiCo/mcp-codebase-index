@@ -15,6 +15,7 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 - 🔄 **Real-time Watch**: Monitors file changes and updates index automatically
 - 🌐 **Multi-language**: Supports 15+ programming languages
 - ☁️ **Vector Storage**: Uses Qdrant for persistent vector storage
+- 💾 **Backup & Export**: Export/import index for disaster recovery and team collaboration
 - 📦 **Simple Setup**: Just 4 environment variables to get started
 
 ## 🚀 Quick Start
@@ -174,6 +175,58 @@ Use the `indexing_status` tool to monitor progress:
 - Quota usage and rate limits
 - Recent errors with timestamps
 - Files queued for next run
+
+### Backup and Export Your Index
+
+Protect your indexing investment with built-in backup and export tools:
+
+#### Export Index
+
+```
+"Export my index to a backup file"
+"Create a compressed backup of the index"
+```
+
+**Features:**
+- Exports all vectors and metadata to JSON
+- Automatic gzip compression (~10x size reduction)
+- Includes file mappings and configuration
+- Progress reporting and statistics
+
+#### Import/Restore Index
+
+```
+"Import index from backup file /path/to/backup.json.gz"
+"Restore from backup-2024-01-15-1500v.json.gz"
+"List available backups"
+```
+
+**Conflict strategies:**
+- `skip`: Keep existing vectors, only add new ones
+- `overwrite`: Replace existing vectors (default for restore)
+- `merge`: Combine old and new vectors
+
+#### List Backups
+
+```
+"Show me all available backups"
+"List my index backups"
+```
+
+**Displays:**
+- Backup date and age
+- Vector count and file count
+- Model and dimensions used
+- File size (compressed/uncompressed)
+- Full path to backup file
+
+#### Use Cases
+
+1. **Disaster Recovery**: Export before major changes, restore if needed
+2. **Team Collaboration**: Share index with team members
+3. **Migration**: Move between Qdrant instances
+4. **Testing**: Export production index, import to test environment
+5. **Data Portability**: Switch vector DB providers or maintain local backups
 
 ## 🎛️ Configuration
 
