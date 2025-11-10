@@ -190,4 +190,48 @@ export class QdrantVectorStore {
             return 0;
         }
     }
+
+    /**
+     * Get all unique file paths from indexed vectors
+     */
+    async getAllIndexedFiles(): Promise<Set<string>> {
+        try {
+            const filePaths = new Set<string>();
+            let offset: string | number | null = null;
+            const limit = 100;
+
+            // Scroll through all points to get unique file paths
+            while (true) {
+                const response = await this.client.scroll(this.collectionName, {
+                    limit,
+                    offset,
+                    with_payload: true,
+                    with_vector: false
+                });
+
+                if (!response.points || response.points.length === 0) {
+                    break;
+                }
+
+                // Extract file paths from payloads
+                for (const point of response.points) {
+                    if (point.payload && point.payload.filePath) {
+                        filePaths.add(point.payload.filePath as string);
+                    }
+                }
+
+                // Check if there are more points
+                const nextOffset = response.next_page_offset;
+                if (!nextOffset || typeof nextOffset === 'object') {
+                    break;
+                }
+                offset = nextOffset as string | number;
+            }
+
+            return filePaths;
+        } catch (error) {
+            console.error('[Qdrant] Error getting indexed files:', error);
+            return new Set<string>();
+        }
+    }
 }
