@@ -86,7 +86,7 @@ export class CodebaseIndexMCPServer {
         this.server = new Server(
             {
                 name: 'mcp-codebase-index',
-                version: '1.5.1'
+                version: '1.5.3'
             },
             {
                 capabilities: {
@@ -236,6 +236,16 @@ export class CodebaseIndexMCPServer {
                     required: ['query']
                 }
             });
+
+            // Add enhancement telemetry tool
+            tools.push({
+                name: 'enhancement_telemetry',
+                description: 'Get telemetry data for prompt enhancement (success rate, cache hits, latency)',
+                inputSchema: {
+                    type: 'object',
+                    properties: {}
+                }
+            });
         }
 
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -258,6 +268,9 @@ export class CodebaseIndexMCPServer {
             }
             if (request.params.name === 'enhance_prompt') {
                 return await this.handleEnhancePrompt(request.params.arguments);
+            }
+            if (request.params.name === 'enhancement_telemetry') {
+                return await this.handleEnhancementTelemetry(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -384,6 +397,73 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                     {
                         type: 'text',
                         text: args.query || 'Enhancement failed. Please try again.'
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle enhancement telemetry
+     */
+    private async handleEnhancementTelemetry(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        if (!this.promptEnhancer) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: 'Prompt enhancement is not enabled.'
+                    }
+                ]
+            };
+        }
+
+        try {
+            const telemetry = this.promptEnhancer.getTelemetry();
+            const config = this.promptEnhancer.getConfig();
+
+            const report = `# Prompt Enhancement Telemetry
+
+## Performance Metrics
+- Total Enhancements: ${telemetry.totalEnhancements}
+- Successful: ${telemetry.successfulEnhancements}
+- Failed: ${telemetry.failedEnhancements}
+- Success Rate: ${telemetry.successRate}
+
+## Caching
+- Cache Hits: ${telemetry.cacheHits}
+- Cache Hit Rate: ${telemetry.cacheHitRate}
+- Total API Calls: ${telemetry.totalApiCalls}
+
+## Latency
+- Average Latency: ${telemetry.avgLatency}
+- Total Latency: ${telemetry.totalLatency}ms
+
+## Configuration
+- Enabled: ${config.enabled}
+- Max Query Length: ${config.maxQueryLength} characters
+- Cache TTL: ${config.cacheTTL / 1000}s
+- Context Cache TTL: ${config.contextCacheTTL / 1000}s
+
+## Cost Savings
+- API Calls Saved: ${telemetry.cacheHits} (via caching)
+- Estimated Cost Savings: ~$${(telemetry.cacheHits * 0.0001).toFixed(4)} (assuming $0.0001 per call)`;
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: report
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[EnhancementTelemetry] Error:', error);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to get telemetry: ${error.message}`
                     }
                 ]
             };
@@ -1265,9 +1345,15 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
             // Final save
             this.saveIndexState();
 
+            // Invalidate prompt enhancer context cache after indexing
+            if (this.promptEnhancer) {
+                this.promptEnhancer.invalidateContextCache();
+                console.log('[PromptEnhancer] Context cache invalidated after indexing');
+            }
+
             console.log(`\n[Complete] Indexed ${processedChunks} chunks`);
             console.log(`[Quota] Used ${this.indexState.dailyQuota.chunksIndexed}/${this.DAILY_QUOTA_LIMIT} (${((this.indexState.dailyQuota.chunksIndexed / this.DAILY_QUOTA_LIMIT) * 100).toFixed(1)}%)`);
-            
+
             if (this.indexState.pendingQueue.length > 0) {
                 console.log(`[Queue] ${this.indexState.pendingQueue.length} files pending for next run\n`);
             }
@@ -1349,7 +1435,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      */
     async start(): Promise<void> {
         // Log version
-        console.log('[MCP] Version: 1.5.1');
+        console.log('[MCP] Version: 1.5.3');
         
         // Initialize vector store
         await this.vectorStore.initializeCollection();
