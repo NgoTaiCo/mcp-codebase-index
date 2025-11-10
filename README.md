@@ -25,6 +25,7 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 ### 🔧 Resources
 - **[Qdrant Setup](./docs/guides/QDRANT_CLOUD_SETUP.md)** - Get Qdrant credentials
 - **[Testing Guide](./docs/guides/TEST_SEARCH.md)** - Test search functionality
+- **[Prompt Enhancement Guide](./docs/guides/PROMPT_ENHANCEMENT_GUIDE.md)** - Use prompt enhancement effectively
 - **[Changelog](./docs/CHANGELOG.md)** - Version history
 
 ---
@@ -111,105 +112,55 @@ Ask GitHub Copilot:
 
 ---
 
-## 🎯 Using Prompt Enhancement
+## 🎯 Prompt Enhancement (Optional)
 
-> **Note:** Prompt enhancement is a **transparent background tool** that automatically improves search quality. You don't need to explicitly mention it in your prompts.
+> **TL;DR:** Prompt enhancement is a transparent background tool that automatically improves search quality. Just ask naturally - no need to mention "enhance" in your prompts.
 
-### How It Works
+### Quick Overview
 
-When enabled (`PROMPT_ENHANCEMENT=true`), the AI assistant automatically:
-1. **Enhances** your search query with technical context
-2. **Searches** the codebase with improved query
+When enabled (`PROMPT_ENHANCEMENT=true`), the AI automatically:
+1. **Enhances** your search query with codebase context
+2. **Searches** with the improved query
 3. **Continues** with your original request (implement, fix, explain, etc.)
 
-**Important:** Prompt enhancement is just an intermediate step to improve search results. The AI should **always continue** to fulfill your original request after searching.
-
-### ✅ Good Prompts (Recommended)
-
-These prompts clearly state what you want to accomplish:
+### Good Prompts ✅
 
 ```
-✅ "Find the authentication logic and add 2FA support"
-   → AI will: search → analyze → implement 2FA
-
-✅ "Search for profile feature and add a 'bio' field"
-   → AI will: search → analyze → add bio field
-
-✅ "Find error handling code and explain how it works"
-   → AI will: search → analyze → explain
-
-✅ "Locate the payment flow and fix the timeout issue"
-   → AI will: search → analyze → fix timeout
+✅ "Find authentication logic and add 2FA support"
+✅ "Locate payment flow and fix the timeout issue"
+✅ "Search for profile feature and add bio field"
 ```
 
-**Why these work:** Clear intent (find + action) → AI knows what to do after search
+**Why these work:** Clear goal (find + action) → AI knows what to do
 
-### ❌ Bad Prompts (Avoid)
-
-These prompts are ambiguous and cause the AI to stop after searching:
+### Bad Prompts ❌
 
 ```
 ❌ "Enhance and search for authentication"
-   → AI will: search → stop (unclear what to do next)
-
-❌ "Use prompt enhancement to find profile feature"
-   → AI will: search → stop (no action specified)
-
-❌ "Search for error handling"
-   → AI will: search → stop (what should I do with results?)
+❌ "Use prompt enhancement to find profile"
 ```
 
-**Why these fail:** No clear action → AI doesn't know what to do after search
+**Why these fail:** No clear action → AI stops after search
 
-### 💡 Best Practices
+### Key Principle
 
-1. **Focus on your goal, not the tool**
-   - ✅ "Add logging to the authentication flow"
-   - ❌ "Enhance query and search for authentication"
+> **Prompt enhancement is invisible infrastructure.**
+>
+> Just tell the AI what you want to accomplish. It will automatically use enhancement to improve search quality behind the scenes.
 
-2. **Combine search with action**
-   - ✅ "Find database config and update connection pool size"
-   - ❌ "Find database config"
+**Think of it like autocomplete:** You don't say "use autocomplete" - you just type and it helps automatically.
 
-3. **Be specific about what you want**
-   - ✅ "Locate user model and add email validation"
-   - ❌ "Search for user stuff"
+### 📖 Learn More
 
-4. **Let AI handle enhancement automatically**
-   - ✅ "Find payment logic" (AI auto-enhances in background)
-   - ❌ "Enhance this: payment logic" (unnecessary explicit call)
+For detailed guide including:
+- Technical details and architecture
+- Configuration options
+- Real-world examples (TypeScript, Python, Dart, etc.)
+- Performance tips and optimization
+- Troubleshooting and FAQ
+- Advanced use cases
 
-### 🔍 Understanding the Flow
-
-**Correct workflow:**
-```
-User: "Find profile feature and add avatar upload"
-  ↓
-AI: [Auto-enhances query in background]
-  ↓
-AI: [Searches codebase]
-  ↓
-AI: [Analyzes results]
-  ↓
-AI: [Implements avatar upload] ✅
-```
-
-**Incorrect workflow (what to avoid):**
-```
-User: "Enhance and search for profile feature"
-  ↓
-AI: [Enhances query]
-  ↓
-AI: [Searches codebase]
-  ↓
-AI: "I found 10 results. What should I do next?" ❌
-```
-
-### 🎓 Key Takeaway
-
-> **Prompt enhancement is invisible infrastructure.** Just tell the AI what you want to accomplish, and it will automatically use enhancement to improve search quality behind the scenes.
-
-**Think of it like autocomplete:** You don't say "use autocomplete to write this function" - you just start typing and autocomplete helps automatically. Same with prompt enhancement.
+**See:** [Prompt Enhancement Guide](./docs/guides/PROMPT_ENHANCEMENT_GUIDE.md)
 
 ---
 
