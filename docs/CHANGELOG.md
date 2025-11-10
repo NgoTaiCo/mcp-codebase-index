@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2025-11-10
+
+### Added
+- **Vector Database Visualization** (Optional Feature)
+  - Visualize entire vector database in 2D/3D space using UMAP dimensionality reduction
+  - Visualize search queries and retrieved documents in vector space
+  - K-means clustering for grouping similar code chunks
+  - Multiple export formats: JSON, summary, and Plotly-compatible
+  - Performance optimized: <15s for 1000 vectors
+  - Export size optimized: <1MB
+  - Caching system for UMAP projections (24-hour TTL)
+  - Optional dependency on `umap-js` to avoid bloating for non-users
+
+### New MCP Tools
+- `visualize_collection` - Visualize entire vector database with optional clustering
+- `visualize_query` - Visualize search query and retrieved documents in vector space
+
+### Technical Implementation
+- TypeScript implementation using `umap-js` (Google PAIR)
+- Integrated with existing Qdrant vector store
+- VectorVisualizer class for orchestrating visualization pipeline
+- VectorRetriever for fetching vectors from Qdrant
+- DimensionalityReducer with caching and performance tracking
+- VisualizationExporter for multiple output formats
+- Support for both 2D and 3D visualizations
+- Auto-detection of optimal cluster count
+
+### Improvements Over RAGxplorer
+- Native TypeScript implementation (vs Python)
+- Integrated with existing infrastructure
+- Caching system for better performance
+- K-means clustering with auto-detection
+- Multiple export formats
+- Performance metrics tracking
+- Optional dependency model
+
 ## [1.4.10] - 2025-11-08
 
 ### Fixed
