@@ -87,7 +87,7 @@ export class CodebaseIndexMCPServer {
         this.server = new Server(
             {
                 name: 'mcp-codebase-index',
-                version: '1.5.4-beta.4'
+                version: '1.5.4-beta.5'
             },
             {
                 capabilities: {
@@ -249,36 +249,54 @@ export class CodebaseIndexMCPServer {
             });
         }
 
-        // Add visualization tools (always available, but require umap-js to be installed)
+        // Add visualization tools (always available)
         tools.push({
             name: 'visualize_collection',
-            description: 'Visualize the entire vector database in 2D or 3D space using UMAP dimensionality reduction. Shows how code is distributed in the embedding space. Requires "npm install umap-js" to work.',
+            description: `Visualize the entire vector database in 2D or 3D space using UMAP dimensionality reduction.
+
+USE CASES:
+- Explore how code is distributed in the embedding space
+- Identify clusters of similar code
+- Understand the overall structure of the codebase
+- Find outliers or isolated code sections
+
+OUTPUT FORMATS:
+- "summary": Human-readable text summary with statistics and cluster info (RECOMMENDED for LLM interpretation)
+- "plotly": Interactive Plotly JSON for visualization in browser (use when user asks for interactive plot)
+- "json": Full structured data (use for programmatic processing)
+
+EXAMPLE USAGE:
+- User: "Show me how my codebase is organized" → Use format="summary"
+- User: "Visualize my codebase" → Use format="plotly"
+- User: "What clusters exist in my code?" → Use format="summary" with enableClustering=true
+
+The tool returns visualization data that you should interpret and explain to the user.`,
             inputSchema: {
                 type: 'object',
                 properties: {
                     dimensions: {
                         type: 'number',
-                        description: 'Number of dimensions for visualization: 2 for 2D plot, 3 for 3D plot (default: 2)',
+                        description: 'Number of dimensions: 2 for 2D plot (recommended), 3 for 3D plot',
                         enum: [2, 3],
                         default: 2
                     },
                     enableClustering: {
                         type: 'boolean',
-                        description: 'Enable k-means clustering to group similar code (default: true)',
+                        description: 'Enable k-means clustering to group similar code. Recommended: true',
                         default: true
                     },
                     maxVectors: {
                         type: 'number',
-                        description: 'Maximum number of vectors to visualize (default: 1000, max: 5000)',
+                        description: 'Maximum vectors to visualize. More vectors = slower but more complete. Recommended: 1000',
                         minimum: 100,
                         maximum: 5000,
                         default: 1000
                     },
                     format: {
                         type: 'string',
-                        description: 'Output format: "json" (default), "summary", or "plotly"',
+                        description: 'Output format. Use "summary" for text analysis, "plotly" for interactive visualization',
                         enum: ['json', 'summary', 'plotly'],
-                        default: 'json'
+                        default: 'summary'
                     }
                 }
             }
@@ -286,44 +304,69 @@ export class CodebaseIndexMCPServer {
 
         tools.push({
             name: 'visualize_query',
-            description: 'Visualize a search query and its retrieved documents in the vector space. Shows where the query lands relative to the codebase. Requires "npm install umap-js" to work.',
+            description: `Visualize a search query and its retrieved documents in the vector space.
+
+USE CASES:
+- Show where a query lands in the embedding space relative to the codebase
+- Highlight which code chunks are most similar to the query
+- Understand why certain results were retrieved
+- Debug search relevance issues
+
+OUTPUT FORMATS:
+- "summary": Human-readable text with query position, top matches, and cluster info (RECOMMENDED for LLM interpretation)
+- "plotly": Interactive Plotly JSON showing query point (red diamond) and retrieved points (green) against background (gray)
+- "json": Full structured data
+
+EXAMPLE USAGE:
+- User: "Where is authentication code in my codebase?" → Use query="authentication", format="summary"
+- User: "Show me error handling code visually" → Use query="error handling", format="plotly"
+- User: "Why did search return these results for 'database'?" → Use query="database", format="summary"
+
+INTERPRETING RESULTS:
+- Query point is shown as a red diamond
+- Retrieved/relevant points are shown in green (closer to query = more similar)
+- Background points are gray
+- Clusters show groups of similar code
+- Distance in the plot reflects semantic similarity
+
+The tool returns visualization data that you should interpret and explain to the user.`,
             inputSchema: {
                 type: 'object',
                 properties: {
                     query: {
                         type: 'string',
-                        description: 'The search query to visualize (e.g., "authentication logic", "error handling")'
+                        description: 'The search query to visualize. Examples: "authentication logic", "error handling", "database queries"'
                     },
                     dimensions: {
                         type: 'number',
-                        description: 'Number of dimensions for visualization: 2 for 2D plot, 3 for 3D plot (default: 2)',
+                        description: 'Number of dimensions: 2 for 2D plot (recommended), 3 for 3D plot',
                         enum: [2, 3],
                         default: 2
                     },
                     topK: {
                         type: 'number',
-                        description: 'Number of top results to retrieve and highlight (default: 10, max: 50)',
+                        description: 'Number of top similar results to retrieve and highlight. Recommended: 10',
                         minimum: 1,
                         maximum: 50,
                         default: 10
                     },
                     enableClustering: {
                         type: 'boolean',
-                        description: 'Enable k-means clustering to group similar code (default: true)',
+                        description: 'Enable k-means clustering to group similar code. Recommended: true',
                         default: true
                     },
                     maxVectors: {
                         type: 'number',
-                        description: 'Maximum number of background vectors to show (default: 500, max: 2000)',
+                        description: 'Maximum background vectors to show. More = slower but more context. Recommended: 500',
                         minimum: 100,
                         maximum: 2000,
                         default: 500
                     },
                     format: {
                         type: 'string',
-                        description: 'Output format: "json" (default), "summary", or "plotly"',
+                        description: 'Output format. Use "summary" for text analysis, "plotly" for interactive visualization',
                         enum: ['json', 'summary', 'plotly'],
-                        default: 'json'
+                        default: 'summary'
                     }
                 },
                 required: ['query']
@@ -566,7 +609,7 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
             dimensions: z.union([z.literal(2), z.literal(3)]).default(2),
             enableClustering: z.boolean().default(true),
             maxVectors: z.number().int().min(100).max(5000).default(1000),
-            format: z.enum(['json', 'summary', 'plotly']).default('json')
+            format: z.enum(['json', 'summary', 'plotly']).default('summary')
         });
 
         try {
@@ -649,7 +692,7 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
             topK: z.number().int().min(1).max(50).default(10),
             enableClustering: z.boolean().default(true),
             maxVectors: z.number().int().min(100).max(2000).default(500),
-            format: z.enum(['json', 'summary', 'plotly']).default('json')
+            format: z.enum(['json', 'summary', 'plotly']).default('summary')
         });
 
         try {
@@ -1689,7 +1732,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      */
     async start(): Promise<void> {
         // Log version
-        console.log('[MCP] Version: 1.5.4-beta.4');
+        console.log('[MCP] Version: 1.5.4-beta.5');
 
         // Initialize vector store
         await this.vectorStore.initializeCollection();

@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Query Visualization - openim</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; }
+      #plot { width: 100vw; height: 100vh; }
+      .note { position: fixed; top: 8px; left: 8px; background: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    </style>
+  </head>
+  <body>
+    <div class="note">Query: <strong>openim</strong> — Red diamond shows the query location</div>
+    <div id="plot"></div>
+    <script>
+      async function loadAndRender() {
+        // Try to fetch a full query figure (contains collection + query trace)
+        try {
+          const res = await fetch('query_figure_small.json');
+          if (!res.ok) throw new Error('query_figure_small.json not found');
+          const fig = await res.json();
+          Plotly.newPlot('plot', fig.data, fig.layout || {});
+          return;
+        } catch (e) {
+          console.warn('query_figure.json fail, fallback to collection + overlay:', e.message);
+        }
+
+        // Fallback: fetch the collection JSON and draw a query overlay point
+        try {
+          const res = await fetch('collection_figure.json');
+          const fig = await res.json();
+          // Add a single query trace (hard-coded coordinates are used as backup)
+          const queryTrace = {
+            x: [1.2142155254403657],
+            y: [0.9802417090355762],
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Query: openim',
+            marker: { color: 'rgba(217, 39, 39, 0.9)', size: 18, symbol: 'diamond', line: { width: 1, color: 'rgba(0,0,0,0.6)' } },
+            text: ['Query: openim']
+          };
+          fig.data.push(queryTrace);
+          fig.layout = fig.layout || { title: 'Vector Visualization - Collection + Query', xaxis: { title: 'UMAP 1' }, yaxis: { title: 'UMAP 2' } };
+          Plotly.newPlot('plot', fig.data, fig.layout || {});
+        } catch (err) {
+          document.getElementById('plot').innerText = 'Failed to load collection_figure.json or query_figure.json.';
+          console.error(err);
+        }
+      }
+      loadAndRender();
+    </script>
+  </body>
+</html>
