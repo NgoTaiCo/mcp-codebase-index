@@ -82,18 +82,43 @@ export class DimensionalityReducer {
     }
 
     /**
-     * Transform embeddings to reduced dimensions
+     * Get the embedding after fitting
      */
-    async transform(embeddings: number[][]): Promise<number[][]> {
+    getEmbedding(): number[][] {
         if (!this.umapTransformer) {
             throw new Error('UMAP transformer not fitted. Call fit() first.');
         }
 
         try {
-            console.log(`[Reducer] Transforming ${embeddings.length} vectors...`);
+            console.log('[Reducer] Getting embedding from fitted UMAP...');
             const startTime = Date.now();
 
-            // transform() is synchronous in umap-js, not async
+            // getEmbedding() returns the embedding of the fitted data
+            const projections = this.umapTransformer.getEmbedding();
+
+            const elapsed = Date.now() - startTime;
+            console.log(`[Reducer] Got embedding in ${elapsed}ms`);
+
+            return projections;
+        } catch (error) {
+            console.error('[Reducer] Error getting embedding:', error);
+            throw new Error(`Failed to get embedding: ${error}`);
+        }
+    }
+
+    /**
+     * Transform new embeddings to reduced dimensions (for additional data)
+     */
+    transform(embeddings: number[][]): number[][] {
+        if (!this.umapTransformer) {
+            throw new Error('UMAP transformer not fitted. Call fit() first.');
+        }
+
+        try {
+            console.log(`[Reducer] Transforming ${embeddings.length} new vectors...`);
+            const startTime = Date.now();
+
+            // transform() is synchronous and for new data only
             const projections = this.umapTransformer.transform(embeddings);
 
             const elapsed = Date.now() - startTime;
@@ -107,11 +132,11 @@ export class DimensionalityReducer {
     }
 
     /**
-     * Fit and transform in one step
+     * Fit and get embedding in one step
      */
     async fitTransform(embeddings: number[][]): Promise<number[][]> {
         await this.fit(embeddings);
-        return this.transform(embeddings);
+        return this.getEmbedding();
     }
 
     /**
