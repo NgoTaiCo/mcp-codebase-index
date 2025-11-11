@@ -13,3 +13,7 @@ claude_desktop_config.local.json
 memory/
 vector_storage/
 docs/visual-enhancement/*
+
+# Debug/test visualization outputs
+mcp_visualizations/
+output.txt
