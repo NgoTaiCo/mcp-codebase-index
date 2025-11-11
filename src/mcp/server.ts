@@ -22,6 +22,7 @@ import { CodeIndexer } from '../core/indexer.js';
 import { CodeEmbedder } from '../core/embedder.js';
 import { QdrantVectorStore } from '../storage/qdrantClient.js';
 import { PromptEnhancer } from '../enhancement/promptEnhancer.js';
+import { VectorVisualizer } from '../visualization/visualizer.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -248,6 +249,87 @@ export class CodebaseIndexMCPServer {
             });
         }
 
+        // Add visualization tools (always available, but require umap-js to be installed)
+        tools.push({
+            name: 'visualize_collection',
+            description: 'Visualize the entire vector database in 2D or 3D space using UMAP dimensionality reduction. Shows how code is distributed in the embedding space. Requires "npm install umap-js" to work.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    dimensions: {
+                        type: 'number',
+                        description: 'Number of dimensions for visualization: 2 for 2D plot, 3 for 3D plot (default: 2)',
+                        enum: [2, 3],
+                        default: 2
+                    },
+                    enableClustering: {
+                        type: 'boolean',
+                        description: 'Enable k-means clustering to group similar code (default: true)',
+                        default: true
+                    },
+                    maxVectors: {
+                        type: 'number',
+                        description: 'Maximum number of vectors to visualize (default: 1000, max: 5000)',
+                        minimum: 100,
+                        maximum: 5000,
+                        default: 1000
+                    },
+                    format: {
+                        type: 'string',
+                        description: 'Output format: "json" (default), "summary", or "plotly"',
+                        enum: ['json', 'summary', 'plotly'],
+                        default: 'json'
+                    }
+                }
+            }
+        });
+
+        tools.push({
+            name: 'visualize_query',
+            description: 'Visualize a search query and its retrieved documents in the vector space. Shows where the query lands relative to the codebase. Requires "npm install umap-js" to work.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    query: {
+                        type: 'string',
+                        description: 'The search query to visualize (e.g., "authentication logic", "error handling")'
+                    },
+                    dimensions: {
+                        type: 'number',
+                        description: 'Number of dimensions for visualization: 2 for 2D plot, 3 for 3D plot (default: 2)',
+                        enum: [2, 3],
+                        default: 2
+                    },
+                    topK: {
+                        type: 'number',
+                        description: 'Number of top results to retrieve and highlight (default: 10, max: 50)',
+                        minimum: 1,
+                        maximum: 50,
+                        default: 10
+                    },
+                    enableClustering: {
+                        type: 'boolean',
+                        description: 'Enable k-means clustering to group similar code (default: true)',
+                        default: true
+                    },
+                    maxVectors: {
+                        type: 'number',
+                        description: 'Maximum number of background vectors to show (default: 500, max: 2000)',
+                        minimum: 100,
+                        maximum: 2000,
+                        default: 500
+                    },
+                    format: {
+                        type: 'string',
+                        description: 'Output format: "json" (default), "summary", or "plotly"',
+                        enum: ['json', 'summary', 'plotly'],
+                        default: 'json'
+                    }
+                },
+                required: ['query']
+            }
+        });
+
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
             tools
         }));
@@ -271,6 +353,12 @@ export class CodebaseIndexMCPServer {
             }
             if (request.params.name === 'enhancement_telemetry') {
                 return await this.handleEnhancementTelemetry(request.params.arguments);
+            }
+            if (request.params.name === 'visualize_collection') {
+                return await this.handleVisualizeCollection(request.params.arguments);
+            }
+            if (request.params.name === 'visualize_query') {
+                return await this.handleVisualizeQuery(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -464,6 +552,172 @@ ${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' :
                     {
                         type: 'text',
                         text: `Failed to get telemetry: ${error.message}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle visualize_collection tool
+     */
+    private async handleVisualizeCollection(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        const schema = z.object({
+            dimensions: z.union([z.literal(2), z.literal(3)]).default(2),
+            enableClustering: z.boolean().default(true),
+            maxVectors: z.number().int().min(100).max(5000).default(1000),
+            format: z.enum(['json', 'summary', 'plotly']).default('json')
+        });
+
+        try {
+            const validated = schema.parse(args);
+
+            console.log(`[VisualizeCollection] Starting visualization (${validated.dimensions}D, clustering: ${validated.enableClustering})`);
+
+            // Import exporter
+            const { VisualizationExporter } = await import('../visualization/exporter.js');
+
+            // Create visualizer
+            const visualizer = new VectorVisualizer(
+                this.vectorStore.client,
+                this.config.qdrant.collectionName,
+                this.embedder
+            );
+
+            // Visualize collection
+            const result = await visualizer.visualizeCollection({
+                dimensions: validated.dimensions,
+                enableClustering: validated.enableClustering,
+                maxVectors: validated.maxVectors
+            });
+
+            // Export to requested format
+            let output: string;
+            if (validated.format === 'summary') {
+                output = VisualizationExporter.exportSummary(result);
+            } else if (validated.format === 'plotly') {
+                const plotlyData = VisualizationExporter.exportToPlotlyFormat(result);
+                output = JSON.stringify(plotlyData, null, 2);
+            } else {
+                output = VisualizationExporter.exportToCompactJSON(result);
+            }
+
+            const totalTime = result.metadata.performanceMetrics?.totalTime || 0;
+            console.log(`[VisualizeCollection] Completed in ${totalTime}ms`);
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: output
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[VisualizeCollection] Error:', error);
+
+            // Check if it's a UMAP availability error
+            if (error.message?.includes('umap-js')) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: '❌ Visualization requires umap-js to be installed.\n\nPlease run:\n```bash\nnpm install umap-js\n```\n\nThen restart the MCP server.'
+                        }
+                    ]
+                };
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to visualize collection: ${error.message}`
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * Handle visualize_query tool
+     */
+    private async handleVisualizeQuery(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        const schema = z.object({
+            query: z.string(),
+            dimensions: z.union([z.literal(2), z.literal(3)]).default(2),
+            topK: z.number().int().min(1).max(50).default(10),
+            enableClustering: z.boolean().default(true),
+            maxVectors: z.number().int().min(100).max(2000).default(500),
+            format: z.enum(['json', 'summary', 'plotly']).default('json')
+        });
+
+        try {
+            const validated = schema.parse(args);
+
+            console.log(`[VisualizeQuery] Visualizing query: "${validated.query}"`);
+
+            // Import exporter
+            const { VisualizationExporter } = await import('../visualization/exporter.js');
+
+            // Create visualizer
+            const visualizer = new VectorVisualizer(
+                this.vectorStore.client,
+                this.config.qdrant.collectionName,
+                this.embedder
+            );
+
+            // Visualize query
+            const result = await visualizer.visualizeQuery({
+                query: validated.query,
+                dimensions: validated.dimensions,
+                topK: validated.topK,
+                enableClustering: validated.enableClustering,
+                maxVectors: validated.maxVectors
+            });
+
+            // Export to requested format
+            let output: string;
+            if (validated.format === 'summary') {
+                output = VisualizationExporter.exportSummary(result);
+            } else if (validated.format === 'plotly') {
+                const plotlyData = VisualizationExporter.exportToPlotlyFormat(result);
+                output = JSON.stringify(plotlyData, null, 2);
+            } else {
+                output = VisualizationExporter.exportToCompactJSON(result);
+            }
+
+            const totalTime = result.metadata.performanceMetrics?.totalTime || 0;
+            console.log(`[VisualizeQuery] Completed in ${totalTime}ms`);
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: output
+                    }
+                ]
+            };
+        } catch (error: any) {
+            console.error('[VisualizeQuery] Error:', error);
+
+            // Check if it's a UMAP availability error
+            if (error.message?.includes('umap-js')) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: '❌ Visualization requires umap-js to be installed.\n\nPlease run:\n```bash\nnpm install umap-js\n```\n\nThen restart the MCP server.'
+                        }
+                    ]
+                };
+            }
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Failed to visualize query: ${error.message}`
                     }
                 ]
             };
