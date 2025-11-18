@@ -10,6 +10,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 **Supported Editors:**
 - ✅ VS Code with GitHub Copilot
 - ✅ GitHub Copilot CLI
+- ✅ Google Gemini CLI
 - ✅ Kiro AI Editor
 - ✅ Any MCP-compatible editor
 
@@ -21,6 +22,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - **[📖 Full Documentation](./docs/README.md)** - Complete documentation
 - **[⚙️ Setup Guide - VS Code](./docs/SETUP.md)** - Installation for VS Code Copilot
 - **[🖥️ Setup Guide - CLI](./docs/guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
+- **[🤖 Setup Guide - Gemini CLI](./docs/guides/GEMINI_CLI_SETUP.md)** - Installation for Google Gemini CLI
 - **[🎯 Setup Guide - Kiro](./docs/guides/KIRO_SETUP.md)** - Installation for Kiro AI Editor
 - **[⚡ Quick Reference](./docs/QUICK_REF.md)** - Command cheat sheet
 - **[🗺️ Navigation Guide](./docs/NAVIGATION.md)** - Find any doc quickly
@@ -69,6 +71,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 > **Choose your environment:**
 > - **VS Code Users**: Follow steps below
 > - **Copilot CLI Users**: See [Copilot CLI Setup Guide](./docs/guides/COPILOT_CLI_SETUP.md)
+> - **Gemini CLI Users**: See [Gemini CLI Setup Guide](./docs/guides/GEMINI_CLI_SETUP.md)
 > - **Kiro Users**: See [Kiro Setup Guide](./docs/guides/KIRO_SETUP.md)
 
 **Step 1:** Open MCP Configuration in VS Code
