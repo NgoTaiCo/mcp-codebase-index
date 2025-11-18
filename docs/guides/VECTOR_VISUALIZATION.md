@@ -361,11 +361,6 @@ start codebase-viz-myproject-2025-11-18T10-30-00.html
 - Points in the same cluster share similar semantic meaning
 - Outliers (unclustered) are shown in gray
 
-**In Query Visualization:**
-- 🔴 **Red Diamond**: Your search query
-- 🟢 **Green Points**: Retrieved/matching code
-- ⚪ **Gray Points**: Background codebase
-
 ### What Do Clusters Represent?
 
 Clusters are groups of code chunks with similar semantic meaning, typically representing:
