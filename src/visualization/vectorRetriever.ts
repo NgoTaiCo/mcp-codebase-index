@@ -168,36 +168,64 @@ export class VectorRetriever {
                 return this.getAllVectors(sampleSize);
             }
 
-            // Random sampling using scroll with offset
-            const vectors: QdrantVectorData[] = [];
-            const step = Math.floor(totalVectors / sampleSize);
+            console.log(`[VectorRetriever] Sampling ${sampleSize} vectors from ${totalVectors} total...`);
 
-            for (let i = 0; i < sampleSize; i++) {
-                const offset = i * step;
+            // Strategy: Fetch all vectors in batches and sample uniformly
+            const vectors: QdrantVectorData[] = [];
+            const step = Math.max(1, Math.floor(totalVectors / sampleSize));
+
+            let nextOffset: string | number | Record<string, unknown> | null | undefined = undefined;
+            let fetchedCount = 0;
+            let sampledCount = 0;
+            const batchSize = 100; // Fetch in batches of 100
+
+            // Scroll through all vectors and sample uniformly
+            while (sampledCount < sampleSize) {
                 const scrollResult = await this.client.scroll(this.collectionName, {
-                    limit: 1,
-                    offset: offset,
+                    limit: batchSize,
+                    offset: nextOffset,
                     with_payload: true,
                     with_vector: true
                 });
 
-                if (scrollResult.points.length > 0) {
-                    const point = scrollResult.points[0];
-                    if (point.vector && Array.isArray(point.vector)) {
-                        // Handle both single vector and named vectors
-                        const vectorData = Array.isArray(point.vector[0])
-                            ? (point.vector as number[][])[0]
-                            : point.vector as number[];
+                if (scrollResult.points.length === 0) {
+                    break; // No more points
+                }
 
-                        vectors.push({
-                            id: String(point.id),
-                            vector: vectorData,
-                            payload: point.payload as any
-                        });
+                // Process each point in the batch
+                for (const point of scrollResult.points) {
+                    // Sample uniformly: take every Nth vector
+                    if (fetchedCount % step === 0 && sampledCount < sampleSize) {
+                        if (point.vector && Array.isArray(point.vector)) {
+                            // Handle both single vector and named vectors
+                            const vectorData = Array.isArray(point.vector[0])
+                                ? (point.vector as number[][])[0]
+                                : point.vector as number[];
+
+                            vectors.push({
+                                id: String(point.id),
+                                vector: vectorData,
+                                payload: point.payload as any
+                            });
+                            sampledCount++;
+                        }
                     }
+                    fetchedCount++;
+
+                    // Early exit if we've sampled enough
+                    if (sampledCount >= sampleSize) {
+                        break;
+                    }
+                }
+
+                // Check if there are more points to fetch
+                nextOffset = scrollResult.next_page_offset;
+                if (!nextOffset) {
+                    break; // No more pages
                 }
             }
 
+            console.log(`[VectorRetriever] Sampled ${vectors.length} unique vectors (fetched ${fetchedCount} total)`);
             return vectors;
         } catch (error) {
             console.error('[VectorRetriever] Error sampling vectors:', error);

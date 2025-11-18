@@ -26,6 +26,7 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 - **[Qdrant Setup](./docs/guides/QDRANT_CLOUD_SETUP.md)** - Get Qdrant credentials
 - **[Testing Guide](./docs/guides/TEST_SEARCH.md)** - Test search functionality
 - **[Prompt Enhancement Guide](./docs/guides/PROMPT_ENHANCEMENT_GUIDE.md)** - Use prompt enhancement effectively
+- **[Vector Visualization Guide](./docs/guides/VECTOR_VISUALIZATION.md)** - Visualize your codebase
 - **[Changelog](./docs/CHANGELOG.md)** - Version history
 
 ---
@@ -42,7 +43,9 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 - 🌐 **Multi-language** - Supports 15+ programming languages
 - ☁️ **Vector Storage** - Uses Qdrant for persistent storage
 - 🤖 **Prompt Enhancement** - AI-powered query improvement (optional)
-- 📦 **Simple Setup** - Just 4 environment variables
+- � **Vector Visualization** - 2D/3D UMAP visualization of your codebase
+- 🏗️ **Modular Architecture** - Clean handler separation for maintainability
+- �📦 **Simple Setup** - Just 4 environment variables
 
 ---
 
@@ -101,6 +104,19 @@ Ask GitHub Copilot:
 "Where is error logging implemented?"
 ```
 
+### Visualize Your Codebase
+
+Ask GitHub Copilot:
+```
+"Visualize my codebase"
+"Show me how my code is organized"
+"Visualize authentication code"
+```
+
+<!-- PLACEHOLDER: Insert screenshot of codebase visualization -->
+
+**📖 Complete guide:** [Vector Visualization Guide](./docs/guides/VECTOR_VISUALIZATION.md)
+
 ### Check Indexing Status
 
 ```
@@ -109,6 +125,135 @@ Ask GitHub Copilot:
 ```
 
 **📖 More examples:** [Testing Guide](./docs/guides/TEST_SEARCH.md)
+
+---
+
+## 📊 Vector Visualization
+
+> **See your codebase in 2D/3D space** - Understand semantic relationships and code organization visually.
+
+### What is Vector Visualization?
+
+Vector visualization transforms your codebase's **768-dimensional embeddings** into interactive **2D or 3D visualizations** using UMAP dimensionality reduction. This allows you to:
+
+- 🎨 **Explore semantic relationships** - Similar code clusters together
+- 🔍 **Understand architecture** - See your codebase structure at a glance
+- 🎯 **Debug search results** - Visualize why certain code was retrieved
+- 📈 **Track code organization** - Identify modules, patterns, and outliers
+
+<!-- PLACEHOLDER: Insert overview diagram of visualization process -->
+
+### Quick Start
+
+**Visualize entire codebase:**
+```
+User: "Visualize my codebase"
+
+Result: Interactive clusters showing:
+- API Controllers & Routes (28%)
+- Database Models (23%)
+- Authentication (19%)
+- Business Logic (18%)
+- Test Suites (12%)
+```
+
+<!-- PLACEHOLDER: Insert example of clustered visualization -->
+
+**Visualize search results:**
+```
+User: "Visualize authentication code"
+
+Result: Shows:
+- 🔴 Query point (your search)
+- 🟢 Retrieved code (matches)
+- ⚪ Background codebase (context)
+```
+
+<!-- PLACEHOLDER: Insert example of query visualization -->
+
+**Export as HTML:**
+```
+User: "Export visualization as HTML"
+
+Result: Standalone HTML file with:
+- Interactive hover, zoom, pan
+- Click clusters to highlight
+- Modern gradient UI
+- Works offline
+```
+
+<!-- PLACEHOLDER: Insert screenshot of HTML export UI -->
+
+### Understanding the Visualization
+
+**Colors and Clusters:**
+- Each color represents a semantic cluster (module/functionality)
+- Points close together = similar in meaning
+- Distance reflects semantic similarity
+- Outliers indicate unique/specialized code
+
+**Common Cluster Patterns:**
+- **Blue**: Frontend/UI components
+- **Orange**: API endpoints and routes
+- **Green**: Database models and queries
+- **Red**: Authentication and security
+- **Purple**: Tests and validation
+- **Gray**: Utilities and helpers
+
+### Use Cases
+
+1. **🏗️ Architecture Understanding**
+   - Visualize to see module boundaries
+   - Identify tightly coupled code
+   - Find opportunities for refactoring
+
+2. **🔍 Code Discovery**
+   - Locate related functionality visually
+   - Find all code touching a feature
+   - Discover cross-cutting concerns
+
+3. **🐛 Search Debugging**
+   - Understand why results were retrieved
+   - See semantic relationships
+   - Refine queries based on visualization
+
+4. **👥 Team Onboarding**
+   - Export HTML for new developers
+   - Visual guide to codebase structure
+   - Interactive exploration tool
+
+5. **✅ Refactoring Validation**
+   - Visualize before/after refactoring
+   - Verify improved code organization
+   - Track architecture evolution
+
+<!-- PLACEHOLDER: Insert use case comparison screenshots -->
+
+### Performance
+
+| Collection Size | Processing Time | Recommended maxVectors |
+|----------------|-----------------|------------------------|
+| Small (<500 vectors) | ~1s | 500 |
+| Medium (500-2K) | ~4s | 1000 |
+| Large (2K-10K) | ~15s | 2000 |
+| Very Large (>10K) | ~30s | 3000 |
+
+**Tips:**
+- Use 2D for faster processing (40% faster than 3D)
+- Limit maxVectors for large codebases
+- Export HTML for offline exploration
+
+### 📖 Learn More
+
+For detailed documentation including:
+- Complete tool reference
+- Interpretation guide
+- Technical details (UMAP, clustering)
+- Troubleshooting
+- Best practices
+- Advanced use cases
+
+**See:** [Vector Visualization Guide](./docs/guides/VECTOR_VISUALIZATION.md)
 
 ---
 
@@ -244,6 +389,7 @@ mcp-codebase-index/
 ├── docs/                    # All documentation
 │   ├── README.md           # Main documentation
 │   ├── SETUP.md            # Setup guide
+│   ├── CHANGELOG.md        # Version history
 │   ├── NAVIGATION.md       # Navigation guide
 │   ├── guides/             # Detailed guides
 │   └── planning/           # Development planning
@@ -252,7 +398,12 @@ mcp-codebase-index/
 │   ├── core/               # Core business logic
 │   ├── storage/            # Data persistence
 │   ├── enhancement/        # Prompt enhancement
+│   ├── visualization/      # Vector visualization
 │   ├── mcp/                # MCP server
+│   │   ├── server.ts      # Server orchestration (1237 lines)
+│   │   ├── handlers/      # Modular handlers (1045 lines)
+│   │   ├── templates/     # HTML templates
+│   │   └── types/         # Handler types
 │   ├── types/              # Type definitions
 │   └── index.ts            # Entry point
 │
@@ -262,7 +413,7 @@ mcp-codebase-index/
 └── README.md               # This file
 ```
 
-**📖 Detailed structure:** [Source Code Structure](./src/README.md)
+**📖 Detailed structure:** [Project Structure](./PROJECT_STRUCTURE.md) | [Source Code Structure](./src/README.md)
 
 ---
 

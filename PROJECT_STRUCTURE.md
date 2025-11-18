@@ -45,8 +45,24 @@ mcp-codebase-index/
 │   │   ├── promptEnhancer.ts        # Enhancement logic
 │   │   └── templates.ts             # Enhancement templates
 │   │
+│   ├── visualization/                # Vector visualization
+│   │   ├── visualizer.ts            # Main visualizer
+│   │   ├── reducer.ts               # UMAP dimensionality reduction
+│   │   ├── vectorRetriever.ts       # Vector fetching
+│   │   ├── exporter.ts              # Format exporters
+│   │   └── types.ts                 # Visualization types
+│   │
 │   ├── mcp/                          # MCP server layer
-│   │   └── server.ts                # MCP server implementation
+│   │   ├── server.ts                # MCP server orchestration (1237 lines)
+│   │   ├── handlers/                # Modular handler functions
+│   │   │   ├── search.handler.ts         # Search functionality (74 lines)
+│   │   │   ├── enhancement.handler.ts    # Prompt enhancement (131 lines)
+│   │   │   ├── visualization.handler.ts  # Visualizations (296 lines)
+│   │   │   └── indexing.handler.ts       # Index management (544 lines)
+│   │   ├── templates/               # HTML templates
+│   │   │   └── visualization.template.ts # Modern HTML UI
+│   │   └── types/                   # Handler types
+│   │       └── handlers.types.ts    # Context interfaces
 │   │
 │   ├── types/                        # Type definitions
 │   │   └── index.ts                 # All TypeScript types
@@ -87,22 +103,64 @@ Each directory has a clear, single responsibility:
 - `src/core/` - Business logic
 - `src/storage/` - Data persistence
 - `src/enhancement/` - Optional features
+- `src/visualization/` - Vector visualization
 - `src/mcp/` - Protocol layer
-- `src/types/` - Type definitions
+  - `handlers/` - Modular handler functions
+  - `templates/` - HTML templates
+  - `types/` - Handler-specific types
+- `src/types/` - Shared type definitions
 
-### 2. **Clean Root Directory**
+### 2. **Modular Handler Architecture (v1.5.4-beta.19)**
+The MCP server uses a **context injection pattern** for clean handler separation:
+
+**Structure:**
+```typescript
+// Server orchestrates
+class CodebaseIndexMCPServer {
+  private async handleSearch(args: any) {
+    const context: SearchHandlerContext = {
+      embedder: this.embedder,
+      vectorStore: this.vectorStore
+    };
+    return await handleSearch(args, context);
+  }
+}
+
+// Handler executes
+export async function handleSearch(
+  args: any, 
+  context: SearchHandlerContext
+) {
+  // Implementation with injected dependencies
+}
+```
+
+**Benefits:**
+- **Testability**: Handlers can be tested in isolation
+- **Maintainability**: Clear dependencies via context interfaces
+- **Scalability**: Easy to add new handlers
+- **Readability**: Reduced from 2060 to 1237 lines in server.ts
+
+**Handler Modules:**
+- `search.handler.ts` - Search functionality (74 lines)
+- `enhancement.handler.ts` - Prompt enhancement (131 lines)
+- `visualization.handler.ts` - Vector visualizations (296 lines)
+- `indexing.handler.ts` - Index management (544 lines)
+
+### 3. **Clean Root Directory**
 Only essential files at root level:
 - Package management: `package.json`, `package-lock.json`
 - Configuration: `tsconfig.json`, `.gitignore`, `.env.example`
 - Documentation: `README.md`, `PROJECT_STRUCTURE.md`
 
-### 3. **Documentation First**
+### 4. **Documentation First**
 - Every major directory has a README.md
 - Navigation guide helps users find what they need
 - Examples and guides for common tasks
 
-### 4. **Scalability**
+### 5. **Scalability**
 - Easy to add new features (create new folder in `src/`)
+- Easy to add new handlers (create new handler file)
 - Easy to add new docs (add to `docs/guides/`)
 - Easy to find files (logical grouping)
 
@@ -148,7 +206,19 @@ import { CodeIndexer } from '../core/indexer.js';
 import { CodeEmbedder } from '../core/embedder.js';
 import { QdrantVectorStore } from '../storage/qdrantClient.js';
 import { PromptEnhancer } from '../enhancement/promptEnhancer.js';
+import { VectorVisualizer } from '../visualization/visualizer.js';
 import { IndexerConfig } from '../types/index.js';
+
+// Import handlers (v1.5.4-beta.19+)
+import { handleSearch, SearchHandlerContext } from './handlers/search.handler.js';
+import { handleEnhancePrompt, handleEnhancementTelemetry, EnhancementHandlerContext } from './handlers/enhancement.handler.js';
+import { handleVisualizeCollection, handleVisualizeQuery, handleExportVisualizationHtml, VisualizationHandlerContext } from './handlers/visualization.handler.js';
+import { handleIndexingStatus, handleCheckIndex, handleRepairIndex, IndexingHandlerContext } from './handlers/indexing.handler.js';
+
+// From handlers
+import { CodeEmbedder } from '../../core/embedder.js';
+import { QdrantVectorStore } from '../../storage/qdrantClient.js';
+import { VectorVisualizer } from '../../visualization/visualizer.js';
 
 // From src/core/indexer.ts
 import { CodeChunk } from '../types/index.js';
@@ -162,8 +232,16 @@ import { CodeChunk } from '../types/index.js';
 
 ### Source Code (`src/`)
 - **One class per file** (e.g., `CodeIndexer` in `indexer.ts`)
-- **Group by domain** (core, storage, enhancement, mcp)
-- **Types in separate folder** (`types/index.ts`)
+- **One handler per function** (e.g., `handleSearch` in `search.handler.ts`)
+- **Group by domain** (core, storage, enhancement, visualization, mcp)
+- **Handlers in mcp/handlers/** (modular functions with context injection)
+- **Types in separate folder** (`types/index.ts` for shared, `mcp/types/` for handlers)
+
+### Handler Files (`src/mcp/handlers/`)
+- **Export context interface** (e.g., `SearchHandlerContext`)
+- **Export handler function** (e.g., `handleSearch`)
+- **Pure functions** (no state, dependencies via context)
+- **Descriptive names** (e.g., `search.handler.ts`, `indexing.handler.ts`)
 
 ### Documentation (`docs/`)
 - **Main docs at root** (README, SETUP, CHANGELOG)

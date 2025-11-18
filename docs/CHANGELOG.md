@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4-beta.19] - 2025-11-18
+
+### Changed
+- **Major Refactoring: Extracted handlers into modular files for better maintainability**
+  - Reduced `server.ts` from 2060 lines to 1237 lines (40% reduction, 823 lines removed)
+  - Extracted 11 handler methods into 4 modular files with context injection pattern
+  - Created `src/mcp/handlers/` directory structure:
+    - `search.handler.ts` (74 lines): `handleSearch`
+    - `enhancement.handler.ts` (131 lines): `handleEnhancePrompt`, `handleEnhancementTelemetry`
+    - `visualization.handler.ts` (296 lines): `handleVisualizeCollection`, `handleVisualizeQuery`, `handleExportVisualizationHtml`
+    - `indexing.handler.ts` (544 lines): `handleIndexingStatus`, `handleCheckIndex`, `handleRepairIndex`
+  - Implemented context injection pattern for all handlers
+  - Maintains identical public API (no breaking changes)
+  - All handlers properly typed with context interfaces
+
+### Technical Details
+- **Pattern Used**: Context injection with interfaces
+  - Each handler receives a context object with all required dependencies
+  - Server methods create context and delegate to handler functions
+  - Clean separation of concerns: server orchestrates, handlers execute
+- **Benefits**:
+  - Easier to test individual handlers
+  - Clear dependencies via context interfaces
+  - Simpler to maintain and extend
+  - Better code organization and readability
+- **Migration**: Fully backward compatible - no changes required for users
+
 ## [1.4.10] - 2025-11-08
 
 ### Fixed

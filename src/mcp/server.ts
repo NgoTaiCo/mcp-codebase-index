@@ -26,6 +26,12 @@ import { VectorVisualizer } from '../visualization/visualizer.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Import handlers
+import { handleSearch, SearchHandlerContext } from './handlers/search.handler.js';
+import { handleEnhancePrompt, handleEnhancementTelemetry, EnhancementHandlerContext } from './handlers/enhancement.handler.js';
+import { handleVisualizeCollection, handleVisualizeQuery, handleExportVisualizationHtml, VisualizationHandlerContext } from './handlers/visualization.handler.js';
+import { handleIndexingStatus, handleCheckIndex, handleRepairIndex, IndexingHandlerContext } from './handlers/indexing.handler.js';
+
 export class CodebaseIndexMCPServer {
     private server: Server;
     private watcher: FileWatcher;
@@ -87,7 +93,7 @@ export class CodebaseIndexMCPServer {
         this.server = new Server(
             {
                 name: 'mcp-codebase-index',
-                version: '1.5.4-beta.5'
+                version: '1.5.4'
             },
             {
                 capabilities: {
@@ -373,6 +379,39 @@ The tool returns visualization data that you should interpret and explain to the
             }
         });
 
+        // Add HTML export tool
+        tools.push({
+            name: 'export_visualization_html',
+            description: 'Export the vector visualization as a standalone HTML file with modern UI. Automatically saves to file and returns the path. Includes embedded Plotly.js, interactive clusters, and gradient design.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    dimensions: {
+                        type: 'number',
+                        description: 'Number of dimensions: 2 for 2D plot (recommended), 3 for 3D plot',
+                        enum: [2, 3],
+                        default: 2
+                    },
+                    enableClustering: {
+                        type: 'boolean',
+                        description: 'Enable k-means clustering to group similar code. Recommended: true',
+                        default: true
+                    },
+                    maxVectors: {
+                        type: 'number',
+                        description: 'Maximum vectors to visualize. More vectors = slower but more complete. Recommended: 1000',
+                        minimum: 100,
+                        maximum: 5000,
+                        default: 1000
+                    },
+                    outputPath: {
+                        type: 'string',
+                        description: 'Optional: Custom output file path. If not specified, saves to repo root with timestamp.'
+                    }
+                }
+            }
+        });
+
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
             tools
         }));
@@ -403,6 +442,9 @@ The tool returns visualization data that you should interpret and explain to the
             if (request.params.name === 'visualize_query') {
                 return await this.handleVisualizeQuery(request.params.arguments);
             }
+            if (request.params.name === 'export_visualization_html') {
+                return await this.handleExportVisualizationHtml(request.params.arguments);
+            }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
 
@@ -416,847 +458,136 @@ The tool returns visualization data that you should interpret and explain to the
      * Handle search tool
      */
     private async handleSearch(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
-        const schema = z.object({
-            query: z.string(),
-            limit: z.number().int().min(1).max(20).default(5)
-        });
-
-        try {
-            const validated = schema.parse(args);
-
-            // Embed query
-            const queryEmbedding = await this.embedder.embedQuery(validated.query);
-
-            // Search vector store
-            const results = await this.vectorStore.searchVectors(
-                queryEmbedding,
-                validated.limit
-            );
-
-            if (results.length === 0) {
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: 'No results found. The codebase may not be indexed yet, or try a different query.'
-                        }
-                    ]
-                };
-            }
-
-            // Format response
-            const formatted = results.map((r: any, idx: number) => `
-**Result ${idx + 1}** (Relevance: ${(r.score * 100).toFixed(1)}%)
-
-**File:** \`${r.payload.filePath}\`
-**Function:** \`${r.payload.name}\`
-**Lines:** ${r.payload.startLine}-${r.payload.endLine}
-**Language:** ${r.payload.language}
-
-\`\`\`${r.payload.language}
-${r.payload.content.length > 500 ? r.payload.content.substring(0, 500) + '...' : r.payload.content}
-\`\`\`
-      `).join('\n---\n');
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `Found ${results.length} relevant code snippets:\n\n${formatted}`
-                    }
-                ]
-            };
-        } catch (error: any) {
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `Search failed: ${error.message || error}`
-                    }
-                ]
-            };
-        }
+        const context: SearchHandlerContext = {
+            embedder: this.embedder,
+            vectorStore: this.vectorStore
+        };
+        return await handleSearch(args, context);
     }
 
     /**
      * Handle enhance_prompt tool
      */
     private async handleEnhancePrompt(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
-        // Check if prompt enhancement is enabled
-        if (!this.promptEnhancer) {
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: 'Prompt enhancement is not enabled. Set PROMPT_ENHANCEMENT=true in your MCP configuration to enable this feature.'
-                    }
-                ]
-            };
-        }
-
-        const schema = z.object({
-            query: z.string(),
-            customPrompts: z.array(z.string()).optional(),
-            template: z.enum(['general', 'find_implementation', 'find_usage', 'find_bug', 'explain_code']).optional(),
-            model: z.enum(['gemini-2.5-flash', 'gemini-2.5-flash-lite']).optional()
-        });
-
-        try {
-            const validated = schema.parse(args);
-
-            console.log(`[EnhancePrompt] Enhancing query: "${validated.query}"`);
-
-            // Enhance the query
-            const result = await this.promptEnhancer.enhance(validated, this.indexState);
-
-            console.log(`[EnhancePrompt] Enhanced: "${result.enhancedQuery}"`);
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: result.enhancedQuery
-                    }
-                ]
-            };
-        } catch (error: any) {
-            console.error('[EnhancePrompt] Error:', error);
-
-            // Fallback: return original query
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: args.query || 'Enhancement failed. Please try again.'
-                    }
-                ]
-            };
-        }
+        const context: EnhancementHandlerContext = {
+            promptEnhancer: this.promptEnhancer,
+            indexState: this.indexState
+        };
+        return await handleEnhancePrompt(args, context);
     }
 
     /**
      * Handle enhancement telemetry
      */
     private async handleEnhancementTelemetry(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
-        if (!this.promptEnhancer) {
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: 'Prompt enhancement is not enabled.'
-                    }
-                ]
-            };
-        }
-
-        try {
-            const telemetry = this.promptEnhancer.getTelemetry();
-            const config = this.promptEnhancer.getConfig();
-
-            const report = `# Prompt Enhancement Telemetry
-
-## Performance Metrics
-- Total Enhancements: ${telemetry.totalEnhancements}
-- Successful: ${telemetry.successfulEnhancements}
-- Failed: ${telemetry.failedEnhancements}
-- Success Rate: ${telemetry.successRate}
-
-## Caching
-- Cache Hits: ${telemetry.cacheHits}
-- Cache Hit Rate: ${telemetry.cacheHitRate}
-- Total API Calls: ${telemetry.totalApiCalls}
-
-## Latency
-- Average Latency: ${telemetry.avgLatency}
-- Total Latency: ${telemetry.totalLatency}ms
-
-## Configuration
-- Enabled: ${config.enabled}
-- Max Query Length: ${config.maxQueryLength} characters
-- Cache TTL: ${config.cacheTTL / 1000}s
-- Context Cache TTL: ${config.contextCacheTTL / 1000}s
-
-## Cost Savings
-- API Calls Saved: ${telemetry.cacheHits} (via caching)
-- Estimated Cost Savings: ~$${(telemetry.cacheHits * 0.0001).toFixed(4)} (assuming $0.0001 per call)`;
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: report
-                    }
-                ]
-            };
-        } catch (error: any) {
-            console.error('[EnhancementTelemetry] Error:', error);
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `Failed to get telemetry: ${error.message}`
-                    }
-                ]
-            };
-        }
+        const context: EnhancementHandlerContext = {
+            promptEnhancer: this.promptEnhancer,
+            indexState: this.indexState
+        };
+        return await handleEnhancementTelemetry(args, context);
     }
 
     /**
      * Handle visualize_collection tool
      */
     private async handleVisualizeCollection(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
-        const schema = z.object({
-            dimensions: z.union([z.literal(2), z.literal(3)]).default(2),
-            enableClustering: z.boolean().default(true),
-            maxVectors: z.number().int().min(100).max(5000).default(1000),
-            format: z.enum(['json', 'summary', 'plotly']).default('summary')
-        });
-
-        try {
-            const validated = schema.parse(args);
-
-            console.log(`[VisualizeCollection] Starting visualization (${validated.dimensions}D, clustering: ${validated.enableClustering})`);
-
-            // Import exporter
-            const { VisualizationExporter } = await import('../visualization/exporter.js');
-
-            // Create visualizer
-            const visualizer = new VectorVisualizer(
-                this.vectorStore.client,
-                this.config.qdrant.collectionName,
-                this.embedder
-            );
-
-            // Visualize collection
-            const result = await visualizer.visualizeCollection({
-                dimensions: validated.dimensions,
-                enableClustering: validated.enableClustering,
-                maxVectors: validated.maxVectors
-            });
-
-            // Export to requested format
-            let output: string;
-            if (validated.format === 'summary') {
-                output = VisualizationExporter.exportSummary(result);
-            } else if (validated.format === 'plotly') {
-                const plotlyData = VisualizationExporter.exportToPlotlyFormat(result);
-                output = JSON.stringify(plotlyData, null, 2);
-            } else {
-                output = VisualizationExporter.exportToCompactJSON(result);
-            }
-
-            const totalTime = result.metadata.performanceMetrics?.totalTime || 0;
-            console.log(`[VisualizeCollection] Completed in ${totalTime}ms`);
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: output
-                    }
-                ]
-            };
-        } catch (error: any) {
-            console.error('[VisualizeCollection] Error:', error);
-
-            // Check if it's a UMAP availability error
-            if (error.message?.includes('umap-js')) {
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: '❌ Visualization requires umap-js to be installed.\n\nPlease run:\n```bash\nnpm install umap-js\n```\n\nThen restart the MCP server.'
-                        }
-                    ]
-                };
-            }
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `Failed to visualize collection: ${error.message}`
-                    }
-                ]
-            };
-        }
+        const context: VisualizationHandlerContext = {
+            vectorStoreClient: this.vectorStore.client,
+            collectionName: this.config.qdrant.collectionName,
+            embedder: this.embedder,
+            repoPath: this.config.repoPath
+        };
+        return await handleVisualizeCollection(args, context);
     }
 
     /**
      * Handle visualize_query tool
      */
     private async handleVisualizeQuery(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
-        const schema = z.object({
-            query: z.string(),
-            dimensions: z.union([z.literal(2), z.literal(3)]).default(2),
-            topK: z.number().int().min(1).max(50).default(10),
-            enableClustering: z.boolean().default(true),
-            maxVectors: z.number().int().min(100).max(2000).default(500),
-            format: z.enum(['json', 'summary', 'plotly']).default('summary')
-        });
+        const context: VisualizationHandlerContext = {
+            vectorStoreClient: this.vectorStore.client,
+            collectionName: this.config.qdrant.collectionName,
+            embedder: this.embedder,
+            repoPath: this.config.repoPath
+        };
+        return await handleVisualizeQuery(args, context);
+    }
 
-        try {
-            const validated = schema.parse(args);
-
-            console.log(`[VisualizeQuery] Visualizing query: "${validated.query}"`);
-
-            // Import exporter
-            const { VisualizationExporter } = await import('../visualization/exporter.js');
-
-            // Create visualizer
-            const visualizer = new VectorVisualizer(
-                this.vectorStore.client,
-                this.config.qdrant.collectionName,
-                this.embedder
-            );
-
-            // Visualize query
-            const result = await visualizer.visualizeQuery({
-                query: validated.query,
-                dimensions: validated.dimensions,
-                topK: validated.topK,
-                enableClustering: validated.enableClustering,
-                maxVectors: validated.maxVectors
-            });
-
-            // Export to requested format
-            let output: string;
-            if (validated.format === 'summary') {
-                output = VisualizationExporter.exportSummary(result);
-            } else if (validated.format === 'plotly') {
-                const plotlyData = VisualizationExporter.exportToPlotlyFormat(result);
-                output = JSON.stringify(plotlyData, null, 2);
-            } else {
-                output = VisualizationExporter.exportToCompactJSON(result);
-            }
-
-            const totalTime = result.metadata.performanceMetrics?.totalTime || 0;
-            console.log(`[VisualizeQuery] Completed in ${totalTime}ms`);
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: output
-                    }
-                ]
-            };
-        } catch (error: any) {
-            console.error('[VisualizeQuery] Error:', error);
-
-            // Check if it's a UMAP availability error
-            if (error.message?.includes('umap-js')) {
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: '❌ Visualization requires umap-js to be installed.\n\nPlease run:\n```bash\nnpm install umap-js\n```\n\nThen restart the MCP server.'
-                        }
-                    ]
-                };
-            }
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `Failed to visualize query: ${error.message}`
-                    }
-                ]
-            };
-        }
+    /**
+     * Handle export_visualization_html tool - export visualization as standalone HTML
+     * Saves HTML to file instead of returning via MCP (to avoid truncation)
+     */
+    private async handleExportVisualizationHtml(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        const context: VisualizationHandlerContext = {
+            vectorStoreClient: this.vectorStore.client,
+            collectionName: this.config.qdrant.collectionName,
+            embedder: this.embedder,
+            repoPath: this.config.repoPath
+        };
+        return await handleExportVisualizationHtml(args, context);
     }
 
     /**
      * Handle indexing status check
      */
     private async handleIndexingStatus(args?: any): Promise<any> {
-        try {
-            // Parse verbose flag
-            const verbose = args?.verbose === true || args?.verbose === 'true';
-
-            const collections = await this.vectorStore.getCollections();
-            const vectorCount = collections.collections?.[0]?.vectors_count ||
-                collections.collections?.[0]?.points_count || 0;
-
-            // Calculate storage size estimate (rough: 768 dim * 4 bytes per float + metadata)
-            const estimatedSize = vectorCount * (768 * 4 + 500); // ~3.5KB per vector
-
-            // Get quota usage from embedder
-            const quotaUsage = this.embedder.getQuotaUsage();
-
-            const status = {
-                isIndexing: this.isIndexing,
-                queuedFiles: this.indexingQueue.size,
-                vectorsStored: vectorCount,
-                collection: this.config.qdrant.collectionName,
-                dailyQuota: this.indexState.dailyQuota,
-                stats: this.indexState.stats,
-                pendingQueue: this.indexState.pendingQueue.length,
-                progress: this.indexingProgress,
-                performance: this.performanceMetrics,
-                recentErrors: this.recentErrors,
-                storageSize: estimatedSize,
-                quotaUsage: quotaUsage
-            };
-
-            // Build status message
-            let message = `**📊 Indexing Status**\n\n`;
-
-            // Progress section (only if indexing)
-            if (status.isIndexing && status.progress.totalFiles > 0) {
-                message += `**Progress:** ${status.progress.percentage}% (${status.progress.processedFiles}/${status.progress.totalFiles} files)\n`;
-                message += `**Current File:** \`${status.progress.currentFile || 'Processing...'}\`\n`;
-
-                if (status.progress.estimatedTimeRemaining !== null) {
-                    message += `**ETA:** ${this.formatDuration(status.progress.estimatedTimeRemaining)}\n`;
-                }
-                message += `\n`;
-            }
-
-            // Performance metrics (only if indexing or recently indexed)
-            if (status.performance.filesPerSecond > 0) {
-                message += `**⏱️ Performance:**\n`;
-                message += `- Speed: ${status.performance.filesPerSecond.toFixed(2)} files/sec\n`;
-                message += `- Average: ${this.formatDuration(status.performance.averageTimePerFile)} per file\n`;
-                message += `- Total Time: ${this.formatDuration(status.performance.totalDuration)}\n`;
-                message += `- Chunks Processed: ${status.performance.chunksProcessed}\n`;
-                message += `\n`;
-            }
-
-            // API Quota usage (RPM, TPM, RPD)
-            message += `**📈 API Quota Usage:**\n`;
-            message += `- **RPM:** ${status.quotaUsage.rpm.current}/${status.quotaUsage.rpm.limit} (${status.quotaUsage.rpm.percentage.toFixed(1)}%)\n`;
-            message += `- **TPM:** ${status.quotaUsage.tpm.current.toLocaleString()}/${status.quotaUsage.tpm.limit.toLocaleString()} (${status.quotaUsage.tpm.percentage.toFixed(1)}%)\n`;
-
-            if (status.quotaUsage.rpd.limit > 0) {
-                message += `- **RPD:** ${status.quotaUsage.rpd.current}/${status.quotaUsage.rpd.limit} (${status.quotaUsage.rpd.percentage.toFixed(1)}%)\n`;
-            } else {
-                message += `- **RPD:** ${status.quotaUsage.rpd.current} (no daily limit)\n`;
-            }
-
-            message += `- **Tier:** ${status.quotaUsage.tier.charAt(0).toUpperCase() + status.quotaUsage.tier.slice(1)}\n`;
-            message += `- **Model:** ${status.quotaUsage.model}\n`;
-            message += `\n`;
-
-            // Daily chunks quota (for spreading work)
-            const quotaUsagePercent = ((status.dailyQuota.chunksIndexed / status.dailyQuota.limit) * 100).toFixed(1);
-            message += `**📊 Daily Chunks Quota (${status.dailyQuota.date}):**\n`;
-            message += `- Used: ${status.dailyQuota.chunksIndexed} / ${status.dailyQuota.limit} chunks\n`;
-            message += `- Remaining: ${status.dailyQuota.limit - status.dailyQuota.chunksIndexed} chunks\n`;
-            message += `- Usage: ${quotaUsagePercent}%\n`;
-            message += `\n`;
-
-            // Storage stats
-            message += `**📦 Storage:**\n`;
-            message += `- Vectors: ${status.vectorsStored}\n`;
-            message += `- Collection: \`${status.collection}\`\n`;
-            message += `- Estimated Size: ${this.formatBytes(status.storageSize)}\n`;
-            message += `\n`;
-
-            // File categorization stats
-            message += `**📊 File Categorization:**\n`;
-            message += `- ✨ New: ${status.stats.newFiles}\n`;
-            message += `- 📝 Modified: ${status.stats.modifiedFiles}\n`;
-            message += `- ✅ Unchanged: ${status.stats.unchangedFiles}\n`;
-            message += `- 🗑️ Deleted: ${status.stats.deletedFiles}\n`;
-            message += `\n`;
-
-            // Recent errors (if any)
-            if (status.recentErrors.length > 0) {
-                message += `**⚠️ Recent Errors (${status.recentErrors.length}):**\n`;
-                const errorsToShow = verbose ? status.recentErrors : status.recentErrors.slice(0, 3);
-
-                for (const error of errorsToShow) {
-                    const timeAgo = this.formatTimeAgo(Date.now() - error.timestamp);
-                    message += `- \`${error.filePath}\`: ${error.error} (${timeAgo})\n`;
-                }
-
-                if (!verbose && status.recentErrors.length > 3) {
-                    message += `  _...and ${status.recentErrors.length - 3} more (use verbose:true to see all)_\n`;
-                }
-                message += `\n`;
-            }
-
-            // Queue status
-            if (status.pendingQueue > 0) {
-                message += `**📋 Queue:** ${status.pendingQueue} files pending for next run\n`;
-                message += `\n`;
-            }
-
-            // Overall status
-            message += status.isIndexing ?
-                '⏳ **Status:** Indexing in progress...' :
-                '✅ **Status:** Ready for search';
-
-            if (status.queuedFiles > 0) {
-                message += `\n⚠️ ${status.queuedFiles} files queued for processing`;
-            }
-
-            if (status.pendingQueue > 0) {
-                message += `\n⚠️ ${status.pendingQueue} files queued for next run (quota reached)`;
-            }
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: message
-                    }
-                ]
-            };
-        } catch (error: any) {
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `Failed to get status: ${error.message || error}`
-                    }
-                ]
-            };
-        }
+        const context: IndexingHandlerContext = {
+            vectorStore: this.vectorStore,
+            embedder: this.embedder,
+            indexState: this.indexState,
+            isIndexing: this.isIndexing,
+            indexingQueue: this.indexingQueue,
+            indexingProgress: this.indexingProgress,
+            performanceMetrics: this.performanceMetrics,
+            recentErrors: this.recentErrors,
+            config: this.config,
+            watcher: this.watcher,
+            saveIndexState: () => this.saveIndexState(),
+            processIndexingQueue: () => this.processIndexingQueue()
+        };
+        return await handleIndexingStatus(args, context);
     }
 
     /**
      * Handle check_index tool - verify index health and detect issues
      */
     private async handleCheckIndex(args?: any): Promise<any> {
-        try {
-            const deepScan = args?.deepScan === true || args?.deepScan === 'true';
-
-            // Warn if indexing in progress
-            if (this.isIndexing) {
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: '⚠️ **Warning:** Indexing is currently in progress. Results may be incomplete or inaccurate.\n\nPlease wait for indexing to complete and try again.'
-                        }
-                    ]
-                };
-            }
-
-            console.log('[CheckIndex] Starting index health check...');
-
-            // 1. Get all files in repository
-            const repoFiles = new Set<string>();
-            const walkDir = (dir: string) => {
-                const files = fs.readdirSync(dir);
-                for (const file of files) {
-                    const filePath = path.join(dir, file);
-                    try {
-                        const stat = fs.statSync(filePath);
-                        if (stat.isDirectory()) {
-                            const dirName = path.basename(filePath);
-                            const shouldIgnore = this.config.ignorePaths.some(pattern =>
-                                dirName === pattern ||
-                                filePath.includes(path.sep + pattern + path.sep) ||
-                                filePath.endsWith(path.sep + pattern)
-                            );
-                            if (!shouldIgnore) {
-                                walkDir(filePath);
-                            }
-                        } else if (this.watcher['shouldWatch'](filePath)) {
-                            const relativePath = path.relative(this.config.repoPath, filePath);
-                            repoFiles.add(relativePath);
-                        }
-                    } catch (error) {
-                        // Skip files that can't be read
-                    }
-                }
-            };
-            walkDir(this.config.repoPath);
-
-            // 2. Get all indexed files from Qdrant
-            const indexedFiles = await this.vectorStore.getAllIndexedFiles();
-
-            // 3. Compare and detect issues
-            const missingFiles: string[] = [];
-            const orphanedVectors: string[] = [];
-
-            // Find missing files (in repo but not indexed)
-            for (const file of repoFiles) {
-                if (!indexedFiles.has(file)) {
-                    missingFiles.push(file);
-                }
-            }
-
-            // Find orphaned vectors (indexed but not in repo)
-            for (const file of indexedFiles) {
-                if (!repoFiles.has(file)) {
-                    orphanedVectors.push(file);
-                }
-            }
-
-            // 4. Get vector count and stats
-            const vectorCount = await this.vectorStore.getVectorCount();
-            const coverage = repoFiles.size > 0
-                ? ((repoFiles.size - missingFiles.length) / repoFiles.size * 100).toFixed(1)
-                : '0.0';
-
-            // 5. Determine overall status
-            const totalIssues = missingFiles.length + orphanedVectors.length;
-            let overallStatus = '✅ Healthy';
-            if (totalIssues > 0 && totalIssues < 10) {
-                overallStatus = '⚠️ Healthy (minor issues)';
-            } else if (totalIssues >= 10) {
-                overallStatus = '❌ Issues detected';
-            }
-
-            // 6. Build report
-            let report = `🔍 **Index Health Check**\n\n`;
-            report += `**Overall Status:** ${overallStatus}\n\n`;
-
-            report += `📊 **Statistics:**\n`;
-            report += `- Files in repo: ${repoFiles.size}\n`;
-            report += `- Files indexed: ${repoFiles.size - missingFiles.length}\n`;
-            report += `- Coverage: ${coverage}%\n`;
-            report += `- Vectors stored: ${vectorCount}\n\n`;
-
-            if (totalIssues > 0) {
-                report += `⚠️ **Issues Found (${totalIssues}):**\n\n`;
-
-                if (missingFiles.length > 0) {
-                    report += `**1. Missing Files (${missingFiles.length}):**\n`;
-                    const filesToShow = missingFiles.slice(0, 10);
-                    for (const file of filesToShow) {
-                        report += `   - ${file}\n`;
-                    }
-                    if (missingFiles.length > 10) {
-                        report += `   - ... and ${missingFiles.length - 10} more\n`;
-                    }
-                    report += `\n`;
-                }
-
-                if (orphanedVectors.length > 0) {
-                    report += `**2. Orphaned Vectors (${orphanedVectors.length}):**\n`;
-                    const filesToShow = orphanedVectors.slice(0, 10);
-                    for (const file of filesToShow) {
-                        report += `   - ${file} (deleted)\n`;
-                    }
-                    if (orphanedVectors.length > 10) {
-                        report += `   - ... and ${orphanedVectors.length - 10} more\n`;
-                    }
-                    report += `\n`;
-                }
-
-                report += `💡 **Recommendations:**\n`;
-                if (missingFiles.length > 0) {
-                    report += `- Run \`repair_index\` with \`issues: ["missing_files"]\` to index missing files\n`;
-                }
-                if (orphanedVectors.length > 0) {
-                    report += `- Run \`repair_index\` with \`issues: ["orphaned_vectors"]\` to clean orphaned vectors\n`;
-                }
-                report += `- Or use \`autoFix: true\` to fix all issues automatically\n`;
-            } else {
-                report += `✅ **No Issues Found**\n\n`;
-                report += `Your index is healthy and up to date!`;
-            }
-
-            console.log('[CheckIndex] Health check complete');
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: report
-                    }
-                ]
-            };
-        } catch (error: any) {
-            console.error('[CheckIndex] Error:', error);
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `❌ Failed to check index: ${error.message || error}`
-                    }
-                ]
-            };
-        }
+        const context: IndexingHandlerContext = {
+            vectorStore: this.vectorStore,
+            embedder: this.embedder,
+            indexState: this.indexState,
+            isIndexing: this.isIndexing,
+            indexingQueue: this.indexingQueue,
+            indexingProgress: this.indexingProgress,
+            performanceMetrics: this.performanceMetrics,
+            recentErrors: this.recentErrors,
+            config: this.config,
+            watcher: this.watcher,
+            saveIndexState: () => this.saveIndexState(),
+            processIndexingQueue: () => this.processIndexingQueue()
+        };
+        return await handleCheckIndex(args, context);
     }
 
     /**
      * Handle repair_index tool - fix detected index issues
      */
     private async handleRepairIndex(args?: any): Promise<any> {
-        try {
-            // Parse arguments
-            const issuesToFix = args?.issues || ['missing_files', 'orphaned_vectors'];
-            const autoFix = args?.autoFix === true || args?.autoFix === 'true';
-
-            // Check if indexing is already in progress
-            if (this.isIndexing) {
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: '⚠️ **Error:** Indexing is currently in progress.\n\nPlease wait for the current indexing operation to complete before running repair.'
-                        }
-                    ]
-                };
-            }
-
-            console.log('[RepairIndex] Starting index repair...');
-            console.log('[RepairIndex] Issues to fix:', issuesToFix);
-
-            // Lock to prevent concurrent operations
-            this.isIndexing = true;
-
-            try {
-                let report = `🔧 **Index Repair**\n\n`;
-                let totalFixed = 0;
-
-                // 1. Get all files in repository
-                const repoFiles = new Set<string>();
-                const walkDir = (dir: string) => {
-                    const files = fs.readdirSync(dir);
-                    for (const file of files) {
-                        const filePath = path.join(dir, file);
-                        try {
-                            const stat = fs.statSync(filePath);
-                            if (stat.isDirectory()) {
-                                const dirName = path.basename(filePath);
-                                const shouldIgnore = this.config.ignorePaths.some(pattern =>
-                                    dirName === pattern ||
-                                    filePath.includes(path.sep + pattern + path.sep) ||
-                                    filePath.endsWith(path.sep + pattern)
-                                );
-                                if (!shouldIgnore) {
-                                    walkDir(filePath);
-                                }
-                            } else if (this.watcher['shouldWatch'](filePath)) {
-                                const relativePath = path.relative(this.config.repoPath, filePath);
-                                repoFiles.add(relativePath);
-                            }
-                        } catch (error) {
-                            // Skip files that can't be read
-                        }
-                    }
-                };
-                walkDir(this.config.repoPath);
-
-                // 2. Get all indexed files from Qdrant
-                const indexedFiles = await this.vectorStore.getAllIndexedFiles();
-
-                // 3. Handle missing files
-                if (issuesToFix.includes('missing_files')) {
-                    const missingFiles: string[] = [];
-                    for (const file of repoFiles) {
-                        if (!indexedFiles.has(file)) {
-                            missingFiles.push(file);
-                        }
-                    }
-
-                    if (missingFiles.length > 0) {
-                        report += `**Missing Files (${missingFiles.length}):**\n`;
-
-                        if (autoFix) {
-                            report += `Re-indexing missing files...\n\n`;
-
-                            // Add to indexing queue
-                            for (const file of missingFiles) {
-                                const fullPath = path.join(this.config.repoPath, file);
-                                this.indexingQueue.add(fullPath);
-                            }
-
-                            // Process queue
-                            await this.processIndexingQueue();
-
-                            totalFixed += missingFiles.length;
-                            report += `✅ Re-indexed ${missingFiles.length} files\n\n`;
-                        } else {
-                            const filesToShow = missingFiles.slice(0, 10);
-                            for (const file of filesToShow) {
-                                report += `   - ${file}\n`;
-                            }
-                            if (missingFiles.length > 10) {
-                                report += `   - ... and ${missingFiles.length - 10} more\n`;
-                            }
-                            report += `\n💡 Use \`autoFix: true\` to re-index these files\n\n`;
-                        }
-                    } else {
-                        report += `**Missing Files:** None found ✅\n\n`;
-                    }
-                }
-
-                // 4. Handle orphaned vectors
-                if (issuesToFix.includes('orphaned_vectors')) {
-                    const orphanedVectors: string[] = [];
-                    for (const file of indexedFiles) {
-                        if (!repoFiles.has(file)) {
-                            orphanedVectors.push(file);
-                        }
-                    }
-
-                    if (orphanedVectors.length > 0) {
-                        report += `**Orphaned Vectors (${orphanedVectors.length}):**\n`;
-
-                        if (autoFix) {
-                            report += `Removing orphaned vectors...\n\n`;
-
-                            // Delete orphaned vectors
-                            for (const file of orphanedVectors) {
-                                await this.vectorStore.deleteByFilePath(file);
-                                this.indexState.indexedFiles.delete(file);
-                            }
-
-                            // Save state
-                            this.saveIndexState();
-
-                            totalFixed += orphanedVectors.length;
-                            report += `✅ Removed ${orphanedVectors.length} orphaned vectors\n\n`;
-                        } else {
-                            const filesToShow = orphanedVectors.slice(0, 10);
-                            for (const file of filesToShow) {
-                                report += `   - ${file} (deleted)\n`;
-                            }
-                            if (orphanedVectors.length > 10) {
-                                report += `   - ... and ${orphanedVectors.length - 10} more\n`;
-                            }
-                            report += `\n💡 Use \`autoFix: true\` to remove these vectors\n\n`;
-                        }
-                    } else {
-                        report += `**Orphaned Vectors:** None found ✅\n\n`;
-                    }
-                }
-
-                // 5. Summary
-                if (autoFix) {
-                    report += `\n✅ **Repair Complete**\n`;
-                    report += `Total issues fixed: ${totalFixed}\n\n`;
-                    report += `Run \`check_index\` to verify the repairs.`;
-                } else {
-                    report += `\n💡 **Next Steps:**\n`;
-                    report += `Run this command again with \`autoFix: true\` to apply the fixes.`;
-                }
-
-                console.log('[RepairIndex] Repair complete');
-
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: report
-                        }
-                    ]
-                };
-            } finally {
-                // Always release lock
-                this.isIndexing = false;
-            }
-        } catch (error: any) {
-            console.error('[RepairIndex] Error:', error);
-            this.isIndexing = false;
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `❌ Failed to repair index: ${error.message || error}`
-                    }
-                ]
-            };
-        }
+        const context: IndexingHandlerContext = {
+            vectorStore: this.vectorStore,
+            embedder: this.embedder,
+            indexState: this.indexState,
+            isIndexing: this.isIndexing,
+            indexingQueue: this.indexingQueue,
+            indexingProgress: this.indexingProgress,
+            performanceMetrics: this.performanceMetrics,
+            recentErrors: this.recentErrors,
+            config: this.config,
+            watcher: this.watcher,
+            saveIndexState: () => this.saveIndexState(),
+            processIndexingQueue: () => this.processIndexingQueue()
+        };
+        return await handleRepairIndex(args, context);
     }
 
     /**
@@ -1732,7 +1063,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      */
     async start(): Promise<void> {
         // Log version
-        console.log('[MCP] Version: 1.5.4-beta.5');
+        console.log('[MCP] Version: 1.5.4');
 
         // Initialize vector store
         await this.vectorStore.initializeCollection();

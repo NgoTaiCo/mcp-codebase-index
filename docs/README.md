@@ -178,6 +178,19 @@ Ask GitHub Copilot to search your codebase:
 "Find all API endpoint definitions"
 ```
 
+### Visualize Your Codebase
+
+Explore semantic relationships and code organization:
+
+```
+"Visualize my codebase"
+"Show me how my code is organized"
+"Visualize authentication code"
+"Export visualization as HTML"
+```
+
+**📖 Complete guide:** [Vector Visualization Guide](./guides/VECTOR_VISUALIZATION.md)
+
 ### Enhance Your Queries (Optional)
 
 If you enabled prompt enhancement (`PROMPT_ENHANCEMENT=true`), you can enhance vague queries before searching:
@@ -187,6 +200,8 @@ If you enabled prompt enhancement (`PROMPT_ENHANCEMENT=true`), you can enhance v
 "Enhance this query: error handling"
 ```
 
+**📖 Complete guide:** [Prompt Enhancement Guide](./guides/PROMPT_ENHANCEMENT_GUIDE.md)
+
 **How it works:**
 1. Analyzes your codebase context (languages, frameworks, patterns)
 2. Uses Gemini 2.5 Flash to expand your query with technical details
@@ -195,20 +210,6 @@ If you enabled prompt enhancement (`PROMPT_ENHANCEMENT=true`), you can enhance v
 **Example:**
 - **Before**: `"authentication"`
 - **After**: `"Find authentication implementation including login, logout, token management in TypeScript using JWT tokens and Express middleware"`
-
-**Available templates:**
-- `general` - General purpose enhancement (default)
-- `find_implementation` - Find code implementations
-- `find_usage` - Find where code is used
-- `find_bug` - Find potential bugs or issues
-- `explain_code` - Find code that needs explanation
-
-**Usage:**
-```
-"Enhance: authentication"
-"Enhance with template find_implementation: user login"
-"Enhance and search: error handling"
-```
 
 ### Check Indexing Status
 

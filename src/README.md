@@ -9,7 +9,10 @@ src/
 ├── core/               # Core business logic
 ├── storage/            # Data persistence layer
 ├── enhancement/        # Prompt enhancement feature
+├── visualization/      # Vector visualization feature
 ├── mcp/                # MCP server implementation
+│   ├── handlers/       # Modular handler functions
+│   └── templates/      # HTML templates
 ├── types/              # TypeScript type definitions
 └── index.ts            # Application entry point
 ```
@@ -61,15 +64,64 @@ AI-powered query improvement (optional):
   - Template formatting with codebase context
   - Extensible template system
 
+### `visualization/` - Vector Visualization Feature
+UMAP-based 2D/3D visualization of vector embeddings:
+
+- **`visualizer.ts`** - Main visualizer class
+  - Orchestrates visualization pipeline
+  - Supports collection and query visualization
+  - Configurable dimensions (2D/3D) and clustering
+
+- **`reducer.ts`** - Dimensionality reduction
+  - UMAP implementation for 768D → 2D/3D reduction
+  - Configurable parameters (neighbors, minDist, spread)
+  - Preserves semantic structure
+
+- **`vectorRetriever.ts`** - Vector fetching
+  - Efficient batch retrieval from Qdrant
+  - Sampling strategies for large collections
+  - Metadata extraction
+
+- **`exporter.ts`** - Format exporters
+  - Plotly JSON format (interactive web visualizations)
+  - Summary text format (LLM-friendly descriptions)
+  - Compact JSON format (programmatic use)
+
+- **`types.ts`** - Visualization types
+  - VisualizationResult, ClusterInfo, PerformanceMetrics
+  - Configuration interfaces
+
 ### `mcp/` - MCP Server Layer
 Model Context Protocol server implementation:
 
-- **`server.ts`** - MCP server
-  - Implements 5 MCP tools: search_codebase, indexing_status, check_index, repair_index, enhance_prompt
-  - Handles tool requests and responses
-  - Manages indexing lifecycle and state
-  - Coordinates all components
+- **`server.ts`** - MCP server orchestration (1237 lines)
+  - Main server class and initialization logic
+  - Tool registration and request routing
+  - State management and coordination
+  - Delegates to handler functions for execution
   - Implements checkpoint system for auto-save
+
+- **`handlers/`** - Modular handler functions (4 files, 1045 lines)
+  - **`search.handler.ts`** (74 lines) - Search functionality
+    - `handleSearch` - Semantic code search with embeddings
+  - **`enhancement.handler.ts`** (131 lines) - Prompt enhancement
+    - `handleEnhancePrompt` - Query enhancement with AI
+    - `handleEnhancementTelemetry` - Enhancement metrics
+  - **`visualization.handler.ts`** (296 lines) - Vector visualization
+    - `handleVisualizeCollection` - Visualize entire codebase
+    - `handleVisualizeQuery` - Visualize search results
+    - `handleExportVisualizationHtml` - Export as HTML
+  - **`indexing.handler.ts`** (544 lines) - Index management
+    - `handleIndexingStatus` - Progress and metrics
+    - `handleCheckIndex` - Verify index health
+    - `handleRepairIndex` - Fix index issues
+  - Uses context injection pattern for clean dependencies
+
+- **`templates/`** - HTML templates
+  - **`visualization.template.ts`** - Modern HTML UI for visualizations
+
+- **`types/`** - Handler-specific types
+  - **`handlers.types.ts`** - Context interfaces for all handlers
 
 ### `types/` - Type Definitions
 Shared TypeScript types and interfaces:
@@ -87,11 +139,51 @@ User Query (via Copilot)
     ↓
 MCP Server (mcp/server.ts)
     ↓
-├─→ Search: Embedder → Qdrant → Results
-├─→ Enhance: PromptEnhancer → Enhanced Query
-├─→ Status: IndexState → Progress Report
+├─→ Search: Handler → Embedder → Qdrant → Results
+├─→ Enhance: Handler → PromptEnhancer → Enhanced Query
+├─→ Visualize: Handler → Visualizer → UMAP → Plotly/HTML
+├─→ Status: Handler → IndexState → Progress Report
 └─→ Index: FileWatcher → Indexer → Embedder → Qdrant
 ```
+
+## 🏗️ Architecture Pattern (v1.5.4-beta.19)
+
+**Context Injection Pattern:**
+
+```typescript
+// 1. Define context interface
+export interface SearchHandlerContext {
+  embedder: CodeEmbedder;
+  vectorStore: QdrantVectorStore;
+}
+
+// 2. Export handler function
+export async function handleSearch(
+  args: any,
+  context: SearchHandlerContext
+) {
+  // Implementation using injected dependencies
+  const embedding = await context.embedder.embedQuery(args.query);
+  return await context.vectorStore.searchVectors(embedding);
+}
+
+// 3. Server orchestrates
+class CodebaseIndexMCPServer {
+  private async handleSearch(args: any) {
+    const context: SearchHandlerContext = {
+      embedder: this.embedder,
+      vectorStore: this.vectorStore
+    };
+    return await handleSearch(args, context);
+  }
+}
+```
+
+**Benefits:**
+- ✅ **Testable**: Mock context for unit tests
+- ✅ **Maintainable**: Clear dependencies
+- ✅ **Scalable**: Easy to add new handlers
+- ✅ **Type-safe**: Full TypeScript support
 
 ## 🚀 Entry Point
 

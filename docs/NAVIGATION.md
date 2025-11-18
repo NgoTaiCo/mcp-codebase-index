@@ -30,6 +30,8 @@ docs/
 │
 ├── guides/                      # Detailed guides
 │   ├── QDRANT_CLOUD_SETUP.md   # Qdrant setup walkthrough
+│   ├── PROMPT_ENHANCEMENT_GUIDE.md  # Prompt enhancement guide
+│   ├── VECTOR_VISUALIZATION.md  # Vector visualization guide
 │   ├── mcp-server-guide.md     # Build your own MCP server
 │   └── TEST_SEARCH.md          # Test search functionality
 │
@@ -65,9 +67,10 @@ docs/
 | Question | Document |
 |----------|----------|
 | How do I search my codebase? | [Main README](./README.md) - Usage section |
+| How do I visualize my codebase? | [Vector Visualization Guide](./guides/VECTOR_VISUALIZATION.md) |
 | What commands are available? | [Quick Reference](./QUICK_REF.md) |
 | How do I test if it's working? | [Testing Guide](./guides/TEST_SEARCH.md) |
-| How do I use prompt enhancement? | [Main README](./README.md) - Enhance Queries |
+| How do I use prompt enhancement? | [Prompt Enhancement Guide](./guides/PROMPT_ENHANCEMENT_GUIDE.md) |
 
 ### Troubleshooting
 | Question | Document |
@@ -89,8 +92,9 @@ docs/
 | Question | Document |
 |----------|----------|
 | What features are available? | [Main README](./README.md) - Features |
+| How do I visualize code relationships? | [Vector Visualization Guide](./guides/VECTOR_VISUALIZATION.md) |
 | How does incremental indexing work? | [Issue #3](./planning/issues/issue-3-incremental-indexing.md) |
-| What is prompt enhancement? | [Issue #6](./planning/issues/issue-6-prompt-enhancement.md) |
+| What is prompt enhancement? | [Prompt Enhancement Guide](./guides/PROMPT_ENHANCEMENT_GUIDE.md) |
 | How does index verification work? | [Issue #5](./planning/issues/issue-5-index-verification.md) |
 | What about rate limiting? | [Issue #2](./planning/issues/issue-2-rate-limiting.md) |
 

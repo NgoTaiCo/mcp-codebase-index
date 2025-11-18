@@ -74,49 +74,97 @@ export class VisualizationExporter {
         try {
             const traces: any[] = [];
 
-            // Group points by category
-            const categories = ['chunk', 'query', 'retrieved'];
-            const colors = {
-                chunk: 'rgba(100, 100, 100, 0.5)',
-                query: 'rgba(255, 0, 0, 1)',
-                retrieved: 'rgba(0, 255, 0, 0.8)'
-            };
-            const sizes = {
-                chunk: 5,
-                query: 15,
-                retrieved: 10
-            };
+            // Check if we have clusters
+            const hasClusters = data.clusters && data.clusters.length > 0;
 
-            categories.forEach(category => {
-                const categoryPoints = data.points.filter(p => p.category === category);
-                
-                if (categoryPoints.length > 0) {
-                    const trace: any = {
-                        x: categoryPoints.map(p => p.x),
-                        y: categoryPoints.map(p => p.y),
-                        mode: 'markers',
-                        type: data.metadata.reducedDimensions === 3 ? 'scatter3d' : 'scatter',
-                        name: category.charAt(0).toUpperCase() + category.slice(1),
-                        marker: {
-                            color: colors[category as keyof typeof colors],
-                            size: sizes[category as keyof typeof sizes],
-                            line: {
-                                width: 0
-                            }
-                        },
-                        text: categoryPoints.map(p => 
-                            `${p.filePath}<br>Lines: ${p.startLine}-${p.endLine}<br>${p.chunkContent.substring(0, 100)}...`
-                        ),
-                        hoverinfo: 'text'
-                    };
+            if (hasClusters) {
+                // Group by clusters for collection visualization
+                data.clusters!.forEach((cluster, idx) => {
+                    const clusterPoints = data.points.filter(p => p.clusterId === cluster.id);
 
-                    if (data.metadata.reducedDimensions === 3) {
-                        trace.z = categoryPoints.map(p => p.z);
+                    if (clusterPoints.length > 0) {
+                        const trace: any = {
+                            x: clusterPoints.map(p => p.x),
+                            y: clusterPoints.map(p => p.y),
+                            mode: 'markers',
+                            type: data.metadata.reducedDimensions === 3 ? 'scatter3d' : 'scatter',
+                            name: `Cluster ${cluster.id}`,
+                            marker: {
+                                size: 10,
+                                opacity: 0.8,
+                                line: {
+                                    width: 1,
+                                    color: 'rgba(255, 255, 255, 0.4)'
+                                }
+                            },
+                            // PERFORMANCE: Shorten hover text (only show last 2 path segments + filename)
+                            text: clusterPoints.map(p => {
+                                const pathParts = p.filePath.split('/');
+                                const shortPath = pathParts.length > 3
+                                    ? '.../' + pathParts.slice(-3).join('/')
+                                    : p.filePath;
+                                return `${shortPath}<br>Lines: ${p.startLine}-${p.endLine}<br>${p.chunkContent.substring(0, 80)}...`;
+                            }),
+                            hoverinfo: 'text'
+                        };
+
+                        if (data.metadata.reducedDimensions === 3) {
+                            trace.z = clusterPoints.map(p => p.z);
+                        }
+
+                        traces.push(trace);
                     }
+                });
+            } else {
+                // Group by category for query visualization
+                const categories = ['chunk', 'query', 'retrieved'];
+                const colors = {
+                    chunk: 'rgba(100, 100, 100, 0.5)',
+                    query: 'rgba(255, 0, 0, 1)',
+                    retrieved: 'rgba(0, 255, 0, 0.8)'
+                };
+                const sizes = {
+                    chunk: 5,
+                    query: 15,
+                    retrieved: 10
+                };
 
-                    traces.push(trace);
-                }
-            });
+                categories.forEach(category => {
+                    const categoryPoints = data.points.filter(p => p.category === category);
+
+                    if (categoryPoints.length > 0) {
+                        const trace: any = {
+                            x: categoryPoints.map(p => p.x),
+                            y: categoryPoints.map(p => p.y),
+                            mode: 'markers',
+                            type: data.metadata.reducedDimensions === 3 ? 'scatter3d' : 'scatter',
+                            name: category.charAt(0).toUpperCase() + category.slice(1),
+                            marker: {
+                                color: colors[category as keyof typeof colors],
+                                size: sizes[category as keyof typeof sizes],
+                                line: {
+                                    width: 0
+                                }
+                            },
+                            // PERFORMANCE: Shorten hover text
+                            text: categoryPoints.map(p => {
+                                const pathParts = p.filePath.split('/');
+                                const shortPath = pathParts.length > 3
+                                    ? '.../' + pathParts.slice(-3).join('/')
+                                    : p.filePath;
+                                return `${shortPath}<br>Lines: ${p.startLine}-${p.endLine}<br>${p.chunkContent.substring(0, 80)}...`;
+                            }),
+                            hoverinfo: 'text'
+                        };
+
+                        if (data.metadata.reducedDimensions === 3) {
+                            trace.z = categoryPoints.map(p => p.z);
+                        }
+
+                        traces.push(trace);
+                    }
+                });
+            }
 
             // Add query point if exists
             if (data.queryPoint) {
