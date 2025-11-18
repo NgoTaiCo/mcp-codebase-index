@@ -9,6 +9,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 
 **Supported Editors:**
 - ✅ VS Code with GitHub Copilot
+- ✅ VS Code with Roo Cline
 - ✅ GitHub Copilot CLI
 - ✅ Google Gemini CLI
 - ✅ Kiro AI Editor
@@ -24,6 +25,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - **[🖥️ Setup Guide - CLI](./docs/guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
 - **[🤖 Setup Guide - Gemini CLI](./docs/guides/GEMINI_CLI_SETUP.md)** - Installation for Google Gemini CLI
 - **[🎯 Setup Guide - Kiro](./docs/guides/KIRO_SETUP.md)** - Installation for Kiro AI Editor
+- **[🦘 Setup Guide - Roo Cline](./docs/guides/ROO_CLINE_SETUP.md)** - Installation for Roo Cline (VS Code)
 - **[⚡ Quick Reference](./docs/QUICK_REF.md)** - Command cheat sheet
 - **[🗺️ Navigation Guide](./docs/NAVIGATION.md)** - Find any doc quickly
 
@@ -69,7 +71,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 ### Installation
 
 > **Choose your environment:**
-> - **VS Code Users**: Follow steps below
+> - **VS Code Users**: Follow steps below or see [Roo Cline Setup](./docs/guides/ROO_CLINE_SETUP.md)
 > - **Copilot CLI Users**: See [Copilot CLI Setup Guide](./docs/guides/COPILOT_CLI_SETUP.md)
 > - **Gemini CLI Users**: See [Gemini CLI Setup Guide](./docs/guides/GEMINI_CLI_SETUP.md)
 > - **Kiro Users**: See [Kiro Setup Guide](./docs/guides/KIRO_SETUP.md)

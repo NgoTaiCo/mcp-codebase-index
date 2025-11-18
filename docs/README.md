@@ -6,6 +6,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 
 **Supported Editors:**
 - ✅ VS Code with GitHub Copilot
+- ✅ VS Code with Roo Cline
 - ✅ GitHub Copilot CLI
 - ✅ Google Gemini CLI
 - ✅ Kiro AI Editor
@@ -20,6 +21,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - 🖥️ **[Setup Guide - Copilot CLI](./guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
 - 🤖 **[Setup Guide - Gemini CLI](./guides/GEMINI_CLI_SETUP.md)** - Installation for Google Gemini CLI
 - 🎯 **[Setup Guide - Kiro](./guides/KIRO_SETUP.md)** - Installation for Kiro AI Editor
+- 🦘 **[Setup Guide - Roo Cline](./guides/ROO_CLINE_SETUP.md)** - Installation for Roo Cline (VS Code)
 - 🗺️ **[Navigation Guide](./NAVIGATION.md)** - Find any documentation quickly
 - ⚡ **[Quick Reference](./QUICK_REF.md)** - Command cheat sheet
 
