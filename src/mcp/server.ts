@@ -93,7 +93,7 @@ export class CodebaseIndexMCPServer {
         this.server = new Server(
             {
                 name: 'mcp-codebase-index',
-                version: '1.5.4'
+                version: '1.6.0'
             },
             {
                 capabilities: {
@@ -1063,7 +1063,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      */
     async start(): Promise<void> {
         // Log version
-        console.log('[MCP] Version: 1.5.4');
+        console.log('[MCP] Version: 1.6.0');
 
         // Initialize vector store
         await this.vectorStore.initializeCollection();
