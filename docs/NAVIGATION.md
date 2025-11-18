@@ -11,8 +11,9 @@ Quick guide to find what you need in the MCP Codebase Index documentation.
 1. **[Main README](./README.md)** - Overview, features, and quick start guide
 2. **[Setup Guide - VS Code](./SETUP.md)** - Installation for VS Code Copilot
 3. **[Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
-4. **[Qdrant Cloud Setup](./guides/QDRANT_CLOUD_SETUP.md)** - Get your Qdrant credentials
-5. **[Quick Reference](./QUICK_REF.md)** - Command cheat sheet
+4. **[Setup Guide - Kiro](./guides/KIRO_SETUP.md)** - Installation for Kiro AI Editor
+5. **[Qdrant Cloud Setup](./guides/QDRANT_CLOUD_SETUP.md)** - Get your Qdrant credentials
+6. **[Quick Reference](./QUICK_REF.md)** - Command cheat sheet
 
 **Estimated time:** 15-20 minutes to get up and running
 
@@ -31,6 +32,7 @@ docs/
 │
 ├── guides/                      # Detailed guides
 │   ├── COPILOT_CLI_SETUP.md    # Setup for GitHub Copilot CLI
+│   ├── KIRO_SETUP.md           # Setup for Kiro AI Editor
 │   ├── QDRANT_CLOUD_SETUP.md   # Qdrant setup walkthrough
 │   ├── PROMPT_ENHANCEMENT_GUIDE.md  # Prompt enhancement guide
 │   ├── VECTOR_VISUALIZATION.md  # Vector visualization guide
@@ -62,9 +64,10 @@ docs/
 |----------|----------|
 | How do I install on VS Code? | [Setup Guide - VS Code](./SETUP.md) |
 | How do I install on Copilot CLI? | [Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md) |
+| How do I install on Kiro? | [Setup Guide - Kiro](./guides/KIRO_SETUP.md) |
 | Where do I get Qdrant credentials? | [Qdrant Setup](./guides/QDRANT_CLOUD_SETUP.md) |
 | What environment variables do I need? | [Setup Guide - VS Code](./SETUP.md) or [Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md) |
-| How do I configure multiple projects? | [Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md) |
+| How do I configure multiple projects? | [Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md) or [Setup Guide - Kiro](./guides/KIRO_SETUP.md) |
 
 ### Usage
 | Question | Document |

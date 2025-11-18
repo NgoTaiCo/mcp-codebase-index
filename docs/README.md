@@ -1,16 +1,23 @@
 # MCP Codebase Index Server
 
-> AI-powered semantic search for your codebase in GitHub Copilot
+> AI-powered semantic search for your codebase in GitHub Copilot, Kiro, and other MCP-compatible editors
 
-A Model Context Protocol (MCP) server that enables GitHub Copilot to search and understand your codebase using Google's Gemini embeddings and Qdrant vector storage.
+A Model Context Protocol (MCP) server that enables AI editors to search and understand your codebase using Google's Gemini embeddings and Qdrant vector storage.
+
+**Supported Editors:**
+- ✅ VS Code with GitHub Copilot
+- ✅ GitHub Copilot CLI
+- ✅ Kiro AI Editor
+- ✅ Any MCP-compatible editor
 
 ---
 
 ## 📚 Documentation Navigation
 
 **New to this project?** Start here:
-- 📖 **[Setup Guide](./SETUP.md)** - Installation for VS Code Copilot
-- 🖥️ **[Copilot CLI Setup](./guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
+- 📖 **[Setup Guide - VS Code](./SETUP.md)** - Installation for VS Code Copilot
+- 🖥️ **[Setup Guide - Copilot CLI](./guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
+- 🎯 **[Setup Guide - Kiro](./guides/KIRO_SETUP.md)** - Installation for Kiro AI Editor
 - 🗺️ **[Navigation Guide](./NAVIGATION.md)** - Find any documentation quickly
 - ⚡ **[Quick Reference](./QUICK_REF.md)** - Command cheat sheet
 
