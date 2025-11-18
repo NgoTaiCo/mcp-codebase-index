@@ -9,7 +9,8 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 ## 📚 Documentation Navigation
 
 **New to this project?** Start here:
-- 📖 **[Setup Guide](./SETUP.md)** - Installation and configuration
+- 📖 **[Setup Guide](./SETUP.md)** - Installation for VS Code Copilot
+- 🖥️ **[Copilot CLI Setup](./guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
 - 🗺️ **[Navigation Guide](./NAVIGATION.md)** - Find any documentation quickly
 - ⚡ **[Quick Reference](./QUICK_REF.md)** - Command cheat sheet
 

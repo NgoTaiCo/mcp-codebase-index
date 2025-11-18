@@ -13,7 +13,8 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 
 ### 🚀 Getting Started
 - **[📖 Full Documentation](./docs/README.md)** - Complete documentation
-- **[⚙️ Setup Guide](./docs/SETUP.md)** - Installation and configuration
+- **[⚙️ Setup Guide - VS Code](./docs/SETUP.md)** - Installation for VS Code Copilot
+- **[🖥️ Setup Guide - CLI](./docs/guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
 - **[⚡ Quick Reference](./docs/QUICK_REF.md)** - Command cheat sheet
 - **[🗺️ Navigation Guide](./docs/NAVIGATION.md)** - Find any doc quickly
 
@@ -58,6 +59,10 @@ A Model Context Protocol (MCP) server that enables GitHub Copilot to search and 
 
 ### Installation
 
+> **Choose your environment:**
+> - **VS Code Users**: Follow steps below
+> - **Copilot CLI Users**: See [Copilot CLI Setup Guide](./docs/guides/COPILOT_CLI_SETUP.md)
+
 **Step 1:** Open MCP Configuration in VS Code
 1. Open GitHub Copilot Chat (`Ctrl+Alt+I` / `Cmd+Alt+I`)
 2. Click Settings icon → MCP Servers → MCP Configuration (JSON)
@@ -89,7 +94,9 @@ The server will automatically:
 - Index your codebase
 - Watch for file changes
 
-**📖 Detailed instructions:** [Setup Guide](./docs/SETUP.md)
+**📖 Detailed instructions:**
+- [VS Code Setup Guide](./docs/SETUP.md)
+- [Copilot CLI Setup Guide](./docs/guides/COPILOT_CLI_SETUP.md)
 
 ---
 

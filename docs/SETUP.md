@@ -1,6 +1,8 @@
-# Setup Guide
+# Setup Guide - VS Code Copilot
 
-Complete walkthrough to get MCP Codebase Index Server running with GitHub Copilot.
+Complete walkthrough to get MCP Codebase Index Server running with GitHub Copilot in VS Code.
+
+> **Note:** This guide is for VS Code users. For GitHub Copilot CLI, see [Copilot CLI Setup Guide](./guides/COPILOT_CLI_SETUP.md).
 
 ## Prerequisites
 

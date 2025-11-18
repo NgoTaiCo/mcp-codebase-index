@@ -9,9 +9,10 @@ Quick guide to find what you need in the MCP Codebase Index documentation.
 **Start here if you're new to the project:**
 
 1. **[Main README](./README.md)** - Overview, features, and quick start guide
-2. **[Setup Guide](./SETUP.md)** - Step-by-step installation instructions
-3. **[Qdrant Cloud Setup](./guides/QDRANT_CLOUD_SETUP.md)** - Get your Qdrant credentials
-4. **[Quick Reference](./QUICK_REF.md)** - Command cheat sheet
+2. **[Setup Guide - VS Code](./SETUP.md)** - Installation for VS Code Copilot
+3. **[Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md)** - Installation for GitHub Copilot CLI
+4. **[Qdrant Cloud Setup](./guides/QDRANT_CLOUD_SETUP.md)** - Get your Qdrant credentials
+5. **[Quick Reference](./QUICK_REF.md)** - Command cheat sheet
 
 **Estimated time:** 15-20 minutes to get up and running
 
@@ -22,13 +23,14 @@ Quick guide to find what you need in the MCP Codebase Index documentation.
 ```
 docs/
 ├── README.md                    # Main documentation (start here!)
-├── SETUP.md                     # Detailed setup guide
+├── SETUP.md                     # Setup guide for VS Code Copilot
 ├── QUICK_REF.md                 # Quick reference card
 ├── CHANGELOG.md                 # Version history
 ├── COPILOT_INSTRUCTIONS.md      # GitHub Copilot usage guide
 ├── NAVIGATION.md                # This file
 │
 ├── guides/                      # Detailed guides
+│   ├── COPILOT_CLI_SETUP.md    # Setup for GitHub Copilot CLI
 │   ├── QDRANT_CLOUD_SETUP.md   # Qdrant setup walkthrough
 │   ├── PROMPT_ENHANCEMENT_GUIDE.md  # Prompt enhancement guide
 │   ├── VECTOR_VISUALIZATION.md  # Vector visualization guide
@@ -58,10 +60,11 @@ docs/
 ### Installation & Setup
 | Question | Document |
 |----------|----------|
-| How do I install this? | [Setup Guide](./SETUP.md) |
+| How do I install on VS Code? | [Setup Guide - VS Code](./SETUP.md) |
+| How do I install on Copilot CLI? | [Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md) |
 | Where do I get Qdrant credentials? | [Qdrant Setup](./guides/QDRANT_CLOUD_SETUP.md) |
-| What environment variables do I need? | [Setup Guide](./SETUP.md) |
-| How do I configure VS Code? | [Setup Guide](./SETUP.md) |
+| What environment variables do I need? | [Setup Guide - VS Code](./SETUP.md) or [Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md) |
+| How do I configure multiple projects? | [Setup Guide - CLI](./guides/COPILOT_CLI_SETUP.md) |
 
 ### Usage
 | Question | Document |
