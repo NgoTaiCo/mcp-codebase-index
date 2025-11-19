@@ -184,12 +184,6 @@ Result: Interactive clusters showing:
 ```
 User: "Visualize authentication code"
 
-Result: Shows:
-- 🔴 Query point (your search)
-- 🟢 Retrieved code (matches)
-- ⚪ Background codebase (context)
-```
-
 <!-- PLACEHOLDER: Insert example of query visualization -->
 
 **Export as HTML:**
