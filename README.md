@@ -133,7 +133,8 @@ Ask GitHub Copilot:
 "Visualize authentication code"
 ```
 
-<!-- PLACEHOLDER: Insert screenshot of codebase visualization -->
+<img width="2545" height="1273" alt="image" src="https://github.com/user-attachments/assets/614e8e75-eae9-4810-9947-745efd63bdcd" />
+
 
 **📖 Complete guide:** [Vector Visualization Guide](./docs/guides/VECTOR_VISUALIZATION.md)
 
