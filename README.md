@@ -152,31 +152,29 @@ Ask GitHub Copilot:
 
 **📖 Complete guide:** [Vector Visualization Guide](./docs/guides/VECTOR_VISUALIZATION.md)
 
-### Bootstrap Memory from Codebase (NEW!)
+### Memory Management (AI Chat + Web UI Only)
 
-Automatically generate high-quality memory entities from your codebase:
-
-```bash
-# Basic bootstrap
-npx tsx scripts/bootstrap-cli.ts \
-  --source=src/ \
-  --collection=codebase
-
-# With custom settings
-npx tsx scripts/bootstrap-cli.ts \
-  --source=src/ \
-  --collection=codebase \
-  --budget=100000 \
-  --top=50 \
-  --output=bootstrap-results.json
-
-# Fast bootstrap (small projects)
-npx tsx scripts/bootstrap-cli.ts \
-  --source=src/ \
-  --collection=test \
-  --budget=10000 \
-  --top=10
+**Bootstrap via AI:**
 ```
+"Bootstrap memory for this codebase"
+```
+Auto-generates 50+ entities in 3-5 minutes via MCP tool.
+
+**Search via AI:**
+```
+"Search memory for authentication entities"
+"Find recent bugfixes in memory"
+```
+
+**Visual exploration:**
+```
+"Open memory UI"
+```
+Opens Web UI at http://localhost:3001 with:
+- 📊 D3.js graph visualization
+- 🔍 Real-time search & filters
+- 📈 Statistics dashboard
+- 🖱️ Click nodes for details
 
 **What it does:**
 - ✅ Extracts code structure via AST parsing (0 tokens, 549 files/sec)
@@ -198,7 +196,7 @@ npx tsx scripts/bootstrap-cli.ts \
 ```
 "Bootstrap memory for this codebase"
 ```
-Auto-generates 50+ entities in 3-5 minutes.
+Auto-generates 50+ entities in 3-5 minutes via MCP tool.
 
 **Search via AI:**
 ```
@@ -258,18 +256,6 @@ Result: Interactive clusters showing:
 - Authentication (19%)
 - Business Logic (18%)
 - Test Suites (12%)
-```
-
-<!-- PLACEHOLDER: Insert example of clustered visualization -->
-
-**Visualize search results:**
-```
-User: "Visualize authentication code"
-
-Result: Shows:
-- 🔴 Query point (your search)
-- 🟢 Retrieved code (matches)
-- ⚪ Background codebase (context)
 ```
 
 <!-- PLACEHOLDER: Insert example of query visualization -->
@@ -595,9 +581,17 @@ mcp-codebase-index/
 │   │   └── index.ts
 │   ├── enhancement/        # Prompt enhancement
 │   ├── visualization/      # Vector visualization
+│   ├── bootstrap/          # Smart Bootstrap (NEW in v3.0)
+│   │   ├── orchestrator.ts        # Main orchestrator (431 lines)
+│   │   ├── ast-parser.ts          # Code structure extraction
+│   │   ├── index-analyzer.ts      # Pattern detection
+│   │   └── gemini-analyzer.ts     # Semantic analysis
 │   ├── mcp/                # MCP server
-│   │   ├── server.ts      # Server orchestration (1237 lines)
-│   │   ├── handlers/      # Modular handlers (1045 lines)
+│   │   ├── server.ts      # Server orchestration (1350+ lines)
+│   │   ├── handlers/      # Modular handlers
+│   │   │   ├── memory-management.handler.ts  # 3 MCP tools (507 lines)
+│   │   │   ├── memory-ui.handler.ts          # Web UI server
+│   │   │   └── ...
 │   │   ├── templates/     # HTML templates
 │   │   └── types/         # Handler types
 │   ├── intelligence/       # Contextual intelligence
@@ -606,9 +600,6 @@ mcp-codebase-index/
 │   │   └── ...
 │   ├── types/              # Type definitions
 │   └── index.ts            # Entry point
-│
-├── cli/                     # Command-line tools (NEW in v3.1)
-│   └── memory-cli.ts       # Memory management CLI (349 lines)
 │
 ├── test/                    # Tests
 │   ├── memory-vector-store.test.ts  # Memory tests (261 lines)

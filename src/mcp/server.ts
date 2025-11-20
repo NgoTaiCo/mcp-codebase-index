@@ -25,6 +25,16 @@ import { PromptEnhancer } from '../enhancement/promptEnhancer.js';
 import { VectorVisualizer } from '../visualization/visualizer.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Get package.json version dynamically
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf-8')
+);
+const VERSION = packageJson.version;
 
 // Import handlers
 import { handleSearch, SearchHandlerContext } from './handlers/search.handler.js';
@@ -113,7 +123,7 @@ export class CodebaseIndexMCPServer {
         this.server = new Server(
             {
                 name: 'mcp-codebase-index',
-                version: '1.6.0'
+                version: VERSION
             },
             {
                 capabilities: {
@@ -1344,7 +1354,7 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
      */
     async start(): Promise<void> {
         // Log version
-        console.log('[MCP] Version: 1.6.0');
+        console.log(`[MCP] Version: ${VERSION}`);
 
         // Initialize vector store
         await this.vectorStore.initializeCollection();
