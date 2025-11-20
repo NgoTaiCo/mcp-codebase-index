@@ -88,9 +88,6 @@ export interface CompiledContext {
     /** Required dependencies */
     dependencies: Dependency[];
 
-    /** Similar patterns found in codebase */
-    patterns: Pattern[];
-
     /** Implementation steps suggested */
     steps: string[];
 
@@ -156,19 +153,19 @@ export interface MemoryEntity {
 
     /** Observations/notes */
     observations: string[];
-    
+
     /** Relevance score (0-100) - Only for vector search results */
     relevance?: number;
-    
+
     /** Related files */
     relatedFiles?: string[];
-    
+
     /** Related components */
     relatedComponents?: string[];
-    
+
     /** Dependencies */
     dependencies?: string[];
-    
+
     /** Tags */
     tags?: string[];
 }
@@ -189,6 +186,8 @@ export interface Dependency {
 
 /**
  * Pattern found in codebase
+ * @deprecated Not used - using intent-based approach instead
+ * Kept for backward compatibility
  */
 export interface Pattern {
     /** Pattern description */

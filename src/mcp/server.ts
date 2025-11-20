@@ -32,6 +32,15 @@ import { handleEnhancePrompt, handleEnhancementTelemetry, EnhancementHandlerCont
 import { handleVisualizeCollection, handleVisualizeQuery, handleExportVisualizationHtml, VisualizationHandlerContext } from './handlers/visualization.handler.js';
 import { handleIndexingStatus, handleCheckIndex, handleRepairIndex, IndexingHandlerContext } from './handlers/indexing.handler.js';
 import { handleOpenMemoryUI, handleCloseMemoryUI, MemoryUIHandlerContext } from './handlers/memory-ui.handler.js';
+import {
+    handleBootstrapMemory,
+    handleListMemory,
+    handleShowMemory,
+    handleSearchMemory,
+    handleDeleteMemory,
+    handleMemoryHealth,
+    MemoryManagementContext
+} from './handlers/memory-management.handler.js';
 import { IntentAnalyzer } from '../intelligence/intentAnalyzer.js';
 import { ContextCompiler } from '../intelligence/contextCompiler.js';
 import { ImplementationTracker } from '../intelligence/implementationTracker.js';
@@ -148,9 +157,26 @@ export class CodebaseIndexMCPServer {
                 // Use Optimizer instead of IntentAnalyzer directly
                 this.optimizer = new IntelligentOptimizer(geminiApiKey);
                 this.intentAnalyzer = new IntentAnalyzer(geminiApiKey); // Keep for direct access if needed
+
+                // Initialize Memory Vector Store if enabled
+                // Feature flag: ENABLE_INTERNAL_MEMORY
+                // - If true: Use our Qdrant-based memory vector store
+                // - If false: User can use external MCP Memory Server (graph-based)
+                const enableInternalMemory = process.env.ENABLE_INTERNAL_MEMORY === 'true';
+                if (enableInternalMemory) {
+                    this.memoryVectorStore = new MemoryVectorStore(
+                        this.vectorStore,  // Pass QdrantVectorStore instance
+                        this.embedder
+                    );
+                    console.log('[Memory] Internal Memory Vector Store enabled (Qdrant-based)');
+                } else {
+                    console.log('[Memory] Internal memory disabled - users can use external MCP Memory Server');
+                }
+
                 this.contextCompiler = new ContextCompiler(
                     this.embedder,
-                    this.vectorStore
+                    this.vectorStore,
+                    this.memoryVectorStore || undefined
                 );
                 this.implementationTracker = new ImplementationTracker(
                     geminiApiKey,
@@ -479,6 +505,123 @@ The tool returns visualization data that you should interpret and explain to the
             }
         });
 
+        // Memory Management Tools (minimal set - only if internal memory enabled)
+        // Philosophy: Keep it simple - use Web UI for exploration, MCP tools for automation
+        if (this.memoryVectorStore) {
+            tools.push({
+                name: 'bootstrap_memory',
+                description: `Bootstrap memory from codebase - auto-generate memory entities via smart analysis.
+
+**Purpose:** AI agent automation for first-time setup or refresh. This uses AST parsing, index analysis, and Gemini to intelligently extract key entities (controllers, features, bugs, patterns) from your codebase.
+
+**When to use:**
+- Initial setup: "Bootstrap memory for this codebase"
+- After major changes: "Refresh memory entities"
+- Empty memory: Auto-suggested by the system
+
+**What it does:**
+1. Analyzes code structure (AST + index metadata)
+2. Identifies important code segments (Gemini clustering)
+3. Auto-generates entities with metadata
+4. Imports to memory (if autoImport=true)
+
+**For visual exploration:** Use open_memory_ui tool instead.`,
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        sourceDir: {
+                            type: 'string',
+                            description: 'Source directory to analyze (default: "src")',
+                            default: 'src'
+                        },
+                        tokenBudget: {
+                            type: 'number',
+                            description: 'Max tokens for Gemini analysis (default: 100000, conservative to avoid quota issues)',
+                            minimum: 1000,
+                            maximum: 1000000,
+                            default: 100000
+                        },
+                        topCandidates: {
+                            type: 'number',
+                            description: 'Number of top candidates to analyze (default: 50)',
+                            minimum: 10,
+                            maximum: 200,
+                            default: 50
+                        },
+                        maxVectors: {
+                            type: 'number',
+                            description: 'Max vectors to sample from codebase (default: 1000)',
+                            minimum: 100,
+                            maximum: 5000,
+                            default: 1000
+                        },
+                        clusterCount: {
+                            type: 'number',
+                            description: 'Number of clusters for organization (default: 5)',
+                            minimum: 3,
+                            maximum: 20,
+                            default: 5
+                        },
+                        outputPath: {
+                            type: 'string',
+                            description: 'Optional: Path to save bootstrap report JSON'
+                        },
+                        autoImport: {
+                            type: 'boolean',
+                            description: 'Auto-import entities to memory (default: true)',
+                            default: true
+                        }
+                    }
+                }
+            });
+
+            tools.push({
+                name: 'search_memory',
+                description: `Quick semantic search across memory entities - stay in chat, no browser needed.
+
+**Purpose:** Fast conversational queries without opening Web UI.
+
+**Use cases:**
+- "Find entities about authentication"
+- "What do we have related to bug fixes?"
+- "Search for controller implementations"
+
+**Returns:** Top matching entities with relevance scores, directly in chat.
+
+**For visual exploration:** Use open_memory_ui tool to see graph, relationships, and browse interactively.
+
+**Note:** This uses vector embeddings for semantic similarity, not keyword matching.`,
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        query: {
+                            type: 'string',
+                            description: 'Search query in natural language (e.g., "authentication logic", "recent bug fixes")'
+                        },
+                        entityType: {
+                            type: 'string',
+                            description: 'Optional: Filter by entity type (e.g., "Controller", "Feature", "Bug")'
+                        },
+                        tags: {
+                            type: 'array',
+                            description: 'Optional: Filter by tags',
+                            items: {
+                                type: 'string'
+                            }
+                        },
+                        limit: {
+                            type: 'number',
+                            description: 'Max results to return (default: 10)',
+                            minimum: 1,
+                            maximum: 50,
+                            default: 10
+                        }
+                    },
+                    required: ['query']
+                }
+            });
+        }
+
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
             tools
         }));
@@ -517,6 +660,12 @@ The tool returns visualization data that you should interpret and explain to the
             }
             if (request.params.name === 'close_memory_ui') {
                 return await this.handleCloseMemoryUI(request.params.arguments);
+            }
+            if (request.params.name === 'bootstrap_memory') {
+                return await this.handleBootstrapMemory(request.params.arguments);
+            }
+            if (request.params.name === 'search_memory') {
+                return await this.handleSearchMemory(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -619,6 +768,44 @@ The tool returns visualization data that you should interpret and explain to the
      */
     private async handleCloseMemoryUI(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
         return await handleCloseMemoryUI();
+    }
+
+    /**
+     * Handle bootstrap_memory tool - auto-generate memory entities from codebase
+     */
+    private async handleBootstrapMemory(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        const context: MemoryManagementContext = {
+            memoryVectorStore: this.memoryVectorStore,
+            vectorStore: this.vectorStore,
+            embedder: this.embedder,
+            repoPath: this.config.repoPath,
+            qdrantConfig: {
+                url: this.config.qdrant.url,
+                apiKey: this.config.qdrant.apiKey || '',
+                collectionName: this.config.qdrant.collectionName
+            },
+            geminiApiKey: process.env.GEMINI_API_KEY || ''
+        };
+        return await handleBootstrapMemory(args, context);
+    }
+
+    /**
+     * Handle search_memory tool - semantic search across memory entities
+     */
+    private async handleSearchMemory(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        const context: MemoryManagementContext = {
+            memoryVectorStore: this.memoryVectorStore,
+            vectorStore: this.vectorStore,
+            embedder: this.embedder,
+            repoPath: this.config.repoPath,
+            qdrantConfig: {
+                url: this.config.qdrant.url,
+                apiKey: this.config.qdrant.apiKey || '',
+                collectionName: this.config.qdrant.collectionName
+            },
+            geminiApiKey: process.env.GEMINI_API_KEY || ''
+        };
+        return await handleSearchMemory(args, context);
     }
 
     /**
@@ -1161,6 +1348,12 @@ ${status.queuedFiles > 0 ? `\n⚠️ ${status.queuedFiles} files waiting to be i
 
         // Initialize vector store
         await this.vectorStore.initializeCollection();
+
+        // Initialize memory vector store if enabled
+        if (this.memoryVectorStore) {
+            await this.memoryVectorStore.initialize();
+            console.log('[Memory] Memory collection initialized');
+        }
 
         // Load incremental index state
         this.loadIndexState();

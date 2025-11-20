@@ -68,16 +68,21 @@ class MemoryCLI {
         }
 
         // Search for all entities (using empty query)
-        const results = await this.memoryStore.search('', {
-            limit: options?.limit || 50,
-            entityType: options?.type
-        });
+        const searchOptions: any = {
+            limit: options?.limit || 50
+        };
+
+        if (options?.type) {
+            searchOptions.filter = { entityType: options.type };
+        }
+
+        const results = await this.memoryStore.search('', searchOptions);
 
         results.forEach((result, idx) => {
-            console.log(`${idx + 1}. ${result.entityName}`);
-            console.log(`   Type: ${result.entityType}`);
-            console.log(`   Observations: ${result.observations.length}`);
-            console.log(`   Tags: ${result.tags?.join(', ') || 'none'}`);
+            console.log(`${idx + 1}. ${result.entity.name}`);
+            console.log(`   Type: ${result.entity.entityType}`);
+            console.log(`   Observations: ${result.entity.observations.length}`);
+            console.log(`   Tags: ${result.entity.tags?.join(', ') || 'none'}`);
             console.log('');
         });
     }
@@ -203,12 +208,11 @@ class MemoryCLI {
     async health(entities: MemoryEntity[]) {
         console.log('\n🏥 Checking memory sync health...\n');
 
+        const healthStatus = await this.syncManager.getHealth();
         const validation = await this.syncManager.validateSync(entities);
-        const stats = await this.syncManager.getStats();
 
-        console.log(`Vector Store Entities: ${stats.vectorStoreEntities}`);
-        console.log(`MCP Memory Entities: ${stats.mcpMemoryEntities}`);
-        console.log(`In Sync: ${stats.inSync ? '✅' : '❌'}`);
+        console.log(`Vector Store Entities: ${healthStatus.vectorStoreEntities}`);
+        console.log(`In Sync: ${healthStatus.inSync ? '✅' : '❌'}`);
 
         console.log(`\nHealth: ${validation.isHealthy ? '✅ Healthy' : '❌ Issues detected'}`);
 
@@ -242,11 +246,16 @@ class MemoryCLI {
     async search(query: string, options?: { limit?: number; threshold?: number; type?: string }) {
         console.log(`\n🔍 Searching for: "${query}"\n`);
 
-        const results = await this.memoryStore.search(query, {
+        const searchOptions: any = {
             limit: options?.limit || 10,
-            threshold: options?.threshold || 0.6,
-            entityType: options?.type
-        });
+            threshold: options?.threshold || 0.6
+        };
+
+        if (options?.type) {
+            searchOptions.filter = { entityType: options.type };
+        }
+
+        const results = await this.memoryStore.search(query, searchOptions);
 
         if (results.length === 0) {
             console.log('No results found.');
@@ -256,9 +265,9 @@ class MemoryCLI {
         console.log(`Found ${results.length} results:\n`);
 
         results.forEach((result, idx) => {
-            console.log(`${idx + 1}. [${Math.round(result.similarity * 100)}%] ${result.entityName}`);
-            console.log(`   Type: ${result.entityType}`);
-            console.log(`   First observation: ${result.observations[0]}`);
+            console.log(`${idx + 1}. [${Math.round(result.score * 100)}%] ${result.entity.name}`);
+            console.log(`   Type: ${result.entity.entityType}`);
+            console.log(`   First observation: ${result.entity.observations[0]}`);
             console.log('');
         });
     }
@@ -334,7 +343,7 @@ Examples:
                 const limit = parseInt(args.find(a => a.startsWith('--limit='))?.split('=')[1] || '10');
                 const threshold = parseFloat(args.find(a => a.startsWith('--threshold='))?.split('=')[1] || '0.6');
                 const type = args.find(a => a.startsWith('--type='))?.split('=')[1];
-                
+
                 if (!query) {
                     console.error('Error: Search query required');
                     return;

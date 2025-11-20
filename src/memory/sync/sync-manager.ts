@@ -56,15 +56,12 @@ export interface CleanupResult {
 export class MemorySyncManager {
     private memoryVectorStore: MemoryVectorStore;
     private updateDetector: MemoryUpdateDetector;
-    private mcpMemoryClient?: any; // TODO: Replace with actual MCP Memory client
 
     constructor(
-        memoryVectorStore: MemoryVectorStore,
-        mcpMemoryClient?: any
+        memoryVectorStore: MemoryVectorStore
     ) {
         this.memoryVectorStore = memoryVectorStore;
         this.updateDetector = new MemoryUpdateDetector(memoryVectorStore);
-        this.mcpMemoryClient = mcpMemoryClient;
     }
 
     /**
@@ -73,7 +70,7 @@ export class MemorySyncManager {
      */
     async syncAll(entities: MemoryEntity[]): Promise<SyncResult> {
         const startTime = Date.now();
-        
+
         const result: SyncResult = {
             total: entities.length,
             created: 0,
@@ -99,7 +96,7 @@ export class MemorySyncManager {
                 console.log(`[MemorySyncManager] Creating ${toCreate.length} new entities...`);
                 const batchResult = await this.memoryVectorStore.storeBatch(toCreate);
                 result.created = batchResult.stored;
-                
+
                 if (batchResult.errors && batchResult.errors.length > 0) {
                     result.errors.push(...batchResult.errors);
                 }
@@ -109,7 +106,7 @@ export class MemorySyncManager {
             const toUpdate = entities.filter(e => changes.changed.includes(e.name));
             if (toUpdate.length > 0) {
                 console.log(`[MemorySyncManager] Updating ${toUpdate.length} changed entities...`);
-                
+
                 for (const entity of toUpdate) {
                     try {
                         await this.memoryVectorStore.updateEntity(entity);
@@ -179,10 +176,12 @@ export class MemorySyncManager {
 
     /**
      * Cleanup orphaned vectors
-     * Removes vectors that no longer exist in MCP Memory Server
+     * Note: Not needed since MemoryVectorStore is single source of truth.
+     * Use deleteEntity() directly to remove unwanted entities.
      */
     async cleanupOrphaned(currentEntities: MemoryEntity[]): Promise<CleanupResult> {
-        console.log('[MemorySyncManager] Starting orphaned vector cleanup...');
+        console.log('[MemorySyncManager] Orphaned cleanup not needed - MemoryVectorStore is single source of truth');
+        console.log('[MemorySyncManager] Use MemoryVectorStore.deleteEntity() to remove unwanted entities');
 
         const result: CleanupResult = {
             found: 0,
@@ -190,35 +189,7 @@ export class MemorySyncManager {
             errors: []
         };
 
-        try {
-            // Get all entity names from MCP Memory
-            const currentNames = new Set(currentEntities.map(e => e.name));
-
-            // Get stats to know total entities in vector store
-            const stats = await this.memoryVectorStore.getStats();
-            const totalVectors = stats.totalEntities;
-
-            console.log(`[MemorySyncManager] Checking ${totalVectors} vectors against ${currentNames.size} MCP entities...`);
-
-            // TODO: Implement scroll/pagination to get all entity names from vector store
-            // For now, we can only check entities we know about
-            // In a full implementation, we'd need to:
-            // 1. Scroll through all vectors in Qdrant
-            // 2. Check if each vector's entityName exists in currentNames
-            // 3. Delete if not found
-
-            // This is a simplified version that works with the entities we're syncing
-            // A full implementation would require Qdrant scroll API
-
-            console.log('[MemorySyncManager] Orphaned cleanup complete (simplified version)');
-            console.log('Note: Full orphaned vector detection requires Qdrant scroll API');
-
-            return result;
-        } catch (error) {
-            console.error('[MemorySyncManager] Cleanup error:', error);
-            result.errors.push(`Cleanup failed: ${error}`);
-            throw error;
-        }
+        return result;
     }
 
     /**
@@ -234,7 +205,7 @@ export class MemorySyncManager {
      */
     async forceSync(entities: MemoryEntity[]): Promise<SyncResult> {
         const startTime = Date.now();
-        
+
         console.log(`[MemorySyncManager] Force syncing ${entities.length} entities (ignoring change detection)...`);
 
         const result: SyncResult = {
@@ -251,7 +222,7 @@ export class MemorySyncManager {
             const batchResult = await this.memoryVectorStore.storeBatch(entities);
             result.updated = batchResult.stored;
             result.created = 0; // Force sync treats all as updates
-            
+
             if (batchResult.errors && batchResult.errors.length > 0) {
                 result.errors.push(...batchResult.errors);
             }
@@ -270,22 +241,18 @@ export class MemorySyncManager {
     }
 
     /**
-     * Get sync statistics
+     * Get sync health status
+     * Returns statistics about vector store
      */
-    async getStats(): Promise<{
+    async getHealth(): Promise<{
         vectorStoreEntities: number;
-        mcpMemoryEntities: number;
         inSync: boolean;
     }> {
         const vectorStats = await this.memoryVectorStore.getStats();
 
-        // TODO: Get count from MCP Memory Server
-        const mcpCount = 0; // Placeholder
-
         return {
             vectorStoreEntities: vectorStats.totalEntities,
-            mcpMemoryEntities: mcpCount,
-            inSync: vectorStats.totalEntities === mcpCount
+            inSync: true // Single source of truth, always in sync
         };
     }
 

@@ -20,7 +20,7 @@
  */
 
 import dotenv from 'dotenv';
-import { BootstrapOrchestrator } from './bootstrap/orchestrator.js';
+import { BootstrapOrchestrator } from '../src/bootstrap/orchestrator.js';
 
 // Load environment
 dotenv.config();
@@ -29,14 +29,14 @@ dotenv.config();
 function parseArgs() {
     const args = process.argv.slice(2);
     const options: Record<string, string | boolean> = {};
-    
+
     for (const arg of args) {
         if (arg.startsWith('--')) {
             const [key, value] = arg.substring(2).split('=');
             options[key] = value || true;
         }
     }
-    
+
     return options;
 }
 
@@ -92,13 +92,13 @@ Documentation:
 
 async function main() {
     const options = parseArgs();
-    
+
     // Show help
     if (options.help) {
         showHelp();
         process.exit(0);
     }
-    
+
     // Validate required options
     if (!options.source || !options.collection) {
         console.error('❌ Error: Missing required options\n');
@@ -106,12 +106,12 @@ async function main() {
         console.error('   Run with --help for usage information');
         process.exit(1);
     }
-    
+
     // Validate environment variables
     const qdrantUrl = process.env.QDRANT_URL;
     const qdrantApiKey = process.env.QDRANT_API_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
-    
+
     if (!qdrantUrl || !qdrantApiKey || !geminiApiKey) {
         console.error('❌ Error: Missing environment variables\n');
         console.error('   Required in .env:');
@@ -120,13 +120,13 @@ async function main() {
         console.error('   - GEMINI_API_KEY');
         process.exit(1);
     }
-    
+
     // Parse numeric options
     const tokenBudget = options.budget ? parseInt(options.budget as string) : 100_000;
     const topCandidates = options.top ? parseInt(options.top as string) : 50;
     const maxVectors = options.vectors ? parseInt(options.vectors as string) : 1000;
     const clusterCount = options.clusters ? parseInt(options.clusters as string) : 5;
-    
+
     // Create orchestrator
     const orchestrator = new BootstrapOrchestrator({
         sourceDir: options.source as string,
@@ -142,11 +142,11 @@ async function main() {
         outputPath: options.output as string,
         verbose: !!options.verbose,
     });
-    
+
     // Run bootstrap
     try {
         const result = await orchestrator.bootstrap();
-        
+
         if (result.success) {
             console.log('\n✅ Bootstrap completed successfully!');
             console.log(`\n📦 Created ${result.entities.length} memory entities`);

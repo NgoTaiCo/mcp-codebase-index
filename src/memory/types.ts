@@ -45,45 +45,55 @@ export interface MemorySearchOptions {
     /** Minimum similarity threshold 0-1 (default: 0.6) */
     threshold?: number;
 
-    /** Filter by entity type */
-    entityType?: string;
+    /** Filter options */
+    filter?: {
+        /** Filter by entity type */
+        entityType?: string;
 
-    /** Filter by tags */
-    tags?: string[];
+        /** Filter by tags */
+        tags?: string[];
+    };
 }
 
 /**
  * Memory search result with similarity score
  */
 export interface MemorySearchResult {
-    /** Entity name */
-    entityName: string;
-
-    /** Entity type */
-    entityType: string;
-
-    /** Observations */
-    observations: string[];
-
-    /** Related files */
-    relatedFiles?: string[];
-
-    /** Related components */
-    relatedComponents?: string[];
-
-    /** Dependencies */
-    dependencies?: string[];
-
-    /** Tags */
-    tags?: string[];
+    /** Full entity object */
+    entity: MemoryEntity;
 
     /** Similarity score 0-1 */
+    score: number;
+
+    /** Legacy fields for backward compatibility */
+    /** @deprecated Use entity.name instead */
+    entityName: string;
+
+    /** @deprecated Use entity.entityType instead */
+    entityType: string;
+
+    /** @deprecated Use entity.observations instead */
+    observations: string[];
+
+    /** @deprecated Use entity.relatedFiles instead */
+    relatedFiles?: string[];
+
+    /** @deprecated Use entity.relatedComponents instead */
+    relatedComponents?: string[];
+
+    /** @deprecated Use entity.dependencies instead */
+    dependencies?: string[];
+
+    /** @deprecated Use entity.tags instead */
+    tags?: string[];
+
+    /** @deprecated Use score instead */
     similarity: number;
 
-    /** Creation timestamp */
+    /** @deprecated Use entity.createdAt instead */
     createdAt?: number;
 
-    /** Last update timestamp */
+    /** @deprecated Use entity.updatedAt instead */
     updatedAt?: number;
 }
 

@@ -444,9 +444,74 @@ For detailed guide including:
     "WATCH_MODE": "true",
     "BATCH_SIZE": "50",
     "EMBEDDING_MODEL": "text-embedding-004",
-    "PROMPT_ENHANCEMENT": "true"
+    "PROMPT_ENHANCEMENT": "true",
+    "ENABLE_INTERNAL_MEMORY": "true"
   }
 }
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `QDRANT_COLLECTION` | Collection name in Qdrant | `codebase` |
+| `WATCH_MODE` | Auto-reindex on file changes | `true` |
+| `BATCH_SIZE` | Embedding batch size | `50` |
+| `EMBEDDING_MODEL` | Gemini embedding model | `text-embedding-004` |
+| `PROMPT_ENHANCEMENT` | Enable AI query enhancement | `false` |
+| `ENABLE_INTERNAL_MEMORY` | Use internal Qdrant memory (vs external MCP Memory) | `false` |
+
+### Memory Options
+
+**You have 2 choices for memory:**
+
+#### Option 1: Internal Qdrant-based Memory (Recommended)
+```json
+{
+  "env": {
+    "ENABLE_INTERNAL_MEMORY": "true"
+  }
+}
+```
+- ✅ **Fast semantic search** (50-150ms)
+- ✅ **Auto-bootstrap** from codebase
+- ✅ **Auto-tracking** with ImplementationTracker
+- ✅ **Vector-based** similarity search
+- ⚠️ **Requires bootstrap** (one-time setup)
+
+**Setup:**
+```bash
+# 1. Enable in config
+ENABLE_INTERNAL_MEMORY=true
+
+# 2. Bootstrap memory
+npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
+```
+
+#### Option 2: External MCP Memory Server (Advanced)
+```json
+{
+  "env": {
+    "ENABLE_INTERNAL_MEMORY": "false"
+  }
+}
+```
+- ✅ **Graph-based** relations
+- ✅ **Custom storage** (SQLite, Neo4j, etc.)
+- ✅ **MCP protocol** standard
+- ⚠️ **User manages** (must provide own MCP Memory Server)
+
+**Examples:**
+- [@modelcontextprotocol/server-memory](https://github.com/modelcontextprotocol/servers/tree/main/src/memory)
+- Your custom graph database
+
+**When to use each:**
+
+| Use Case | Internal Memory | External Memory |
+|----------|----------------|-----------------|
+| Large codebase (500+ files) | ✅ Best | ❌ Too slow |
+| Semantic code search | ✅ Perfect | ⚠️ Limited |
+| Complex relations | ⚠️ Basic | ✅ Excellent |
+| Easy setup | ✅ One command | ❌ Manual |
+| Custom logic | ❌ Fixed | ✅ Flexible |
 ```
 
 **📖 Full configuration guide:** [Setup Guide](./docs/SETUP.md)

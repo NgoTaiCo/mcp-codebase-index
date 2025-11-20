@@ -166,8 +166,7 @@ export class MemoryVectorStore {
         const {
             limit = 10,
             threshold = 0.6,
-            entityType,
-            tags
+            filter
         } = options;
 
         try {
@@ -185,20 +184,20 @@ export class MemoryVectorStore {
                 complexity: 1
             });
 
-            // Build filter
-            const filter: any = {};
-            if (entityType) {
-                filter.must = filter.must || [];
-                filter.must.push({
+            // Build Qdrant filter
+            const qdrantFilter: any = {};
+            if (filter?.entityType) {
+                qdrantFilter.must = qdrantFilter.must || [];
+                qdrantFilter.must.push({
                     key: 'entityType',
-                    match: { value: entityType }
+                    match: { value: filter.entityType }
                 });
             }
-            if (tags && tags.length > 0) {
-                filter.must = filter.must || [];
-                filter.must.push({
+            if (filter?.tags && filter.tags.length > 0) {
+                qdrantFilter.must = qdrantFilter.must || [];
+                qdrantFilter.must.push({
                     key: 'tags',
-                    match: { any: tags }
+                    match: { any: filter.tags }
                 });
             }
 
@@ -208,26 +207,44 @@ export class MemoryVectorStore {
                 limit,
                 score_threshold: threshold,
                 with_payload: true,
-                ...(Object.keys(filter).length > 0 && { filter })
+                ...(Object.keys(qdrantFilter).length > 0 && { filter: qdrantFilter })
             });
 
-            // Transform results
+            // Transform results to new format
             return results.map((result) => {
                 if (!result.payload) {
                     throw new Error('Result payload is null or undefined');
                 }
-                
-                return {
-                    entityName: result.payload.entityName as string,
+
+                // Build entity object
+                const entity: MemoryEntity = {
+                    name: result.payload.entityName as string,
                     entityType: result.payload.entityType as string,
                     observations: result.payload.observations as string[],
                     relatedFiles: result.payload.relatedFiles as string[] | undefined,
                     relatedComponents: result.payload.relatedComponents as string[] | undefined,
                     dependencies: result.payload.dependencies as string[] | undefined,
                     tags: result.payload.tags as string[] | undefined,
-                    similarity: result.score,
                     createdAt: result.payload.createdAt as number | undefined,
                     updatedAt: result.payload.updatedAt as number | undefined
+                };
+
+                return {
+                    // New fields
+                    entity,
+                    score: result.score,
+
+                    // Legacy fields for backward compatibility
+                    entityName: entity.name,
+                    entityType: entity.entityType,
+                    observations: entity.observations,
+                    relatedFiles: entity.relatedFiles,
+                    relatedComponents: entity.relatedComponents,
+                    dependencies: entity.dependencies,
+                    tags: entity.tags,
+                    similarity: result.score,
+                    createdAt: entity.createdAt,
+                    updatedAt: entity.updatedAt
                 };
             });
         } catch (error) {
@@ -366,18 +383,36 @@ export class MemoryVectorStore {
             if (!point.payload) {
                 throw new Error('Point payload is null or undefined');
             }
-            
-            return {
-                entityName: point.payload.entityName as string,
+
+            // Build entity object
+            const entity: MemoryEntity = {
+                name: point.payload.entityName as string,
                 entityType: point.payload.entityType as string,
                 observations: point.payload.observations as string[],
                 relatedFiles: point.payload.relatedFiles as string[] | undefined,
                 relatedComponents: point.payload.relatedComponents as string[] | undefined,
                 dependencies: point.payload.dependencies as string[] | undefined,
                 tags: point.payload.tags as string[] | undefined,
-                similarity: 1.0, // Exact match
                 createdAt: point.payload.createdAt as number | undefined,
                 updatedAt: point.payload.updatedAt as number | undefined
+            };
+
+            return {
+                // New fields
+                entity,
+                score: 1.0, // Exact match
+
+                // Legacy fields for backward compatibility
+                entityName: entity.name,
+                entityType: entity.entityType,
+                observations: entity.observations,
+                relatedFiles: entity.relatedFiles,
+                relatedComponents: entity.relatedComponents,
+                dependencies: entity.dependencies,
+                tags: entity.tags,
+                similarity: 1.0,
+                createdAt: entity.createdAt,
+                updatedAt: entity.updatedAt
             };
         } catch (error) {
             console.error(`[MemoryVectorStore] Error getting entity ${entityName}:`, error);
@@ -461,7 +496,7 @@ export class MemoryVectorStore {
         const hash = createHash('sha1')
             .update(namespace + entityName)
             .digest('hex');
-        
+
         // Format as UUID v5
         return [
             hash.substring(0, 8),

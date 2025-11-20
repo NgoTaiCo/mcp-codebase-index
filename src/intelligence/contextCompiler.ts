@@ -26,24 +26,21 @@ export class ContextCompiler {
     private embedder: CodeEmbedder;
     private vectorStore: QdrantVectorStore;
     private memoryVectorStore?: MemoryVectorStore;
-    private useVectorMemorySearch: boolean;
 
     constructor(
-        embedder: CodeEmbedder, 
+        embedder: CodeEmbedder,
         vectorStore: QdrantVectorStore,
         memoryVectorStore?: MemoryVectorStore
     ) {
         this.embedder = embedder;
         this.vectorStore = vectorStore;
         this.memoryVectorStore = memoryVectorStore;
-        
-        // Feature flag: Enable vector memory search
-        this.useVectorMemorySearch = process.env.VECTOR_MEMORY_SEARCH === 'true';
-        
-        if (this.useVectorMemorySearch && this.memoryVectorStore) {
-            console.log('[ContextCompiler] Vector memory search enabled');
+
+        // Log memory search status
+        if (this.memoryVectorStore) {
+            console.log('[ContextCompiler] Memory search enabled (internal Qdrant-based)');
         } else {
-            console.log('[ContextCompiler] Using MCP Memory Server (fallback)');
+            console.log('[ContextCompiler] Memory search disabled (user can use external MCP Memory Server)');
         }
     }
 
@@ -55,10 +52,10 @@ export class ContextCompiler {
 
         try {
             // Parallel fetching for performance
-            const [relatedCode, memory, patterns] = await Promise.all([
+            // Note: Pattern detection removed - using intent-based approach instead
+            const [relatedCode, memory] = await Promise.all([
                 this.fetchRelatedCode(intent),
-                this.fetchMemory(intent),
-                this.findPatterns(intent)
+                this.fetchMemory(intent)
             ]);
 
             // Analyze dependencies
@@ -68,7 +65,7 @@ export class ContextCompiler {
             const steps = this.generateSteps(intent, relatedCode, memory);
 
             // Generate suggestions
-            const suggestions = this.generateSuggestions(intent, memory, patterns);
+            const suggestions = this.generateSuggestions(intent, memory);
 
             // Generate warnings
             const warnings = this.generateWarnings(intent, relatedCode, memory);
@@ -79,7 +76,6 @@ export class ContextCompiler {
                 relatedCode,
                 memory,
                 dependencies,
-                patterns,
                 steps,
                 suggestions,
                 warnings
@@ -90,7 +86,6 @@ export class ContextCompiler {
                 related_code: relatedCode,
                 memory,
                 dependencies,
-                patterns,
                 steps,
                 suggestions,
                 warnings,
@@ -138,24 +133,22 @@ export class ContextCompiler {
      */
     private async fetchMemory(intent: Intent): Promise<MemoryContext> {
         try {
-            if (this.useVectorMemorySearch && this.memoryVectorStore) {
-                // NEW: Vector search for memory
+            if (this.memoryVectorStore) {
+                // Vector search for memory (primary method)
                 const searchQuery = this.buildMemorySearchQuery(intent);
                 const startTime = Date.now();
-                
+
                 const results = await this.memoryVectorStore.search(searchQuery, {
                     limit: 10,
                     threshold: 0.6
                 });
-                
+
                 const duration = Date.now() - startTime;
-                console.log(`[ContextCompiler] Vector memory search: ${results.length} results in ${duration}ms`);
-                
+                console.log(`[ContextCompiler] Memory search: ${results.length} results in ${duration}ms`);
+
                 return this.transformMemoryResults(results);
             } else {
-                // FALLBACK: Use MCP Memory Server (placeholder)
-                // TODO: Implement MCP Memory client integration
-                console.log('[ContextCompiler] MCP Memory Server not implemented yet');
+                // Memory vector search disabled - user can use external MCP Memory Server
                 return {
                     entities: [],
                     decisions: [],
@@ -165,7 +158,7 @@ export class ContextCompiler {
             }
         } catch (error) {
             console.error('[ContextCompiler] Error fetching memory:', error);
-            
+
             // Fallback to empty on error
             return {
                 entities: [],
@@ -185,7 +178,7 @@ export class ContextCompiler {
             intent.action,
             ...intent.related
         ];
-        
+
         return parts.filter(Boolean).join(' ');
     }
 
@@ -203,35 +196,26 @@ export class ContextCompiler {
             tags: r.tags,
             relevance: Math.round(r.similarity * 100)
         }));
-        
+
         // Group by category
-        const decisions = entities.filter(e => 
+        const decisions = entities.filter(e =>
             e.type === 'Decision' || e.type === 'TechnicalDecision'
         );
-        
-        const preferences = entities.filter(e => 
+
+        const preferences = entities.filter(e =>
             e.type === 'Preference' || e.type === 'Pattern'
         );
-        
-        const recent_work = entities.filter(e => 
+
+        const recent_work = entities.filter(e =>
             e.type === 'Implementation' || e.type === 'Feature'
         );
-        
+
         return {
             entities,
             decisions,
             preferences,
             recent_work
         };
-    }
-
-    /**
-     * Find similar patterns in codebase
-     */
-    private async findPatterns(intent: Intent): Promise<Pattern[]> {
-        // TODO: Implement pattern detection
-        // For now, return empty array
-        return [];
     }
 
     /**
@@ -314,8 +298,7 @@ export class ContextCompiler {
      */
     private generateSuggestions(
         intent: Intent,
-        memory: MemoryContext,
-        patterns: Pattern[]
+        memory: MemoryContext
     ): string[] {
         const suggestions: string[] = [];
 
@@ -377,12 +360,11 @@ export class ContextCompiler {
         relatedCode: CodeSnippet[];
         memory: MemoryContext;
         dependencies: Dependency[];
-        patterns: Pattern[];
         steps: string[];
         suggestions: string[];
         warnings: string[];
     }): string {
-        const { intent, relatedCode, memory, dependencies, patterns, steps, suggestions, warnings } = data;
+        const { intent, relatedCode, memory, dependencies, steps, suggestions, warnings } = data;
 
         let md = `# Context for: ${intent.action}\n\n`;
 
@@ -467,7 +449,6 @@ export class ContextCompiler {
                 recent_work: []
             },
             dependencies: [],
-            patterns: [],
             steps: ['Review context', 'Plan approach', 'Implement solution'],
             suggestions: [],
             warnings: ['⚠️ Context compilation failed - proceeding with minimal context'],
