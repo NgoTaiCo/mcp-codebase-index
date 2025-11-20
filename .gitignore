@@ -10,10 +10,11 @@ claude_desktop_config.local.json
 
 # Runtime data
 .data/
-memory/
 vector_storage/
 docs/visual-enhancement/*
 
 # Debug/test visualization outputs
 mcp_visualizations/
 output.txt
+docs/planning/archive/*
+/docs/planning/*

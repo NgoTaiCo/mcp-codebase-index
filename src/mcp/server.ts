@@ -31,6 +31,10 @@ import { handleSearch, SearchHandlerContext } from './handlers/search.handler.js
 import { handleEnhancePrompt, handleEnhancementTelemetry, EnhancementHandlerContext } from './handlers/enhancement.handler.js';
 import { handleVisualizeCollection, handleVisualizeQuery, handleExportVisualizationHtml, VisualizationHandlerContext } from './handlers/visualization.handler.js';
 import { handleIndexingStatus, handleCheckIndex, handleRepairIndex, IndexingHandlerContext } from './handlers/indexing.handler.js';
+import { IntentAnalyzer } from '../intelligence/intentAnalyzer.js';
+import { ContextCompiler } from '../intelligence/contextCompiler.js';
+import { ImplementationTracker } from '../intelligence/implementationTracker.js';
+import { IntelligentOptimizer } from '../intelligence/optimizer.js';
 
 export class CodebaseIndexMCPServer {
     private server: Server;
@@ -39,6 +43,10 @@ export class CodebaseIndexMCPServer {
     private embedder: CodeEmbedder;
     private vectorStore: QdrantVectorStore;
     private promptEnhancer: PromptEnhancer | null = null;
+    private intentAnalyzer: IntentAnalyzer | null = null;
+    private optimizer: IntelligentOptimizer | null = null;
+    private contextCompiler: ContextCompiler | null = null;
+    private implementationTracker: ImplementationTracker | null = null;
     private config: IndexerConfig;
     private indexingQueue: Set<string> = new Set();
     private isIndexing = false;
@@ -127,6 +135,30 @@ export class CodebaseIndexMCPServer {
                 config.codebaseMemoryPath
             );
             console.log('[Server] Prompt enhancement enabled');
+        }
+
+        // Initialize Intelligence Layer (Memory Integration v3.0)
+        try {
+            // Check if GEMINI_API_KEY is available
+            const geminiApiKey = process.env.GEMINI_API_KEY;
+            if (geminiApiKey) {
+                // Use Optimizer instead of IntentAnalyzer directly
+                this.optimizer = new IntelligentOptimizer(geminiApiKey);
+                this.intentAnalyzer = new IntentAnalyzer(geminiApiKey); // Keep for direct access if needed
+                this.contextCompiler = new ContextCompiler(
+                    this.embedder,
+                    this.vectorStore
+                );
+                this.implementationTracker = new ImplementationTracker(
+                    geminiApiKey,
+                    config.repoPath
+                );
+                console.log('[Intelligence] Intelligence Layer initialized with Optimizer (semantic cache + batch processing)');
+            } else {
+                console.log('[Intelligence] Skipped - GEMINI_API_KEY not found (optional)');
+            }
+        } catch (error: any) {
+            console.warn(`[Intelligence] Failed to initialize: ${error.message}`);
         }
 
         this.setupHandlers();
@@ -460,7 +492,10 @@ The tool returns visualization data that you should interpret and explain to the
     private async handleSearch(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
         const context: SearchHandlerContext = {
             embedder: this.embedder,
-            vectorStore: this.vectorStore
+            vectorStore: this.vectorStore,
+            optimizer: this.optimizer || undefined,
+            intentAnalyzer: this.intentAnalyzer || undefined,
+            contextCompiler: this.contextCompiler || undefined
         };
         return await handleSearch(args, context);
     }

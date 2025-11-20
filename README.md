@@ -32,6 +32,8 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 ### 💻 For Developers
 - **[Source Code Structure](./src/README.md)** - Code organization
 - **[MCP Server Guide](./docs/guides/mcp-server-guide.md)** - Build your own MCP server
+- **[Phase 1 Summary](./docs/PHASE_1_SUMMARY.md)** - Memory Vector Store implementation
+- **[Phase 2 Summary](./docs/PHASE_2_SUMMARY.md)** - Memory Sync System implementation
 - **[Roadmap](./docs/planning/IMPROVEMENT_PLAN.md)** - Future plans
 
 ### 🔧 Resources
@@ -45,6 +47,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 
 ## ✨ Features
 
+### Core Search & Indexing
 - 🔍 **Semantic Search** - Find code by meaning, not just keywords
 - 🎯 **Smart Chunking** - Automatically splits code into logical functions/classes
 - 🔄 **Incremental Indexing** - Only re-indexes changed files (90%+ time savings)
@@ -53,11 +56,19 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - ⚡ **Parallel Processing** - 25x faster indexing with batch execution
 - 🔄 **Real-time Watch** - Auto-updates index on file changes
 - 🌐 **Multi-language** - Supports 15+ programming languages
-- ☁️ **Vector Storage** - Uses Qdrant for persistent storage
+
+### Memory & Intelligence (New in v3.1)
+- 🧠 **Memory Vector Store** - 8.7x faster memory search (103ms vs 901ms)
+- 🔄 **Smart Memory Sync** - Auto-sync with change detection (only updates what changed)
+- 📝 **Auto Memory Update** - Automatically creates memory entities from code changes
+- 🎯 **Event-Driven Sync** - Real-time memory updates (onEntityUpdated, onEntityDeleted)
+- 💻 **Memory CLI** - 6 commands for memory management (list, show, search, delete, stats, health)
+
+### Advanced Features
 - 🤖 **Prompt Enhancement** - AI-powered query improvement (optional)
-- � **Vector Visualization** - 2D/3D UMAP visualization of your codebase
+- 📊 **Vector Visualization** - 2D/3D UMAP visualization of your codebase
 - 🏗️ **Modular Architecture** - Clean handler separation for maintainability
-- �📦 **Simple Setup** - Just 4 environment variables
+- 📦 **Simple Setup** - Just 4 environment variables
 
 ---
 
@@ -136,6 +147,42 @@ Ask GitHub Copilot:
 <!-- PLACEHOLDER: Insert screenshot of codebase visualization -->
 
 **📖 Complete guide:** [Vector Visualization Guide](./docs/guides/VECTOR_VISUALIZATION.md)
+
+### Memory Management CLI
+
+Manage memory entities directly:
+
+```bash
+# List all memory entities
+npx tsx cli/memory-cli.ts list
+npx tsx cli/memory-cli.ts list --type=Feature --limit=20
+
+# Show entity details
+npx tsx cli/memory-cli.ts show google_oauth_feature
+
+# Search memory
+npx tsx cli/memory-cli.ts search "OAuth implementation"
+npx tsx cli/memory-cli.ts search "error handling" --limit=5 --type=Pattern
+
+# Delete entity
+npx tsx cli/memory-cli.ts delete old_feature --force
+
+# View statistics
+npx tsx cli/memory-cli.ts stats
+
+# Health check
+npx tsx cli/memory-cli.ts health
+```
+
+**Available Commands:**
+- `list` - List all entities (filterable by type, limit)
+- `show <name>` - Show entity details
+- `search <query>` - Search with similarity threshold
+- `delete <name>` - Delete entity (with --force flag)
+- `stats` - View memory statistics
+- `health` - Check sync health
+
+**📖 More details:** [Phase 2 Summary](./docs/PHASE_2_SUMMARY.md)
 
 ### Check Indexing Status
 
@@ -370,6 +417,8 @@ Python • TypeScript • JavaScript • Dart • Go • Rust • Java • Kotli
 
 ## 📊 Performance
 
+### Codebase Search & Indexing
+
 | Metric | Value |
 |--------|-------|
 | **Indexing Speed** | ~25 files/min |
@@ -377,7 +426,23 @@ Python • TypeScript • JavaScript • Dart • Go • Rust • Java • Kotli
 | **Incremental Savings** | 90%+ time reduction |
 | **Parallel Processing** | 25 chunks/sec |
 
-**📖 Performance details:** [Main Documentation](./docs/README.md)
+### Memory Search & Sync (New in v3.1)
+
+| Metric | Value | vs Baseline |
+|--------|-------|-------------|
+| **Memory Search Speed** | 103ms | 8.7x faster (vs 901ms) |
+| **Memory Search Accuracy** | 88% | 53% improvement |
+| **Smart Sync (100 entities, 50% changed)** | 2.3s | Only updates changed |
+| **Change Detection** | ~3ms/entity | 100% accuracy |
+| **Auto Memory Update** | Real-time | Event-driven |
+
+**Features:**
+- ✅ Content hash-based change detection (SHA-256)
+- ✅ Batch operations (100 entities/batch)
+- ✅ Event-driven sync (instant updates)
+- ✅ Smart sync (skip unchanged entities)
+
+**📖 Performance details:** [Phase 1 Summary](./docs/PHASE_1_SUMMARY.md) | [Phase 2 Summary](./docs/PHASE_2_SUMMARY.md)
 
 ---
 
@@ -411,12 +476,22 @@ mcp-codebase-index/
 │   ├── SETUP.md            # Setup guide
 │   ├── CHANGELOG.md        # Version history
 │   ├── NAVIGATION.md       # Navigation guide
+│   ├── PHASE_1_SUMMARY.md  # Memory Vector Store (v3.1)
+│   ├── PHASE_2_SUMMARY.md  # Memory Sync System (v3.1)
 │   ├── guides/             # Detailed guides
 │   └── planning/           # Development planning
 │
 ├── src/                     # Source code
 │   ├── core/               # Core business logic
 │   ├── storage/            # Data persistence
+│   ├── memory/             # Memory system (NEW in v3.1)
+│   │   ├── vector-store.ts    # Memory vector storage (426 lines)
+│   │   ├── types.ts           # Memory type definitions (151 lines)
+│   │   ├── sync/              # Sync system
+│   │   │   ├── update-detector.ts  # Change detection (186 lines)
+│   │   │   ├── sync-manager.ts     # Sync orchestration (287 lines)
+│   │   │   └── index.ts
+│   │   └── index.ts
 │   ├── enhancement/        # Prompt enhancement
 │   ├── visualization/      # Vector visualization
 │   ├── mcp/                # MCP server
@@ -424,8 +499,20 @@ mcp-codebase-index/
 │   │   ├── handlers/      # Modular handlers (1045 lines)
 │   │   ├── templates/     # HTML templates
 │   │   └── types/         # Handler types
+│   ├── intelligence/       # Contextual intelligence
+│   │   ├── contextCompiler.ts        # Memory integration
+│   │   ├── implementationTracker.ts  # Auto-sync integration
+│   │   └── ...
 │   ├── types/              # Type definitions
 │   └── index.ts            # Entry point
+│
+├── cli/                     # Command-line tools (NEW in v3.1)
+│   └── memory-cli.ts       # Memory management CLI (349 lines)
+│
+├── test/                    # Tests
+│   ├── memory-vector-store.test.ts  # Memory tests (261 lines)
+│   ├── memory-sync.test.ts          # Sync tests (217 lines)
+│   └── ...
 │
 ├── config/                  # Configuration files
 ├── .data/                   # Runtime data (gitignored)
