@@ -67,6 +67,9 @@ Alternative: Use external MCP Memory Server for graph-based memory.`
         // Use REPO_PATH as default if sourceDir not provided
         const sourceDir = validated.sourceDir || context.repoPath;
 
+        // CRITICAL: Ensure memory collection exists before bootstrap
+        await context.memoryVectorStore.initialize();
+
         // Create bootstrap orchestrator
         const orchestrator = new BootstrapOrchestrator({
             sourceDir: sourceDir, // Changed: use variable instead of validated.sourceDir

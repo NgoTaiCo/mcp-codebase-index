@@ -62,7 +62,7 @@ export class GeminiAnalyzer {
         tokenBudget?: number;
     } = {}) {
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ 
+        this.model = this.genAI.getGenerativeModel({
             model: options.model || 'gemini-2.5-flash' // 4M TPM, better quota
         });
         this.tokenBudget = options.tokenBudget || 100000; // 100k default
@@ -73,7 +73,7 @@ export class GeminiAnalyzer {
      */
     async analyze(candidates: AnalysisCandidate[]): Promise<GeminiAnalysisResult> {
         const startTime = Date.now();
-        
+
         console.log('[GeminiAnalyzer] Starting selective analysis...');
         console.log(`  Candidates: ${candidates.length}`);
         console.log(`  Token budget: ${this.tokenBudget.toLocaleString()}`);
@@ -98,11 +98,11 @@ export class GeminiAnalyzer {
             try {
                 const key = this.getCandidateKey(candidate);
                 const analysis = await this.analyzeCandidate(candidate);
-                
+
                 if (analysis) {
                     result.analyses.set(key, analysis);
                     result.itemsAnalyzed++;
-                    
+
                     if (result.itemsAnalyzed % 10 === 0) {
                         console.log(`[GeminiAnalyzer] Progress: ${result.itemsAnalyzed}/${candidates.length} (${this.tokensUsed.toLocaleString()} tokens)`);
                     }
@@ -145,7 +145,7 @@ export class GeminiAnalyzer {
         // Analyze complex elements (medium-high priority)
         for (const element of elements) {
             const priority = this.calculateElementPriority(element);
-            
+
             // Only analyze if priority > 5 (selective)
             if (priority > 5) {
                 candidates.push({
@@ -217,32 +217,51 @@ export class GeminiAnalyzer {
     }
 
     /**
-     * Analyze a single candidate
+     * Analyze a single candidate with retry logic for 503 errors
      */
     private async analyzeCandidate(candidate: AnalysisCandidate): Promise<SemanticAnalysis | null> {
         const prompt = this.buildPrompt(candidate);
-        
+
         // Estimate tokens (rough: 1 token ≈ 4 chars)
         const estimatedTokens = Math.ceil(prompt.length / 4);
-        
+
         if (this.tokensUsed + estimatedTokens > this.tokenBudget) {
             return null;
         }
 
-        try {
-            const result = await this.model.generateContent(prompt);
-            const response = result.response;
-            const text = response.text();
+        // Retry logic for 503 Service Unavailable
+        const maxRetries = 3;
+        let lastError: any = null;
 
-            // Update token count (estimate: input + output)
-            this.tokensUsed += estimatedTokens + Math.ceil(text.length / 4);
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await this.model.generateContent(prompt);
+                const response = result.response;
+                const text = response.text();
 
-            // Parse response
-            return this.parseResponse(text);
-        } catch (error) {
-            console.error('[GeminiAnalyzer] Error calling Gemini:', error);
-            return null;
+                // Update token count (estimate: input + output)
+                this.tokensUsed += estimatedTokens + Math.ceil(text.length / 4);
+
+                // Parse response
+                return this.parseResponse(text);
+            } catch (error: any) {
+                lastError = error;
+
+                // Check if it's a 503 Service Overloaded error
+                if (error.status === 503 && attempt < maxRetries) {
+                    const waitTime = attempt * 2000; // 2s, 4s, 6s backoff
+                    console.log(`[GeminiAnalyzer] Gemini overloaded (503), retrying in ${waitTime}ms... (attempt ${attempt}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    continue;
+                }
+
+                // For other errors or max retries reached, break
+                console.error('[GeminiAnalyzer] Error calling Gemini:', error);
+                break;
+            }
         }
+
+        return null;
     }
 
     /**
@@ -302,7 +321,7 @@ Respond in JSON format:
             }
 
             const parsed = JSON.parse(jsonMatch[0]);
-            
+
             return {
                 description: parsed.description || '',
                 purpose: parsed.purpose || '',
@@ -313,7 +332,7 @@ Respond in JSON format:
             };
         } catch (error) {
             console.error('[GeminiAnalyzer] Error parsing response:', error);
-            
+
             // Fallback: extract from text
             return {
                 description: text.substring(0, 200),

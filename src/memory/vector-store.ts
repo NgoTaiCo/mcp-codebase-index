@@ -422,6 +422,7 @@ export class MemoryVectorStore {
 
     /**
      * Build searchable text from entity (critical for relevance)
+     * IMPORTANT: Must stay under 36KB limit for Gemini embedding API
      */
     private buildSearchableText(entity: MemoryEntity): string {
         const parts: string[] = [];
@@ -432,17 +433,27 @@ export class MemoryVectorStore {
         // Entity type (2x weight)
         parts.push(entity.entityType, entity.entityType);
 
-        // Observations (main content)
-        parts.push(...entity.observations);
+        // Observations (main content) - truncate if too long
+        const observationsText = entity.observations.join(' ');
+        if (observationsText.length > 30000) {
+            // Truncate to 30KB, leaving room for other fields
+            parts.push(observationsText.substring(0, 30000) + '...[truncated]');
+        } else {
+            parts.push(...entity.observations);
+        }
 
         // Related components
         if (entity.relatedComponents) {
             parts.push(...entity.relatedComponents.map(c => `component:${c}`));
         }
 
-        // Related files
+        // Related files - limit to first 50 to avoid huge lists
         if (entity.relatedFiles) {
-            parts.push(...entity.relatedFiles.map(f => `file:${f}`));
+            const files = entity.relatedFiles.slice(0, 50);
+            parts.push(...files.map(f => `file:${f}`));
+            if (entity.relatedFiles.length > 50) {
+                parts.push(`...and ${entity.relatedFiles.length - 50} more files`);
+            }
         }
 
         // Dependencies
@@ -455,7 +466,20 @@ export class MemoryVectorStore {
             parts.push(...entity.tags.map(t => `tag:${t}`));
         }
 
-        return parts.filter(Boolean).join(' ');
+        const fullText = parts.filter(Boolean).join(' ');
+
+        // Final safety check: ensure total text is under 35KB (leaving 1KB margin)
+        const maxBytes = 35000;
+        if (Buffer.byteLength(fullText, 'utf8') > maxBytes) {
+            // Truncate to fit within limit
+            let truncated = fullText;
+            while (Buffer.byteLength(truncated, 'utf8') > maxBytes) {
+                truncated = truncated.substring(0, truncated.length - 100);
+            }
+            return truncated + '...[truncated]';
+        }
+
+        return fullText;
     }
 
     /**
