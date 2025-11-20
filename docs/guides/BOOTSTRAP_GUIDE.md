@@ -59,14 +59,16 @@ npx tsx scripts/bootstrap-cli.ts \
 ### Complete Workflow
 
 ```bash
-# 1. Bootstrap: Generate entities
+# 1. Bootstrap: Generate entities and store in Qdrant
 npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
 
-# 2. Sync: Store entities in vector store (optional)
-npx tsx cli/memory-cli.ts import bootstrap-results.json
+# 2. Search: Use MCP tools via LLM
+# Ask your LLM: "Search codebase for authentication logic"
+# LLM will call MCP tool: search_codebase("authentication logic")
 
-# 3. Search: Query your enhanced memory
-npx tsx cli/memory-cli.ts search "authentication logic"
+# Or use programmatically:
+# import { QdrantVectorStore } from './storage/qdrantClient.js';
+# const results = await store.search('authentication logic', 5);
 ```
 
 ---
@@ -274,14 +276,15 @@ npx tsx scripts/bootstrap-cli.ts \
 
 **Solution**:
 ```bash
-# Check collection exists
-npx tsx cli/memory-cli.ts stats
+# Check if bootstrap completed successfully
+# Look for: "✅ Bootstrap completed" in output
 
-# Verify collection name in mcp.json
-cat mcp.json | grep collectionName
+# Verify Qdrant collection via MCP tool
+# Ask LLM: "Check indexing status"
+# Or use: npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
 
-# Re-index if needed
-npm run index
+# Re-run bootstrap if needed
+npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
 ```
 
 #### 2. "Rate limit exceeded (429)"
@@ -530,11 +533,12 @@ npx tsx scripts/bootstrap-cli.ts \
   --collection=codebase \
   --output=bootstrap.json
 
-# 3. Sync to memory vector store (Phase 2)
+# 3. Test integration (all phases)
 npx tsx test/integration-phase-all.test.ts
 
-# 4. Search with enhanced context (Phase 1)
-npx tsx cli/memory-cli.ts search "authentication implementation"
+# 4. Search via MCP
+# Ask LLM: "Find authentication implementation in codebase"
+# LLM calls: search_codebase("authentication implementation")
 ```
 
 ### Automation
@@ -572,8 +576,9 @@ The Bootstrap System enables **automated, intelligent memory entity generation**
 ✅ **<100k tokens** budget usage  
 
 **Next Steps**:
-1. Read [Memory CLI Guide](./MEMORY_CLI_GUIDE.md) for entity management
+1. Read [Architecture](../ARCHITECTURE.md) for MCP-first design
 2. Check [API Documentation](../API.md) for programmatic usage
+3. See [Migration Guide](./MIGRATION_GUIDE.md) for upgrading from v3.0
 3. See [Integration Guide](./INTEGRATION_GUIDE.md) for complete workflow
 
 ---

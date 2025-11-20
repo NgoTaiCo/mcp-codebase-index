@@ -86,16 +86,16 @@ await syncManager.syncAll();
 - Batch operations for efficiency
 - Selective sync (only changed entities)
 - Cleanup of deleted entities
-- Memory CLI for manual control
+- Automatic background sync (no manual CLI needed)
 
 ### Phase 3: Bootstrap System
 
 ```bash
 # NEW: AI-powered project initialization
-npx tsx scripts/bootstrap-cli.ts --confidence-threshold 0.85
+npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
 
 # Zero-token AST parsing (549 files/sec)
-# Selective AI analysis (<100k tokens)
+# Selective AI analysis (<100k tokens, gemini-2.5-flash)
 # 95.6% confidence output
 ```
 
@@ -222,22 +222,26 @@ npm run build
 
 **Option A: Migrate Existing Memory Entities**
 
-If you have existing entities in MCP Memory:
+If you have existing entities in MCP Memory, they will auto-sync via MemorySyncManager:
 
-```bash
-# Run sync to import into vector store
-npx tsx scripts/memory-cli.ts sync-all
+```typescript
+// Auto-sync is built-in - no manual CLI needed
+import { MemorySyncManager } from './memory/sync/sync-manager.js';
+import { MemoryVectorStore } from './storage/memoryVectorStore.js';
 
-# Verify import
-npx tsx scripts/memory-cli.ts stats
+const vectorStore = new MemoryVectorStore(embedder, qdrant);
+await vectorStore.initialize();
+
+const syncManager = new MemorySyncManager(vectorStore);
+syncManager.startAutoSync(); // Automatically syncs all entities
 ```
 
-**Expected output:**
+**Expected result:**
 ```
-✅ Synced 42 entities to vector store
-📊 Vector Store Stats:
-   - Total vectors: 42
-   - Collection: memory
+✅ Auto-sync enabled
+✅ 42 entities synced to vector store
+📊 Collection: memory, Status: Ready
+```
    - Status: Ready
 ```
 
@@ -246,10 +250,10 @@ npx tsx scripts/memory-cli.ts stats
 If you're starting a new project or want to rebuild:
 
 ```bash
-# Run bootstrap to generate entities
-npx tsx scripts/bootstrap-cli.ts
+# Run bootstrap to generate and index entities
+npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
 
-# Follow prompts, choose settings
+# Bootstrap automatically stores in Qdrant (no manual sync needed)
 # Wait for completion (5-30 min depending on size)
 ```
 
@@ -345,19 +349,24 @@ npx tsx scripts/bootstrap-cli.ts --config bootstrap-config.json
 
 ### 1. Check Memory Vector Store
 
-```bash
-# Get vector store statistics
-npx tsx scripts/memory-cli.ts stats
+```typescript
+// Programmatically check vector store
+import { MemoryVectorStore } from './storage/memoryVectorStore.js';
+
+const store = new MemoryVectorStore(embedder, qdrant);
+await store.initialize();
+
+const stats = await store.getStats();
+console.log('Collection:', stats.collection);
+console.log('Total vectors:', stats.totalVectors);
+console.log('Status:', stats.status);
 ```
 
-**Expected output:**
+**Or ask your LLM:**
 ```
-📊 Memory Vector Store Statistics:
-   Collection: memory
-   Total vectors: 42
-   Dimension: 768
-   Status: Ready
-   Last sync: 2025-11-20T10:30:00Z
+User: "Check indexing status"
+LLM: [Calls MCP tool indexing_status()]
+LLM: "Collection 'memory' has 42 vectors, status: Ready"
 ```
 
 ### 2. Test Search Performance
@@ -394,21 +403,23 @@ Results: 5
 
 ### 3. Verify Auto-Sync (If Enabled)
 
-```bash
-# Add a test entity via MCP Memory
-# Check if it appears in vector store
+```typescript
+// Auto-sync works automatically - no manual check needed
+// Create an entity via MCP Memory, it will auto-sync to vector store
 
-npx tsx scripts/memory-cli.ts stats
-# Should show +1 vector count
+// To verify, search for the new entity:
+const results = await store.search('newly created entity', 5);
+console.log('Found:', results.length); // Should include new entity
 ```
 
 ### 4. Test Bootstrap (If Using)
 
 ```bash
 # Run bootstrap on a small test directory
-npx tsx scripts/bootstrap-cli.ts --input ./test-project
+npx tsx scripts/bootstrap-cli.ts --source=./test-project --collection=test
 
-# Check output
+# Check output for success message
+# "✅ Bootstrap completed"
 cat memory/index-metadata.json/incremental_state.json
 ```
 
@@ -488,12 +499,16 @@ Error: Collection 'memory' does not exist
 ```
 
 **Solution:**
-```bash
-# Initialize vector store first
-npx tsx scripts/memory-cli.ts init
+```typescript
+// Collections are auto-created on first use
+// Just initialize the vector store:
+import { MemoryVectorStore } from './storage/memoryVectorStore.js';
 
-# Or run sync-all (auto-creates collection)
-npx tsx scripts/memory-cli.ts sync-all
+const store = new MemoryVectorStore(embedder, qdrant);
+await store.initialize(); // Creates collection if not exists
+
+// Or run bootstrap which handles collection creation
+npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=memory
 ```
 
 ### Issue 2: "Sync failed - no entities found"
@@ -505,12 +520,16 @@ npx tsx scripts/memory-cli.ts sync-all
 
 **Solution:**
 ```bash
-# Option A: Import from bootstrap
-npx tsx scripts/bootstrap-cli.ts
+# Option A: Bootstrap creates entities automatically
+npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
 
-# Option B: Create test entity manually
-# Add entity via MCP Memory, then sync
-npx tsx scripts/memory-cli.ts sync-all
+# Option B: Create entities via MCP Memory
+# Ask LLM: "Create a memory entity for authentication module"
+# Auto-sync will handle the rest
+
+# Option C: Use programmatic API
+import { MemoryVectorStore } from './storage/memoryVectorStore.js';
+await store.store({ name: 'test', entityType: 'concept', observations: [] });
 ```
 
 ### Issue 3: "Bootstrap uses too many tokens"
@@ -524,11 +543,11 @@ npx tsx scripts/memory-cli.ts sync-all
 ```bash
 # Reduce scope with custom config
 npx tsx scripts/bootstrap-cli.ts \
-  --confidence-threshold 0.9 \
-  --max-tokens 150000 \
-  --exclude "**/test/**,**/docs/**"
+  --source=src/ \
+  --collection=codebase \
+  --budget=150000
 
-# Or use manual filtering in config file
+# Model is always gemini-2.5-flash (4M TPM quota)
 ```
 
 ### Issue 4: "Search returns no results"
@@ -540,11 +559,14 @@ console.log(results); // []
 ```
 
 **Solution:**
-```bash
-# Check if vectors exist
-npx tsx scripts/memory-cli.ts stats
+```typescript
+// Check if collection has vectors
+const stats = await store.getStats();
+console.log('Total vectors:', stats.totalVectors);
 
-# If count is 0, sync memory
+// If 0, run bootstrap first
+// npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
+```# If count is 0, sync memory
 npx tsx scripts/memory-cli.ts sync-all
 
 # Verify sync worked
@@ -578,12 +600,18 @@ Search returns duplicate results for same entity
 ```
 
 **Solution:**
-```bash
-# Clean up duplicates
-npx tsx scripts/memory-cli.ts cleanup
+```typescript
+// Vector store uses UUID v5 for deterministic IDs
+// Duplicates should be rare, but if they occur:
 
-# Re-sync from source
-npx tsx scripts/memory-cli.ts sync-all
+// Option A: Re-run bootstrap (overwrites with same IDs)
+npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
+
+// Option B: Delete collection and rebuild
+import { QdrantVectorStore } from './storage/qdrantClient.js';
+await qdrant.deleteCollection('codebase');
+await qdrant.createCollection('codebase');
+// Then re-bootstrap
 ```
 
 ---
@@ -614,9 +642,9 @@ npx tsx scripts/memory-cli.ts sync-all
 **A:** Token usage varies:
 - **AST Parser:** 0 tokens (local parsing)
 - **Index Analyzer:** 0 tokens (k-means clustering)
-- **Gemini Analyzer:** 50k-250k tokens (selective analysis)
+- **Gemini Analyzer:** 50k-250k tokens (selective analysis with gemini-2.5-flash)
 
-Example: 500-file project uses ~92k tokens (~$0.01 at current rates).
+Example: 500-file project uses ~92k tokens (~$0.01 with free tier).
 
 ### Q5: Can I use both traditional and vector search?
 
@@ -626,7 +654,7 @@ Example: 500-file project uses ~92k tokens (~$0.01 at current rates).
 // Traditional search (reliable, slower)
 const traditional = await contextCompiler.searchMemory('auth');
 
-// Vector search (fast, semantic)
+// Vector search (fast, semantic via Qdrant)
 const vector = await memoryStore.search('auth', 5);
 
 // Use both for validation
@@ -634,44 +662,52 @@ const vector = await memoryStore.search('auth', 5);
 
 ### Q6: What if I don't have Qdrant Cloud?
 
-**A:** Vector store requires Qdrant. Options:
-1. **Use Qdrant Cloud** (recommended, free tier available)
-2. **Self-host Qdrant** (Docker, local setup)
-3. **Skip vector features** (use v3.0 traditional search)
+**A:** Qdrant is required for vector features. Options:
+1. **Use Qdrant Cloud** (recommended, free tier, auto-creates collections)
+2. **Self-host Qdrant** (Docker: `docker run -p 6333:6333 qdrant/qdrant`)
+3. **Skip v3.1** (stay on v3.0 without vector features)
 
-Setup guide: [QDRANT_CLOUD_SETUP.md](../guides/QDRANT_CLOUD_SETUP.md)
+MCP server automatically creates collections on first use.
 
 ### Q7: How do I monitor sync status?
 
-**A:** Use Memory CLI:
+**A:** Via programmatic API or MCP tools:
 
-```bash
-# Check stats
-npx tsx scripts/memory-cli.ts stats
+```typescript
+// Programmatic check
+import { MemoryVectorStore } from './storage/memoryVectorStore.js';
 
-# Get sync history (if logged)
-npx tsx scripts/memory-cli.ts sync-all --verbose
+const stats = await store.getStats();
+console.log('Status:', stats.status);
+console.log('Total vectors:', stats.totalVectors);
+console.log('Last updated:', stats.lastUpdated);
+```
 
-# Test search
-npx tsx scripts/memory-cli.ts search "your query"
+**Or ask your LLM:**
+```
+User: "What's the indexing status?"
+LLM: [Calls MCP tool indexing_status()]
+LLM: "Indexing complete. 523 files, 42 entities, Ready."
 ```
 
 ### Q8: Can I customize Bootstrap behavior?
 
-**A:** Yes, via configuration:
+**A:** Yes, via CLI arguments:
 
 ```bash
-# Adjust confidence threshold
---confidence-threshold 0.9  # Stricter (fewer entities)
---confidence-threshold 0.7  # Looser (more entities)
-
 # Control token budget
---max-tokens 100000  # Smaller budget
---max-tokens 500000  # Larger budget
+--budget 100000    # Smaller budget (fewer Gemini calls)
+--budget 500000    # Larger budget (more analysis)
 
-# Change AI model
---model gemini-2.5-flash      # Fast, cheap (default)
---model gemini-2.0-flash-exp  # Experimental, powerful
+# Adjust top candidates for AI analysis
+--top 30           # Analyze top 30 candidates
+--top 100          # Analyze top 100 candidates
+
+# Select collection
+--collection codebase      # Default code collection
+--collection my-project    # Custom collection name
+
+# Model is always gemini-2.5-flash (4M TPM, best quota)
 ```
 
 ### Q9: What happens to old memory data?
@@ -686,17 +722,27 @@ npx tsx scripts/memory-cli.ts search "your query"
 
 **A:** Run verification checklist:
 
-```bash
-# 1. Check vector store
-npx tsx scripts/memory-cli.ts stats
-# Should show: Total vectors > 0
+```typescript
+// 1. Check vector store programmatically
+import { MemoryVectorStore } from './storage/memoryVectorStore.js';
+const stats = await store.getStats();
+console.log('Total vectors:', stats.totalVectors); // Should be > 0
 
-# 2. Test search performance
-npx tsx test-search.ts
-# Should show: <10ms search time
+// 2. Test search performance
+console.time('search');
+const results = await store.search('authentication', 5);
+console.timeEnd('search'); // Should be < 10ms
 
-# 3. Verify sync (if enabled)
-# Add entity via MCP Memory
+// 3. Verify results quality
+console.log('Results:', results.length); // Should return relevant matches
+```
+
+**Or ask your LLM:**
+```
+User: "Verify the codebase index is working"
+LLM: [Runs checks via MCP tools]
+LLM: "✅ Index ready: 523 files, search latency 4.8ms"
+```
 # Check if appears in vector store
 
 # 4. Review logs

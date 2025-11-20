@@ -18,24 +18,12 @@ interface QuotaInfo {
   requestsPerDay: number;
 }
 
-// Known quota limits for different tiers
+// Known quota limits for production model
 const QUOTA_LIMITS: Record<string, QuotaInfo> = {
-  'gemini-2.0-flash-exp': {
-    model: 'gemini-2.0-flash-exp',
-    requestsPerMinute: 10,
-    tokensPerMinute: 1_000_000, // 1M TPM
-    requestsPerDay: 1_500,
-  },
   'gemini-2.5-flash': {
     model: 'gemini-2.5-flash',
     requestsPerMinute: 10,
-    tokensPerMinute: 4_000_000, // 4M TPM
-    requestsPerDay: 1_500,
-  },
-  'gemini-1.5-flash': {
-    model: 'gemini-1.5-flash',
-    requestsPerMinute: 15,
-    tokensPerMinute: 1_000_000,
+    tokensPerMinute: 4_000_000, // 4M TPM - Best quota for free tier
     requestsPerDay: 1_500,
   },
 };
@@ -51,12 +39,8 @@ async function checkQuota() {
 
   console.log('✅ API Key found:', apiKey.substring(0, 10) + '...\n');
 
-  // Test different models
-  const modelsToTest = [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash-exp',
-    'gemini-1.5-flash',
-  ];
+  // Test production model only
+  const modelsToTest = ['gemini-2.5-flash'];
 
   for (const modelName of modelsToTest) {
     console.log(`📊 Testing model: ${modelName}`);
@@ -152,11 +136,10 @@ async function checkQuota() {
   // Summary and recommendations
   console.log('\n💡 Recommendations:');
   console.log('─'.repeat(60));
-  console.log('1. Use gemini-2.5-flash for production (4M TPM)');
-  console.log('2. Use gemini-2.0-flash-exp for testing (1M TPM)');
-  console.log('3. Implement exponential backoff for 429 errors');
-  console.log('4. Monitor usage at: https://ai.google.dev/usage');
-  console.log('5. Free tier resets: Per-minute (60s), Per-day (24h)');
+  console.log('1. Production model: gemini-2.5-flash (4M TPM - best quota)');
+  console.log('2. Implement exponential backoff for 429 errors');
+  console.log('3. Monitor usage at: https://ai.google.dev/usage');
+  console.log('4. Free tier resets: Per-minute (60s), Per-day (24h)');
   console.log('\n📚 Docs: https://ai.google.dev/gemini-api/docs/rate-limits');
 }
 
