@@ -85,10 +85,172 @@ export class ASTParser {
     }
 
     /**
+     * Detect primary programming language of the project
+     */
+    detectPrimaryLanguage(dirPath: string): string {
+        const languageExtensions: Record<string, string[]> = {
+            'TypeScript': ['.ts', '.tsx'],
+            'JavaScript': ['.js', '.jsx'],
+            'Dart': ['.dart'],
+            'Python': ['.py'],
+            'Go': ['.go'],
+            'Rust': ['.rs'],
+            'Java': ['.java'],
+            'Kotlin': ['.kt'],
+            'Swift': ['.swift'],
+            'C++': ['.cpp', '.cc', '.cxx'],
+            'C': ['.c'],
+            'C#': ['.cs'],
+            'Ruby': ['.rb'],
+            'PHP': ['.php']
+        };
+
+        const skipDirs = [
+            'node_modules', 'dist', 'build', '.git', 'coverage',
+            '.dart_tool', '.pub-cache', 'android', 'ios', 'web',
+            'windows', 'linux', 'macos', '.gradle', '.idea',
+            'out', 'target', 'bin', 'obj', '.vs'
+        ];
+
+        const fileCounts: Record<string, number> = {};
+
+        const walkDir = (currentPath: string) => {
+            try {
+                const files = fs.readdirSync(currentPath);
+
+                for (const file of files) {
+                    const filePath = path.join(currentPath, file);
+                    const stat = fs.statSync(filePath);
+
+                    if (stat.isDirectory()) {
+                        if (!skipDirs.includes(file)) {
+                            walkDir(filePath);
+                        }
+                    } else {
+                        const ext = path.extname(file);
+                        for (const [lang, exts] of Object.entries(languageExtensions)) {
+                            if (exts.includes(ext)) {
+                                fileCounts[lang] = (fileCounts[lang] || 0) + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                // Ignore errors
+            }
+        };
+
+        walkDir(dirPath);
+
+        // Find language with most files
+        let primaryLanguage = 'Unknown';
+        let maxCount = 0;
+
+        for (const [lang, count] of Object.entries(fileCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                primaryLanguage = lang;
+            }
+        }
+
+        return primaryLanguage;
+    }
+
+    /**
+     * Check if directory contains TypeScript/JavaScript files
+     */
+    hasTypeScriptFiles(dirPath: string): boolean {
+        const extensions = ['.ts', '.tsx', '.js', '.jsx'];
+        let hasFiles = false;
+
+        // Directories to skip (common build/generated code)
+        const skipDirs = [
+            'node_modules',
+            'dist',
+            'build',
+            '.git',
+            'coverage',
+            '.dart_tool',
+            '.pub-cache',
+            'android',
+            'ios',
+            'web',
+            'windows',
+            'linux',
+            'macos',
+            '.gradle',
+            '.idea',
+            'out',
+            'target',
+            'bin',
+            'obj',
+            '.vs'
+        ];
+
+        const walkDir = (currentPath: string): boolean => {
+            if (hasFiles) return true; // Early exit
+
+            try {
+                const files = fs.readdirSync(currentPath);
+
+                for (const file of files) {
+                    const filePath = path.join(currentPath, file);
+                    const stat = fs.statSync(filePath);
+
+                    if (stat.isDirectory()) {
+                        // Skip common build/generated directories
+                        if (!skipDirs.includes(file)) {
+                            if (walkDir(filePath)) {
+                                return true;
+                            }
+                        }
+                    } else if (extensions.some(ext => file.endsWith(ext))) {
+                        hasFiles = true;
+                        return true;
+                    }
+                }
+            } catch (error) {
+                // Ignore errors (permission denied, etc.)
+                return false;
+            }
+
+            return false;
+        };
+
+        walkDir(dirPath);
+        return hasFiles;
+    }
+
+    /**
      * Parse multiple files in a directory
      */
     parseDirectory(dirPath: string, extensions: string[] = ['.ts', '.tsx', '.js', '.jsx']): ASTParseResult[] {
         const results: ASTParseResult[] = [];
+
+        // Directories to skip (common build/generated code)
+        const skipDirs = [
+            'node_modules',
+            'dist',
+            'build',
+            '.git',
+            'coverage',
+            '.dart_tool',
+            '.pub-cache',
+            'android',
+            'ios',
+            'web',
+            'windows',
+            'linux',
+            'macos',
+            '.gradle',
+            '.idea',
+            'out',
+            'target',
+            'bin',
+            'obj',
+            '.vs'
+        ];
 
         const walkDir = (currentPath: string) => {
             const files = fs.readdirSync(currentPath);
@@ -98,8 +260,8 @@ export class ASTParser {
                 const stat = fs.statSync(filePath);
 
                 if (stat.isDirectory()) {
-                    // Skip node_modules, dist, build, etc.
-                    if (!['node_modules', 'dist', 'build', '.git', 'coverage'].includes(file)) {
+                    // Skip common build/generated directories
+                    if (!skipDirs.includes(file)) {
                         walkDir(filePath);
                     }
                 } else if (extensions.some(ext => file.endsWith(ext))) {
@@ -179,8 +341,8 @@ export class ASTParser {
             }
         }
 
-        stats.avgElementsPerFile = stats.totalFiles > 0 
-            ? Math.round(stats.totalElements / stats.totalFiles * 10) / 10 
+        stats.avgElementsPerFile = stats.totalFiles > 0
+            ? Math.round(stats.totalElements / stats.totalFiles * 10) / 10
             : 0;
 
         return stats;
@@ -223,8 +385,8 @@ export class ASTParser {
         const { line: endLine } = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
 
         const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
-        const isExported = modifiers?.some(m => 
-            m.kind === ts.SyntaxKind.ExportKeyword || 
+        const isExported = modifiers?.some(m =>
+            m.kind === ts.SyntaxKind.ExportKeyword ||
             m.kind === ts.SyntaxKind.DefaultKeyword
         ) || false;
 
@@ -259,7 +421,7 @@ export class ASTParser {
         // Arrow function (variable declaration)
         if (ts.isVariableStatement(node)) {
             const declaration = node.declarationList.declarations[0];
-            if (declaration?.initializer && 
+            if (declaration?.initializer &&
                 (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer))) {
                 const name = (declaration.name as ts.Identifier).text;
                 return {
@@ -325,7 +487,7 @@ export class ASTParser {
      */
     private isReactComponent(node: ts.Node): boolean {
         const text = node.getText();
-        
+
         // Check for JSX return
         if (text.includes('return') && (text.includes('<') && text.includes('/>'))) {
             return true;
@@ -379,7 +541,7 @@ export class ASTParser {
      * Get node name (for exports)
      */
     private getNodeName(node: ts.Node): string | null {
-        if (ts.isClassDeclaration(node) || ts.isFunctionDeclaration(node) || 
+        if (ts.isClassDeclaration(node) || ts.isFunctionDeclaration(node) ||
             ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node) ||
             ts.isEnumDeclaration(node)) {
             return node.name?.getText() || null;

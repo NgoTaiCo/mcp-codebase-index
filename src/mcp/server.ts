@@ -541,8 +541,7 @@ The tool returns visualization data that you should interpret and explain to the
                     properties: {
                         sourceDir: {
                             type: 'string',
-                            description: 'Source directory to analyze (default: "src")',
-                            default: 'src'
+                            description: 'Source directory to analyze (default: REPO_PATH - your project root). Can override with specific subdirectory like "lib" or "src"'
                         },
                         tokenBudget: {
                             type: 'number',

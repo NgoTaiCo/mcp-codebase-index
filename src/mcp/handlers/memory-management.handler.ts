@@ -38,7 +38,7 @@ export async function handleBootstrapMemory(
     context: MemoryManagementContext
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
     const schema = z.object({
-        sourceDir: z.string().default('src'),
+        sourceDir: z.string().optional(), // Changed: optional instead of default 'src'
         tokenBudget: z.number().int().min(1000).max(1000000).default(100000),
         topCandidates: z.number().int().min(10).max(200).default(50),
         maxVectors: z.number().int().min(100).max(5000).default(1000),
@@ -64,9 +64,12 @@ Alternative: Use external MCP Memory Server for graph-based memory.`
 
         const validated = schema.parse(args);
 
+        // Use REPO_PATH as default if sourceDir not provided
+        const sourceDir = validated.sourceDir || context.repoPath;
+
         // Create bootstrap orchestrator
         const orchestrator = new BootstrapOrchestrator({
-            sourceDir: validated.sourceDir,
+            sourceDir: sourceDir, // Changed: use variable instead of validated.sourceDir
             collection: context.qdrantConfig.collectionName,
             qdrantUrl: context.qdrantConfig.url,
             qdrantApiKey: context.qdrantConfig.apiKey,
@@ -112,7 +115,7 @@ Alternative: Use external MCP Memory Server for graph-based memory.`
 **Summary:**
 - Entities created: ${result.entities.length}
 - Imported to memory: ${importedCount}
-- Source directory: ${validated.sourceDir}
+- Source directory: ${sourceDir}
 
 **Next steps:**
 1. Use \`list_memory\` to view entities
