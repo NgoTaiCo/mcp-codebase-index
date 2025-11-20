@@ -40,7 +40,8 @@ const server = new CodebaseIndexMCPServer({
         '.git', '.venv', 'node_modules', '__pycache__',
         '.env', 'build', 'dist', '.next', 'target',
         'vendor', 'coverage', '.pytest_cache',
-        '.fvm', '.dart_tool', 'ios/Pods', 'android/.gradle'
+        '.fvm', '.dart_tool', 'ios/Pods', 'android/.gradle',
+        '.symlinks', 'ios/.symlinks', 'macos/.symlinks'
     ],
     promptEnhancement: process.env.PROMPT_ENHANCEMENT === 'true'
 });

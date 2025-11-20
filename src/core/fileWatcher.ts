@@ -110,13 +110,24 @@ export class FileWatcher {
                     const stat = fs.statSync(filePath);
 
                     if (stat.isDirectory()) {
-                        // Check if directory should be ignored
-                        const dirName = path.basename(filePath);
-                        const shouldIgnore = this.ignorePaths.some(pattern =>
-                            dirName === pattern ||
-                            filePath.includes(path.sep + pattern + path.sep) ||
-                            filePath.endsWith(path.sep + pattern)
-                        );
+                        // Check if directory or any parent path contains ignore patterns
+                        const relativePath = path.relative(this.repoPath, filePath);
+                        const pathParts = relativePath.split(path.sep);
+                        
+                        const shouldIgnore = this.ignorePaths.some(pattern => {
+                            // Check exact directory name match
+                            if (pathParts.includes(pattern)) return true;
+                            
+                            // Check basename match
+                            if (path.basename(filePath) === pattern) return true;
+                            
+                            // Check path contains pattern
+                            if (filePath.includes(path.sep + pattern + path.sep)) return true;
+                            if (filePath.endsWith(path.sep + pattern)) return true;
+                            
+                            return false;
+                        });
+                        
                         if (shouldIgnore) {
                             ignoredCount++;
                         } else {
@@ -160,13 +171,23 @@ export class FileWatcher {
 
         this.watcher = chokidar.watch(this.repoPath, {
             ignored: (filePath) => {
-                // Ignore node_modules, .git, etc
-                return this.ignorePaths.some(pattern => filePath.includes(pattern));
+                // Ignore node_modules, .git, symlinks, etc
+                return this.ignorePaths.some(pattern => 
+                    filePath.includes(pattern) || 
+                    filePath.includes(path.sep + pattern + path.sep)
+                );
             },
             persistent: true,
-            usePolling: false,
+            usePolling: false, // Use native fs.watch (faster)
             depth: undefined,
-            ignoreInitial: true
+            ignoreInitial: true,
+            awaitWriteFinish: {
+                stabilityThreshold: 500,
+                pollInterval: 100
+            },
+            // Reduce file descriptor pressure
+            atomic: false,
+            followSymlinks: false // Don't follow symlinks to avoid duplicates
         });
 
         // File added or changed
