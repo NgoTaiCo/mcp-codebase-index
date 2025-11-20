@@ -41,6 +41,25 @@ mcp-codebase-index/
 │   ├── storage/                      # Storage layer
 │   │   └── qdrantClient.ts          # Qdrant vector DB
 │   │
+│   ├── memory/                       # Memory integration (v3.0)
+│   │   ├── vector-store.ts          # Memory vector operations
+│   │   ├── types.ts                 # Memory entity types
+│   │   ├── index.ts                 # Memory exports
+│   │   └── sync/                    # Sync system (future)
+│   │
+│   ├── bootstrap/                    # Smart bootstrap system
+│   │   ├── orchestrator.ts          # Main orchestrator
+│   │   ├── ast-parser.ts            # AST code structure extraction
+│   │   ├── index-analyzer.ts        # Pattern detection from vectors
+│   │   └── gemini-analyzer.ts       # Semantic analysis with Gemini
+│   │
+│   ├── intelligence/                 # Intelligence layer (future)
+│   │   ├── intentAnalyzer.ts        # Query intent detection
+│   │   ├── contextCompiler.ts       # Context compilation
+│   │   ├── implementationTracker.ts # Code change tracking
+│   │   ├── optimizer.ts             # Query optimization
+│   │   └── types.ts                 # Intelligence types
+│   │
 │   ├── enhancement/                  # Prompt enhancement
 │   │   ├── promptEnhancer.ts        # Enhancement logic
 │   │   └── templates.ts             # Enhancement templates
@@ -53,12 +72,14 @@ mcp-codebase-index/
 │   │   └── types.ts                 # Visualization types
 │   │
 │   ├── mcp/                          # MCP server layer
-│   │   ├── server.ts                # MCP server orchestration (1237 lines)
+│   │   ├── server.ts                # MCP server orchestration
 │   │   ├── handlers/                # Modular handler functions
-│   │   │   ├── search.handler.ts         # Search functionality (74 lines)
-│   │   │   ├── enhancement.handler.ts    # Prompt enhancement (131 lines)
-│   │   │   ├── visualization.handler.ts  # Visualizations (296 lines)
-│   │   │   └── indexing.handler.ts       # Index management (544 lines)
+│   │   │   ├── search.handler.ts              # Search functionality
+│   │   │   ├── enhancement.handler.ts         # Prompt enhancement
+│   │   │   ├── visualization.handler.ts       # Visualizations
+│   │   │   ├── indexing.handler.ts            # Index management
+│   │   │   ├── memory-ui.handler.ts           # Memory Web UI
+│   │   │   └── memory-management.handler.ts   # Memory MCP tools (3 only)
 │   │   ├── templates/               # HTML templates
 │   │   │   └── visualization.template.ts # Modern HTML UI
 │   │   └── types/                   # Handler types
@@ -69,13 +90,29 @@ mcp-codebase-index/
 │   │
 │   └── index.ts                      # Entry point
 │
+├── 📚 docs/                          # All documentation
+│   ├── memory/                       # Memory integration docs (v3.0)
+│   │   ├── README.md                # Memory overview
+│   │   ├── MEMORY_USER_GUIDE.md     # Complete user guide
+│   │   ├── MEMORY_QUICK_REFERENCE.md # Quick reference
+│   │   └── MEMORY_VISUAL_GUIDE.md   # Visual diagrams
+│   │
+│   ├── guides/                       # Detailed guides
+│   │   ├── BOOTSTRAP_GUIDE.md       # Bootstrap system guide
+│   │   ├── MEMORY_WEB_UI.md         # Memory Web UI guide
+│   │   └── ...                      # Other guides
+│   └── ...
+│
+├── 🔧 scripts/                       # Utility scripts
+│   └── bootstrap-cli.ts             # Bootstrap CLI (for testing)
+│
 ├── ⚙️ config/                        # Configuration files
 │   ├── README.md                     # Config documentation
 │   └── vscode_settings.example.json # VS Code settings example
 │
 ├── 📦 .data/                         # Runtime data (gitignored)
-│   ├── memory/                       # Index state & metadata
-│   └── vector_storage/               # Local vector cache
+│   ├── index-metadata.json/         # Incremental index state
+│   └── vector_storage/              # Local vector cache
 │
 ├── 🏗️ dist/                          # Build output (gitignored)
 │   └── (compiled JavaScript files)
@@ -110,7 +147,7 @@ Each directory has a clear, single responsibility:
   - `types/` - Handler-specific types
 - `src/types/` - Shared type definitions
 
-### 2. **Modular Handler Architecture (v1.5.4-beta.19)**
+### 2. **Modular Handler Architecture (v1.6.0)**
 The MCP server uses a **context injection pattern** for clean handler separation:
 
 **Structure:**
@@ -139,26 +176,43 @@ export async function handleSearch(
 - **Testability**: Handlers can be tested in isolation
 - **Maintainability**: Clear dependencies via context interfaces
 - **Scalability**: Easy to add new handlers
-- **Readability**: Reduced from 2060 to 1237 lines in server.ts
+- **Readability**: Clean separation of concerns
 
 **Handler Modules:**
-- `search.handler.ts` - Search functionality (74 lines)
-- `enhancement.handler.ts` - Prompt enhancement (131 lines)
-- `visualization.handler.ts` - Vector visualizations (296 lines)
-- `indexing.handler.ts` - Index management (544 lines)
+- `search.handler.ts` - Search functionality
+- `enhancement.handler.ts` - Prompt enhancement
+- `visualization.handler.ts` - Vector visualizations
+- `indexing.handler.ts` - Index management
+- `memory-ui.handler.ts` - Memory Web UI
+- `memory-management.handler.ts` - Memory MCP tools (3 only)
 
-### 3. **Clean Root Directory**
+### 3. **Memory Integration (v3.0 - Minimalist Design)**
+Memory system provides intelligent context via:
+- **Memory Vector Store** - Qdrant-based semantic memory
+- **3 MCP Tools** - `bootstrap_memory`, `search_memory`, `open_memory_ui`
+- **Smart Bootstrap** - AST + Index + Gemini analysis
+- **Web UI** - D3.js visualization at localhost:3001
+- **No CLI** - AI chat or Web UI only
+
+**Memory Directories:**
+- `src/memory/` - Memory vector store implementation
+- `src/bootstrap/` - Smart bootstrap system (AST + Index + Gemini)
+- `src/intelligence/` - Context compilation & tracking (future)
+- `docs/memory/` - Complete memory documentation
+
+### 4. **Clean Root Directory**
 Only essential files at root level:
 - Package management: `package.json`, `package-lock.json`
 - Configuration: `tsconfig.json`, `.gitignore`, `.env.example`
 - Documentation: `README.md`, `PROJECT_STRUCTURE.md`
 
-### 4. **Documentation First**
+### 5. **Documentation First**
 - Every major directory has a README.md
+- Memory system has complete docs in `docs/memory/`
 - Navigation guide helps users find what they need
 - Examples and guides for common tasks
 
-### 5. **Scalability**
+### 6. **Scalability**
 - Easy to add new features (create new folder in `src/`)
 - Easy to add new handlers (create new handler file)
 - Easy to add new docs (add to `docs/guides/`)
@@ -209,11 +263,19 @@ import { PromptEnhancer } from '../enhancement/promptEnhancer.js';
 import { VectorVisualizer } from '../visualization/visualizer.js';
 import { IndexerConfig } from '../types/index.js';
 
-// Import handlers (v1.5.4-beta.19+)
+// Import handlers (v1.6.0+)
 import { handleSearch, SearchHandlerContext } from './handlers/search.handler.js';
 import { handleEnhancePrompt, handleEnhancementTelemetry, EnhancementHandlerContext } from './handlers/enhancement.handler.js';
 import { handleVisualizeCollection, handleVisualizeQuery, handleExportVisualizationHtml, VisualizationHandlerContext } from './handlers/visualization.handler.js';
 import { handleIndexingStatus, handleCheckIndex, handleRepairIndex, IndexingHandlerContext } from './handlers/indexing.handler.js';
+import { handleOpenMemoryUI, handleCloseMemoryUI, MemoryUIHandlerContext } from './handlers/memory-ui.handler.js';
+import { handleBootstrapMemory, handleSearchMemory, MemoryManagementContext } from './handlers/memory-management.handler.js';
+
+// Import memory & intelligence
+import { MemoryVectorStore } from '../memory/vector-store.js';
+import { BootstrapOrchestrator } from '../bootstrap/orchestrator.js';
+import { IntentAnalyzer } from '../intelligence/intentAnalyzer.js';
+import { ContextCompiler } from '../intelligence/contextCompiler.js';
 
 // From handlers
 import { CodeEmbedder } from '../../core/embedder.js';
@@ -259,12 +321,13 @@ import { CodeChunk } from '../types/index.js';
 These directories are created at runtime and not tracked by git:
 
 ```
-.data/              # Runtime data
-├── memory/         # Index state & metadata
-└── vector_storage/ # Local vector cache
+.data/                     # Runtime data
+├── index-metadata.json/   # Incremental index state
+└── vector_storage/        # Local vector cache
 
-dist/               # Build output
-node_modules/       # Dependencies
+memory/                    # Memory entity storage (Qdrant-based)
+dist/                      # Build output
+node_modules/              # Dependencies
 ```
 
 ---
@@ -273,8 +336,8 @@ node_modules/       # Dependencies
 
 | Type | Count | Location |
 |------|-------|----------|
-| TypeScript Source | 9 | `src/` |
-| Documentation | 20+ | `docs/` |
+| TypeScript Source | 30+ | `src/` |
+| Documentation | 30+ | `docs/`, `docs/memory/` |
 | Configuration | 3 | `config/`, root |
 | Build Output | Auto-generated | `dist/` |
 
@@ -284,6 +347,9 @@ node_modules/       # Dependencies
 
 ### "Where is the MCP server implementation?"
 → `src/mcp/server.ts`
+
+### "Where is memory integration?"
+→ `src/memory/`, `src/bootstrap/`, `docs/memory/`
 
 ### "Where is the indexing logic?"
 → `src/core/indexer.ts`

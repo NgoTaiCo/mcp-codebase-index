@@ -32,9 +32,9 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 ### 💻 For Developers
 - **[Source Code Structure](./src/README.md)** - Code organization
 - **[MCP Server Guide](./docs/guides/mcp-server-guide.md)** - Build your own MCP server
-- **[Phase 1 Summary](./docs/PHASE_1_SUMMARY.md)** - Memory Vector Store implementation
-- **[Phase 2 Summary](./docs/PHASE_2_SUMMARY.md)** - Memory Sync System implementation
-- **[Bootstrap Guide](./docs/guides/BOOTSTRAP_GUIDE.md)** - Auto-generate memory entities (NEW!)
+- **[Bootstrap Guide](./docs/guides/BOOTSTRAP_GUIDE.md)** - Auto-generate memory entities
+- **[Memory Integration](./docs/memory/README.md)** - Memory system overview (v3.0)
+- **[Memory Quick Reference](./docs/memory/MEMORY_QUICK_REFERENCE.md)** - Memory cheat sheet
 - **[Roadmap](./docs/planning/IMPROVEMENT_PLAN.md)** - Future plans
 
 ### 🔧 Resources
@@ -58,15 +58,15 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - 🔄 **Real-time Watch** - Auto-updates index on file changes
 - 🌐 **Multi-language** - Supports 15+ programming languages
 
-### Memory & Intelligence (New in v3.1)
-- 🧠 **Memory Vector Store** - 8.7x faster memory search (103ms vs 901ms)
-- 🔄 **Smart Memory Sync** - Auto-sync with change detection (only updates what changed)
-- 📝 **Auto Memory Update** - Automatically creates memory entities from code changes
-- 🎯 **Event-Driven Sync** - Real-time memory updates (onEntityUpdated, onEntityDeleted)
-- 💻 **Memory CLI** - 6 commands for memory management (list, show, search, delete, stats, health)
-- 🚀 **Bootstrap System** - Auto-generate memory entities from codebase (5-6 min for 500 files)
-- 🤖 **AI-Powered Analysis** - 95.6% confidence semantic analysis with Gemini
-- 💰 **Token Efficient** - <100k tokens for large projects (16.5% budget usage)
+### Memory & Intelligence
+- 🧠 **Memory Vector Store** - Qdrant-based semantic memory (768-dim Gemini embeddings)
+- 🤖 **3 MCP Tools Only** - `bootstrap_memory`, `search_memory`, `open_memory_ui`
+- � **Smart Bootstrap** - Auto-generate entities via AST + Index + Gemini (3-5 min for 500 files)
+- � **Web UI** - D3.js graph visualization at localhost:3001
+- � **Token Efficient** - <100k tokens for large projects (~$0.01 cost)
+- 🎯 **AI-First Design** - No CLI, interact via AI chat or Web UI only
+- 🔍 **Semantic Search** - Natural language queries ("find auth logic")
+- � **Auto-Indexing** - Background entity creation during code changes
 
 ### Advanced Features
 - 🤖 **Prompt Enhancement** - AI-powered query improvement (optional)
@@ -182,51 +182,43 @@ npx tsx scripts/bootstrap-cli.ts \
 - ✅ Extracts code structure via AST parsing (0 tokens, 549 files/sec)
 - ✅ Detects patterns via clustering (0 tokens, 464 vectors/sec)
 - ✅ Analyzes complex code with Gemini AI (95.6% confidence)
-- ✅ Generates 19+ entities in ~30 seconds for small projects
-- ✅ Estimates 5-6 minutes for 500-file projects
+- ✅ Generates 50+ entities in 3-5 minutes for large projects
+- ✅ Token efficient: <100k tokens (~$0.01 cost)
 
 **Performance:**
-- Token efficient: <100k for large projects (16.5% usage)
-- Quality: 95.6% AI confidence average
 - Fast: 549 files/sec AST, 464 vectors/sec clustering
+- Quality: 95.6% AI confidence average
+- Cheap: <100k tokens for 500-file project
 
 **📖 Complete guide:** [Bootstrap Guide](./docs/guides/BOOTSTRAP_GUIDE.md)
 
-### Memory Management CLI
+### Memory Management (AI Chat + Web UI Only)
 
-Manage memory entities directly:
+**Bootstrap via AI:**
+```
+"Bootstrap memory for this codebase"
+```
+Auto-generates 50+ entities in 3-5 minutes.
 
-```bash
-# List all memory entities
-npx tsx cli/memory-cli.ts list
-npx tsx cli/memory-cli.ts list --type=Feature --limit=20
-
-# Show entity details
-npx tsx cli/memory-cli.ts show google_oauth_feature
-
-# Search memory
-npx tsx cli/memory-cli.ts search "OAuth implementation"
-npx tsx cli/memory-cli.ts search "error handling" --limit=5 --type=Pattern
-
-# Delete entity
-npx tsx cli/memory-cli.ts delete old_feature --force
-
-# View statistics
-npx tsx cli/memory-cli.ts stats
-
-# Health check
-npx tsx cli/memory-cli.ts health
+**Search via AI:**
+```
+"Search memory for authentication entities"
+"Find recent bugfixes in memory"
 ```
 
-**Available Commands:**
-- `list` - List all entities (filterable by type, limit)
-- `show <name>` - Show entity details
-- `search <query>` - Search with similarity threshold
-- `delete <name>` - Delete entity (with --force flag)
-- `stats` - View memory statistics
-- `health` - Check sync health
+**Visual exploration:**
+```
+"Open memory UI"
+```
+Opens Web UI at http://localhost:3001 with:
+- 📊 D3.js graph visualization
+- 🔍 Real-time search & filters
+- 📈 Statistics dashboard
+- 🖱️ Click nodes for details
 
-**📖 More details:** [Phase 2 Summary](./docs/PHASE_2_SUMMARY.md)
+**No CLI** - All interactions via AI chat or Web UI.
+
+**📖 Full guide:** [Memory User Guide](./docs/memory/MEMORY_USER_GUIDE.md)
 
 ### Check Indexing Status
 

@@ -125,9 +125,6 @@ Complete overhaul of memory system with AI-first minimalist design philosophy.
 - `scripts/bootstrap-cli.ts` (176 lines, for testing)
 - `docs/memory/*.md` (4 documentation files)
 
-### Files Removed
-- `cli/memory-cli.ts` (deprecated - use AI chat or Web UI)
-
 ### Design Philosophy
 **Minimalist v3.0**:
 - ✅ 3 MCP tools only

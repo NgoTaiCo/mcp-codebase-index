@@ -564,13 +564,17 @@ console.log(results); // []
 const stats = await store.getStats();
 console.log('Total vectors:', stats.totalVectors);
 
-// If 0, run bootstrap first
-// npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
-```# If count is 0, sync memory
-npx tsx scripts/memory-cli.ts sync-all
+// If 0, run bootstrap first via AI chat
+// Tell AI: "Bootstrap memory for this codebase"
+```
+
+**Solution (via AI chat):**
+```
+User: "Sync memory entities to vector store"
+AI: [Calls MCP tool to sync]
 
 # Verify sync worked
-npx tsx scripts/memory-cli.ts stats
+User: "Show memory statistics"
 ```
 
 ### Issue 5: "Auto-sync not working"
