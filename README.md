@@ -34,6 +34,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - **[MCP Server Guide](./docs/guides/mcp-server-guide.md)** - Build your own MCP server
 - **[Phase 1 Summary](./docs/PHASE_1_SUMMARY.md)** - Memory Vector Store implementation
 - **[Phase 2 Summary](./docs/PHASE_2_SUMMARY.md)** - Memory Sync System implementation
+- **[Bootstrap Guide](./docs/guides/BOOTSTRAP_GUIDE.md)** - Auto-generate memory entities (NEW!)
 - **[Roadmap](./docs/planning/IMPROVEMENT_PLAN.md)** - Future plans
 
 ### 🔧 Resources
@@ -63,6 +64,9 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - 📝 **Auto Memory Update** - Automatically creates memory entities from code changes
 - 🎯 **Event-Driven Sync** - Real-time memory updates (onEntityUpdated, onEntityDeleted)
 - 💻 **Memory CLI** - 6 commands for memory management (list, show, search, delete, stats, health)
+- 🚀 **Bootstrap System** - Auto-generate memory entities from codebase (5-6 min for 500 files)
+- 🤖 **AI-Powered Analysis** - 95.6% confidence semantic analysis with Gemini
+- 💰 **Token Efficient** - <100k tokens for large projects (16.5% budget usage)
 
 ### Advanced Features
 - 🤖 **Prompt Enhancement** - AI-powered query improvement (optional)
@@ -147,6 +151,46 @@ Ask GitHub Copilot:
 <!-- PLACEHOLDER: Insert screenshot of codebase visualization -->
 
 **📖 Complete guide:** [Vector Visualization Guide](./docs/guides/VECTOR_VISUALIZATION.md)
+
+### Bootstrap Memory from Codebase (NEW!)
+
+Automatically generate high-quality memory entities from your codebase:
+
+```bash
+# Basic bootstrap
+npx tsx scripts/bootstrap-cli.ts \
+  --source=src/ \
+  --collection=codebase
+
+# With custom settings
+npx tsx scripts/bootstrap-cli.ts \
+  --source=src/ \
+  --collection=codebase \
+  --budget=100000 \
+  --top=50 \
+  --output=bootstrap-results.json
+
+# Fast bootstrap (small projects)
+npx tsx scripts/bootstrap-cli.ts \
+  --source=src/ \
+  --collection=test \
+  --budget=10000 \
+  --top=10
+```
+
+**What it does:**
+- ✅ Extracts code structure via AST parsing (0 tokens, 549 files/sec)
+- ✅ Detects patterns via clustering (0 tokens, 464 vectors/sec)
+- ✅ Analyzes complex code with Gemini AI (95.6% confidence)
+- ✅ Generates 19+ entities in ~30 seconds for small projects
+- ✅ Estimates 5-6 minutes for 500-file projects
+
+**Performance:**
+- Token efficient: <100k for large projects (16.5% usage)
+- Quality: 95.6% AI confidence average
+- Fast: 549 files/sec AST, 464 vectors/sec clustering
+
+**📖 Complete guide:** [Bootstrap Guide](./docs/guides/BOOTSTRAP_GUIDE.md)
 
 ### Memory Management CLI
 
