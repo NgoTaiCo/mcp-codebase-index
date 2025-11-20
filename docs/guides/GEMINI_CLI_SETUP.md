@@ -449,7 +449,7 @@ You can add other Gemini CLI settings alongside MCP servers:
     }
   },
   "chat": {
-    "model": "gemini-2.0-flash-exp",
+    "model": "gemini-2.5-flash",
     "temperature": 0.7
   },
   "mcpServers": {

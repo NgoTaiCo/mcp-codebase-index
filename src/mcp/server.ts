@@ -31,10 +31,12 @@ import { handleSearch, SearchHandlerContext } from './handlers/search.handler.js
 import { handleEnhancePrompt, handleEnhancementTelemetry, EnhancementHandlerContext } from './handlers/enhancement.handler.js';
 import { handleVisualizeCollection, handleVisualizeQuery, handleExportVisualizationHtml, VisualizationHandlerContext } from './handlers/visualization.handler.js';
 import { handleIndexingStatus, handleCheckIndex, handleRepairIndex, IndexingHandlerContext } from './handlers/indexing.handler.js';
+import { handleOpenMemoryUI, handleCloseMemoryUI, MemoryUIHandlerContext } from './handlers/memory-ui.handler.js';
 import { IntentAnalyzer } from '../intelligence/intentAnalyzer.js';
 import { ContextCompiler } from '../intelligence/contextCompiler.js';
 import { ImplementationTracker } from '../intelligence/implementationTracker.js';
 import { IntelligentOptimizer } from '../intelligence/optimizer.js';
+import { MemoryVectorStore } from '../memory/vector-store.js';
 
 export class CodebaseIndexMCPServer {
     private server: Server;
@@ -42,6 +44,7 @@ export class CodebaseIndexMCPServer {
     private indexer: CodeIndexer;
     private embedder: CodeEmbedder;
     private vectorStore: QdrantVectorStore;
+    private memoryVectorStore: MemoryVectorStore | null = null;
     private promptEnhancer: PromptEnhancer | null = null;
     private intentAnalyzer: IntentAnalyzer | null = null;
     private optimizer: IntelligentOptimizer | null = null;
@@ -444,6 +447,38 @@ The tool returns visualization data that you should interpret and explain to the
             }
         });
 
+        // Add Memory UI tool
+        tools.push({
+            name: 'open_memory_ui',
+            description: 'Launch interactive Memory Explorer web UI to visualize and explore memory entities, relations, and statistics. Opens a web server with D3.js graph visualization.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    port: {
+                        type: 'number',
+                        description: 'Port number for the web server (default: 3001)',
+                        minimum: 1024,
+                        maximum: 65535,
+                        default: 3001
+                    },
+                    host: {
+                        type: 'string',
+                        description: 'Host to bind the server (default: localhost)',
+                        default: 'localhost'
+                    }
+                }
+            }
+        });
+
+        tools.push({
+            name: 'close_memory_ui',
+            description: 'Stop the Memory Explorer web UI server.',
+            inputSchema: {
+                type: 'object',
+                properties: {}
+            }
+        });
+
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
             tools
         }));
@@ -476,6 +511,12 @@ The tool returns visualization data that you should interpret and explain to the
             }
             if (request.params.name === 'export_visualization_html') {
                 return await this.handleExportVisualizationHtml(request.params.arguments);
+            }
+            if (request.params.name === 'open_memory_ui') {
+                return await this.handleOpenMemoryUI(request.params.arguments);
+            }
+            if (request.params.name === 'close_memory_ui') {
+                return await this.handleCloseMemoryUI(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -560,6 +601,24 @@ The tool returns visualization data that you should interpret and explain to the
             repoPath: this.config.repoPath
         };
         return await handleExportVisualizationHtml(args, context);
+    }
+
+    /**
+     * Handle open memory UI
+     */
+    private async handleOpenMemoryUI(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        const context: MemoryUIHandlerContext = {
+            vectorStore: this.vectorStore,
+            memoryVectorStore: this.memoryVectorStore || undefined
+        };
+        return await handleOpenMemoryUI(args, context);
+    }
+
+    /**
+     * Handle close memory UI
+     */
+    private async handleCloseMemoryUI(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        return await handleCloseMemoryUI();
     }
 
     /**
