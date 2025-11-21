@@ -174,14 +174,6 @@ Result: Interactive clusters showing:
 - Test Suites (12%)
 ```
 
-<!-- PLACEHOLDER: Insert example of clustered visualization -->
-
-**Visualize search results:**
-```
-User: "Visualize authentication code"
-
-<!-- PLACEHOLDER: Insert example of query visualization -->
-
 **Export as HTML:**
 ```
 User: "Export visualization as HTML"
