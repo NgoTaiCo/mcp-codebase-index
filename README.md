@@ -147,8 +147,6 @@ Ask GitHub Copilot:
 
 **📖 More examples:** [Testing Guide](./docs/guides/TEST_SEARCH.md)
 
----
-
 ## 📊 Vector Visualization
 
 > **See your codebase in 2D/3D space** - Understand semantic relationships and code organization visually.
@@ -161,8 +159,6 @@ Vector visualization transforms your codebase's **768-dimensional embeddings** i
 - 🔍 **Understand architecture** - See your codebase structure at a glance
 - 🎯 **Debug search results** - Visualize why certain code was retrieved
 - 📈 **Track code organization** - Identify modules, patterns, and outliers
-
-<!-- PLACEHOLDER: Insert overview diagram of visualization process -->
 
 ### Quick Start
 
