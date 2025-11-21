@@ -91,24 +91,140 @@ await store.store({
 });
 ```
 
-##### batchStore()
+##### storeEntity()
 
-Store multiple entities in one operation.
+Store single memory entity with validation.
 
 ```typescript
-async batchStore(entities: MemoryEntity[]): Promise<BatchStoreResult>
+async storeEntity(entity: MemoryEntity): Promise<void>
+```
+
+**Parameters:**
+- `entity` - Memory entity to store
+
+**Validation:**
+- Validates `name` (non-empty string)
+- Validates `entityType` (non-empty string)
+- Validates `observations` (non-empty array, no empty strings)
+- Throws descriptive errors if validation fails
+
+**Example:**
+```typescript
+await store.storeEntity({
+  name: 'google_oauth_feature',
+  entityType: 'Feature',
+  observations: [
+    'Implements Google OAuth 2.0 authentication',
+    'Uses googleapis npm package',
+    'Stores tokens in secure cookie'
+  ],
+  relatedFiles: ['src/auth/google-oauth.ts'],
+  relatedComponents: ['AuthController', 'OAuthService'],
+  dependencies: ['googleapis', 'express-session']
+});
+```
+
+##### storeBatch() / parallelEmbedBatch()
+
+Store multiple entities with parallel embedding (2.8-6.0x faster).
+
+```typescript
+async storeBatch(entities: MemoryEntity[]): Promise<BatchStoreResult>
 ```
 
 **Parameters:**
 - `entities` - Array of entities to store
+
+**Performance:**
+- Uses `Promise.allSettled` with `CONCURRENT_LIMIT=10`
+- Respects Gemini API rate limits (1500 RPM)
+- 2.8x speedup for 10 entities, 6.0x for 50 entities
+- Validates each entity before embedding
 
 **Returns:**
 - `BatchStoreResult` - Success/failure counts
 
 **Example:**
 ```typescript
-const result = await store.batchStore([entity1, entity2, entity3]);
+const result = await store.storeBatch([entity1, entity2, entity3]);
 console.log(`Stored: ${result.successful}, Failed: ${result.failed}`);
+// 10 entities: ~1.8s vs 5.0s sequential (2.8x faster)
+```
+
+##### clearCollection()
+
+Delete all vectors from memory collection (orphaned cleanup).
+
+```typescript
+async clearCollection(): Promise<number>
+```
+
+**Returns:**
+- Number of vectors deleted
+
+**Features:**
+- Idempotent (safe to call multiple times)
+- Returns 0 if collection already empty
+- Collection remains functional after cleanup
+- Used in `bootstrap_memory` with `clearExisting: true`
+
+**Example:**
+```typescript
+const count = await store.clearCollection();
+console.log(`Cleared ${count} orphaned vectors`);
+```
+
+##### checkSync()
+
+Check memory collection health and sync status.
+
+```typescript
+async checkSync(): Promise<MemorySyncStatus>
+```
+
+**Returns:**
+- `MemorySyncStatus`:
+  - `totalVectors` - Total vectors in collection
+  - `healthy` - Boolean health status
+  - `issues` - Array of detected issues
+  - `lastChecked` - Timestamp of check
+
+**Detects:**
+- Vector size mismatch (expects 768-dim)
+- Distance metric issues (should be Cosine)
+- Missing collection
+
+**Example:**
+```typescript
+const status = await store.checkSync();
+if (!status.healthy) {
+  console.error('Issues:', status.issues);
+}
+```
+
+##### startAutoSync() / stopAutoSync()
+
+Enable/disable periodic health monitoring.
+
+```typescript
+async startAutoSync(intervalMinutes: number = 5): Promise<void>
+async stopAutoSync(): Promise<void>
+```
+
+**Parameters:**
+- `intervalMinutes` - Check interval (default: 5 minutes)
+
+**Features:**
+- Auto-starts when `ENABLE_INTERNAL_MEMORY=true`
+- Idempotent (safe to call multiple times)
+- Logs health status to console
+- Use `check_memory_sync` MCP tool for manual checks
+
+**Example:**
+```typescript
+await store.startAutoSync(10); // Check every 10 minutes
+// ... later ...
+await store.stopAutoSync();
 ```
 
 ##### search()

@@ -1,14 +1,20 @@
-# Architecture - MCP Codebase Index v3.1
+# Architecture - MCP Codebase Index v3.2
 
-**Version:** 3.1 (Memory Optimization System)  
-**Date:** 2025-11-20  
+**Version:** 3.2 (Memory Optimization System)  
+**Date:** 2025-11-21  
 **Status:** ✅ Current Architecture
 
 ---
 
 ## Overview
 
-This document describes the **MCP-first architecture** of the Codebase Index system with Memory Optimization (v3.1).
+This document describes the **MCP-first architecture** of the Codebase Index system with Memory Optimization (v3.2).
+
+**Latest Enhancements:**
+- ⚡ Parallel embedding with 2.8-6.0x speedup
+- 🛡️ Entity validation system
+- 🧹 Orphaned vector cleanup
+- 🔍 Auto-sync health monitoring
 
 ---
 

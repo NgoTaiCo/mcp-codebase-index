@@ -61,7 +61,7 @@ export class ImplementationTracker {
     private autoSync: boolean;
 
     constructor(
-        apiKey?: string, 
+        apiKey?: string,
         model?: string,
         syncManager?: MemorySyncManager
     ) {
@@ -71,16 +71,16 @@ export class ImplementationTracker {
         }
 
         this.gemini = new GoogleGenerativeAI(key);
-        this.model = model || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+        this.model = model || process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'; // Changed: Flash-Lite default
         this.activeTrackings = new Map();
         this.fileChanges = new Map();
         this.syncManager = syncManager;
-        
+
         // Auto-sync enabled if sync manager provided and feature flag is on
         this.autoSync = !!syncManager && process.env.VECTOR_MEMORY_SEARCH === 'true';
 
         console.log(`[ImplementationTracker] Initialized with model: ${this.model}`);
-        
+
         if (this.autoSync) {
             console.log('[ImplementationTracker] Auto memory sync enabled');
         }
@@ -254,7 +254,7 @@ Now analyze the changes above.`;
         // Auto-sync to memory if enabled
         if (this.autoSync && this.syncManager) {
             console.log('[ImplementationTracker] Triggering auto memory sync...');
-            
+
             try {
                 await this.updateMemoryFromTracking(tracking);
             } catch (error) {
@@ -312,7 +312,7 @@ Now analyze the changes above.`;
                     `Component ${component} added`,
                     `Part of implementation: ${tracking.intent_id}`
                 ],
-                relatedFiles: tracking.files_created.filter(f => 
+                relatedFiles: tracking.files_created.filter(f =>
                     f.toLowerCase().includes(component.toLowerCase())
                 ),
                 relatedComponents: [component],
@@ -341,11 +341,11 @@ Now analyze the changes above.`;
         // Sync to memory
         if (entities.length > 0) {
             console.log(`[ImplementationTracker] Syncing ${entities.length} entities to memory...`);
-            
+
             const syncResult = await this.syncManager.syncAll(entities);
-            
+
             console.log(`[ImplementationTracker] Memory sync complete: ${syncResult.created} created, ${syncResult.updated} updated`);
-            
+
             if (syncResult.errors.length > 0) {
                 console.error(`[ImplementationTracker] Sync errors: ${syncResult.errors.join(', ')}`);
             }

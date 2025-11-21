@@ -48,12 +48,12 @@ export class FileWatcher {
         try {
             const hashesObj = Object.fromEntries(this.fileHashes);
             const dir = path.dirname(metadataPath);
-            
+
             // Ensure directory exists
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
-            
+
             fs.writeFileSync(metadataPath, JSON.stringify(hashesObj, null, 2), 'utf-8');
         } catch (error) {
             console.error('[FileWatcher] Error saving metadata:', error);
@@ -99,7 +99,7 @@ export class FileWatcher {
         const changed: string[] = [];
         let totalScanned = 0;
         let ignoredCount = 0;
-        
+
         const walk = (dir: string) => {
             const files = fs.readdirSync(dir);
 
@@ -113,22 +113,26 @@ export class FileWatcher {
                         // Check if directory or any parent path contains ignore patterns
                         const relativePath = path.relative(this.repoPath, filePath);
                         const pathParts = relativePath.split(path.sep);
-                        
+                        const basename = path.basename(filePath);
+
                         const shouldIgnore = this.ignorePaths.some(pattern => {
                             // Check exact directory name match
                             if (pathParts.includes(pattern)) return true;
-                            
+
                             // Check basename match
-                            if (path.basename(filePath) === pattern) return true;
-                            
+                            if (basename === pattern) return true;
+
                             // Check path contains pattern
                             if (filePath.includes(path.sep + pattern + path.sep)) return true;
                             if (filePath.endsWith(path.sep + pattern)) return true;
-                            
+
                             return false;
                         });
-                        
-                        if (shouldIgnore) {
+
+                        // IMPORTANT: Skip ALL hidden directories (starting with .)
+                        const isHidden = basename.startsWith('.') && basename !== '.';
+
+                        if (shouldIgnore || isHidden) {
                             ignoredCount++;
                         } else {
                             walk(filePath);
@@ -172,8 +176,8 @@ export class FileWatcher {
         this.watcher = chokidar.watch(this.repoPath, {
             ignored: (filePath) => {
                 // Ignore node_modules, .git, symlinks, etc
-                return this.ignorePaths.some(pattern => 
-                    filePath.includes(pattern) || 
+                return this.ignorePaths.some(pattern =>
+                    filePath.includes(pattern) ||
                     filePath.includes(path.sep + pattern + path.sep)
                 );
             },

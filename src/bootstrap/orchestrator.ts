@@ -93,7 +93,7 @@ export class BootstrapOrchestrator {
         // Set defaults
         this.config = {
             ...config,
-            geminiModel: config.geminiModel || 'gemini-2.5-flash',
+            geminiModel: config.geminiModel || 'gemini-2.5-flash-lite', // Changed: Flash-Lite default
             tokenBudget: config.tokenBudget || 100_000,
             maxVectors: config.maxVectors || 1000,
             clusterCount: config.clusterCount || 5,

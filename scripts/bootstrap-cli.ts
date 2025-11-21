@@ -60,6 +60,7 @@ Optional Settings:
   --clusters <num>     Number of clusters to detect (default: 5)
   --model <name>       Gemini model to use (default: gemini-2.5-flash)
   --output <path>      Save results to JSON file
+  --clear              Clear existing vectors before bootstrap (prevents orphaned data)
   --verbose            Show detailed logs
 
 Examples:

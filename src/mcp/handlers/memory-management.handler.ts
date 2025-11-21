@@ -12,6 +12,7 @@
 import { z } from 'zod';
 import { MemoryVectorStore } from '../../memory/vector-store.js';
 import { BootstrapOrchestrator } from '../../bootstrap/orchestrator.js';
+import { DirectoryBootstrapOrchestrator } from '../../bootstrap/directory-orchestrator.js';
 import type { MemoryEntity, MemorySearchOptions } from '../../memory/types.js';
 import { QdrantVectorStore } from '../../storage/qdrantClient.js';
 import { CodeEmbedder } from '../../core/embedder.js';
@@ -38,13 +39,13 @@ export async function handleBootstrapMemory(
     context: MemoryManagementContext
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
     const schema = z.object({
-        sourceDir: z.string().optional(), // Changed: optional instead of default 'src'
-        tokenBudget: z.number().int().min(1000).max(1000000).default(100000),
-        topCandidates: z.number().int().min(10).max(200).default(50),
-        maxVectors: z.number().int().min(100).max(5000).default(1000),
-        clusterCount: z.number().int().min(3).max(20).default(5),
+        sourceDir: z.string().optional(),
+        tokenBudget: z.number().int().min(1000).max(1000000).default(50000), // Reduced for directory approach
         outputPath: z.string().optional(),
-        autoImport: z.boolean().default(true)
+        autoImport: z.boolean().default(true),
+        clearExisting: z.boolean().default(false), // TODO #3: Clear orphaned vectors before bootstrap
+        geminiModel: z.string().default('gemini-2.5-flash'), // Flash for deep analysis quality
+        ignorePaths: z.array(z.string()).optional()
     });
 
     try {
@@ -65,25 +66,26 @@ Alternative: Use external MCP Memory Server for graph-based memory.`
         const validated = schema.parse(args);
 
         // Use REPO_PATH as default if sourceDir not provided
-        const sourceDir = validated.sourceDir || context.repoPath;
+        const repoPath = validated.sourceDir || context.repoPath;
 
         // CRITICAL: Ensure memory collection exists before bootstrap
         await context.memoryVectorStore.initialize();
 
-        // Create bootstrap orchestrator
-        const orchestrator = new BootstrapOrchestrator({
-            sourceDir: sourceDir, // Changed: use variable instead of validated.sourceDir
-            collection: context.qdrantConfig.collectionName,
-            qdrantUrl: context.qdrantConfig.url,
-            qdrantApiKey: context.qdrantConfig.apiKey,
+        // Clear existing vectors if requested (TODO #3: Orphaned Vector Cleanup)
+        let clearedCount = 0;
+        if (validated.clearExisting) {
+            clearedCount = await context.memoryVectorStore.clearCollection();
+        }
+
+        // Create directory-based bootstrap orchestrator
+        const orchestrator = new DirectoryBootstrapOrchestrator({
+            repoPath: repoPath,
             geminiApiKey: context.geminiApiKey,
-            geminiModel: 'gemini-2.5-flash',
+            geminiModel: validated.geminiModel,
             tokenBudget: validated.tokenBudget,
-            topCandidates: validated.topCandidates,
-            maxVectors: validated.maxVectors,
-            clusterCount: validated.clusterCount,
+            ignorePaths: validated.ignorePaths,
             outputPath: validated.outputPath,
-            verbose: false
+            verbose: true
         });
 
         // Run bootstrap
@@ -116,9 +118,14 @@ Alternative: Use external MCP Memory Server for graph-based memory.`
                     text: `✅ Bootstrap completed successfully!
 
 **Summary:**
+- Architecture: ${result.architecture}
+- Language: ${result.primaryLanguage}
+- Directories analyzed: ${result.analyzedDirectories}
 - Entities created: ${result.entities.length}
 - Imported to memory: ${importedCount}
-- Source directory: ${sourceDir}
+${clearedCount > 0 ? `- Cleared old vectors: ${clearedCount}` : ''}
+- Tokens used: ${result.tokensUsed.toLocaleString()}
+- Time: ${(result.totalTime / 1000).toFixed(2)}s
 
 **Next steps:**
 1. Use \`list_memory\` to view entities
@@ -136,6 +143,9 @@ ${validated.outputPath ? `\n📄 Saved to: ${validated.outputPath}` : ''}`
                 text: `✅ Bootstrap completed!
 
 **Created ${result.entities.length} entities**
+- Architecture: ${result.architecture}
+- Language: ${result.primaryLanguage}
+- Analyzed: ${result.analyzedDirectories} directories
 
 ${validated.outputPath ? `Saved to: ${validated.outputPath}\n\n` : ''}To import: Use \`import_memory_entities\` tool`
             }]

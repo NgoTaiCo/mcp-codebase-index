@@ -48,31 +48,23 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 
 ## ✨ Features
 
-### Core Search & Indexing
-- 🔍 **Semantic Search** - Find code by meaning, not just keywords
-- 🎯 **Smart Chunking** - Automatically splits code into logical functions/classes
-- 🔄 **Incremental Indexing** - Only re-indexes changed files (90%+ time savings)
-- 💾 **Auto-save Checkpoints** - Saves progress every 10 files, resume anytime
-- 📊 **Real-time Progress** - Track indexing with ETA and performance metrics
-- ⚡ **Parallel Processing** - 25x faster indexing with batch execution
-- 🔄 **Real-time Watch** - Auto-updates index on file changes
-- 🌐 **Multi-language** - Supports 15+ programming languages
+### 🔍 Smart Code Search
+- **Semantic Search** - Find code by meaning, not just keywords
+- **Multi-language Support** - Works with 15+ programming languages
+- **Real-time Watch** - Auto-updates index when files change
+- **Incremental Indexing** - 90%+ faster by only indexing changed files
 
-### Memory & Intelligence
-- 🧠 **Memory Vector Store** - Qdrant-based semantic memory (768-dim Gemini embeddings)
-- 🤖 **3 MCP Tools Only** - `bootstrap_memory`, `search_memory`, `open_memory_ui`
-- � **Smart Bootstrap** - Auto-generate entities via AST + Index + Gemini (3-5 min for 500 files)
-- � **Web UI** - D3.js graph visualization at localhost:3001
-- � **Token Efficient** - <100k tokens for large projects (~$0.01 cost)
-- 🎯 **AI-First Design** - No CLI, interact via AI chat or Web UI only
-- 🔍 **Semantic Search** - Natural language queries ("find auth logic")
-- � **Auto-Indexing** - Background entity creation during code changes
+### 🧠 Memory System
+- **Auto-Bootstrap** - Generate 50+ entities in 3-5 minutes from your codebase
+- **Web UI** - Interactive D3.js graph visualization at localhost:3001
+- **4 MCP Tools** - `bootstrap_memory`, `search_memory`, `open_memory_ui`, `check_memory_sync`
+- **Health Monitoring** - Automatic sync checks and orphaned vector cleanup
+- **Fast & Efficient** - 2.8-6.0x speedup with parallel processing, <$0.01 per project
 
-### Advanced Features
-- 🤖 **Prompt Enhancement** - AI-powered query improvement (optional)
-- 📊 **Vector Visualization** - 2D/3D UMAP visualization of your codebase
-- 🏗️ **Modular Architecture** - Clean handler separation for maintainability
-- 📦 **Simple Setup** - Just 4 environment variables
+### 🎯 Advanced Capabilities
+- **Vector Visualization** - See your codebase in 2D/3D space
+- **Prompt Enhancement** - AI-powered query improvement (optional)
+- **Simple Setup** - Just 4 environment variables to get started
 
 ---
 

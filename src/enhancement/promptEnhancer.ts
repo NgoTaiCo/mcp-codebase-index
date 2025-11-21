@@ -200,18 +200,18 @@ export class PromptEnhancer {
         if (lowerPath.includes('vue')) frameworks.push('Vue');
         if (lowerPath.includes('angular')) frameworks.push('Angular');
         if (lowerPath.includes('next')) frameworks.push('Next.js');
-        
+
         // Backend frameworks
         if (lowerPath.includes('express')) frameworks.push('Express');
         if (lowerPath.includes('fastapi')) frameworks.push('FastAPI');
         if (lowerPath.includes('django')) frameworks.push('Django');
         if (lowerPath.includes('flask')) frameworks.push('Flask');
         if (lowerPath.includes('spring')) frameworks.push('Spring');
-        
+
         // Mobile frameworks
         if (lowerPath.includes('flutter') || lowerPath.endsWith('.dart')) frameworks.push('Flutter');
         if (lowerPath.includes('react-native')) frameworks.push('React Native');
-        
+
         // Other
         if (lowerPath.includes('getx')) frameworks.push('GetX');
         if (lowerPath.includes('redux')) frameworks.push('Redux');
@@ -234,7 +234,7 @@ export class PromptEnhancer {
         if (hasBackend) return 'Backend API';
         if (languages.includes('TypeScript') || languages.includes('JavaScript')) return 'JavaScript/TypeScript Project';
         if (languages.includes('Python')) return 'Python Project';
-        
+
         return 'Software Project';
     }
 
@@ -246,7 +246,7 @@ export class PromptEnhancer {
         const filePaths = Array.from(indexState.indexedFiles.keys());
 
         // MVC pattern
-        if (filePaths.some(p => p.includes('controller')) && 
+        if (filePaths.some(p => p.includes('controller')) &&
             filePaths.some(p => p.includes('model')) &&
             filePaths.some(p => p.includes('view'))) {
             patterns.push('MVC');
@@ -303,7 +303,7 @@ export class PromptEnhancer {
                     enhancedQuery: cached.enhanced,
                     originalQuery: input.query,
                     template: input.template || 'general',
-                    model: input.model || 'gemini-2.5-flash'
+                    model: input.model || 'gemini-2.5-flash-lite' // Changed: Flash-Lite default
                 };
             }
 
@@ -332,7 +332,7 @@ export class PromptEnhancer {
             });
 
             // Call Gemini API
-            const model = input.model || 'gemini-2.5-flash';
+            const model = input.model || 'gemini-2.5-flash-lite'; // Changed: Flash-Lite default
             this.telemetry.totalApiCalls++;
             const rawEnhanced = await this.callGemini(model, systemPrompt, userPrompt);
 

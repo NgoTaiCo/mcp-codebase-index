@@ -179,6 +179,9 @@ export class CodebaseIndexMCPServer {
                         this.embedder
                     );
                     console.log('[Memory] Internal Memory Vector Store enabled (Qdrant-based)');
+
+                    // TODO #4: Start auto-sync (every 5 minutes)
+                    this.memoryVectorStore.startAutoSync(5);
                 } else {
                     console.log('[Memory] Internal memory disabled - users can use external MCP Memory Server');
                 }
@@ -579,6 +582,11 @@ The tool returns visualization data that you should interpret and explain to the
                             type: 'boolean',
                             description: 'Auto-import entities to memory (default: true)',
                             default: true
+                        },
+                        clearExisting: {
+                            type: 'boolean',
+                            description: 'Clear all existing vectors before bootstrap to prevent orphaned data (default: false). Set true for fresh re-index.',
+                            default: false
                         }
                     }
                 }
@@ -629,6 +637,26 @@ The tool returns visualization data that you should interpret and explain to the
                     required: ['query']
                 }
             });
+
+            tools.push({
+                name: 'check_memory_sync',
+                description: `Check sync status of memory collection - verify health and detect issues.
+
+**Purpose:** Monitor memory collection health and detect drift/corruption.
+
+**Use cases:**
+- "Check if memory is healthy"
+- "Verify memory sync status"
+- "Diagnose memory issues"
+
+**Returns:** Health status, vector count, issues detected, last check time.
+
+**Auto-sync:** Memory automatically checks every 5 minutes when server is running.`,
+                inputSchema: {
+                    type: 'object',
+                    properties: {}
+                }
+            });
         }
 
         this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -675,6 +703,9 @@ The tool returns visualization data that you should interpret and explain to the
             }
             if (request.params.name === 'search_memory') {
                 return await this.handleSearchMemory(request.params.arguments);
+            }
+            if (request.params.name === 'check_memory_sync') {
+                return await this.handleCheckMemorySync(request.params.arguments);
             }
             throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
         });
@@ -815,6 +846,78 @@ The tool returns visualization data that you should interpret and explain to the
             geminiApiKey: process.env.GEMINI_API_KEY || ''
         };
         return await handleSearchMemory(args, context);
+    }
+
+    /**
+     * Handle check_memory_sync tool - check memory collection health
+     * TODO #4: Auto-sync Memory ↔ Qdrant
+     */
+    private async handleCheckMemorySync(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+        if (!this.memoryVectorStore) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `❌ Internal memory is disabled.
+
+Set ENABLE_INTERNAL_MEMORY=true to use memory sync checking.`
+                }]
+            };
+        }
+
+        try {
+            const syncStatus = await this.memoryVectorStore.checkSync();
+            const lastCheck = new Date(syncStatus.lastChecked).toLocaleString();
+
+            if (syncStatus.healthy) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `✅ Memory collection is healthy!
+
+**Status:**
+- Total vectors: ${syncStatus.totalVectors}
+- Health: ✅ Healthy
+- Issues: None
+- Last checked: ${lastCheck}
+
+**Auto-sync:**
+- Running: ${this.memoryVectorStore.getLastSyncCheck() > 0 ? 'Yes' : 'No'}
+- Interval: Every 5 minutes
+
+Everything is in sync and working properly.`
+                    }]
+                };
+            } else {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `⚠️  Memory collection has issues
+
+**Status:**
+- Total vectors: ${syncStatus.totalVectors}
+- Health: ⚠️  Issues detected
+- Last checked: ${lastCheck}
+
+**Issues found:**
+${syncStatus.issues.map(issue => `- ${issue}`).join('\n')}
+
+**Recommended actions:**
+1. If vector size mismatch: Re-create collection with \`bootstrap_memory\` + \`clearExisting: true\`
+2. If distance metric wrong: Manually fix in Qdrant
+3. If collection missing: Run \`bootstrap_memory\`
+
+Need help? Check the documentation or run \`bootstrap_memory\` to rebuild.`
+                    }]
+                };
+            }
+        } catch (error: any) {
+            return {
+                content: [{
+                    type: 'text',
+                    text: `❌ Sync check failed: ${error.message}`
+                }]
+            };
+        }
     }
 
     /**

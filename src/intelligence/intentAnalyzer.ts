@@ -80,7 +80,7 @@ export class IntentAnalyzer {
         }
 
         this.gemini = new GoogleGenerativeAI(key);
-        this.model = model || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+        this.model = model || process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'; // Changed: Flash-Lite default
 
         // LRU cache: max 1000 items
         this.cache = new LRUCache(1000);

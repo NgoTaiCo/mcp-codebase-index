@@ -63,7 +63,7 @@ export class GeminiAnalyzer {
     } = {}) {
         this.genAI = new GoogleGenerativeAI(apiKey);
         this.model = this.genAI.getGenerativeModel({
-            model: options.model || 'gemini-2.5-flash' // 4M TPM, better quota
+            model: options.model || 'gemini-2.5-flash-lite' // Changed: Flash-Lite for 1000 RPD (vs 250 RPD)
         });
         this.tokenBudget = options.tokenBudget || 100000; // 100k default
     }
@@ -126,6 +126,9 @@ export class GeminiAnalyzer {
     /**
      * Prioritize candidates for analysis
      * Returns candidates sorted by priority with estimated token cost
+     * 
+     * IMPROVED: When elements are empty (non-TS/JS projects), 
+     * create file-level candidates from patterns
      */
     prioritizeCandidates(
         elements: CodeElement[],
@@ -156,6 +159,27 @@ export class GeminiAnalyzer {
             }
         }
 
+        // FALLBACK: If no elements (non-TS/JS project), create file-level candidates from patterns
+        if (elements.length === 0 && patterns.length > 0) {
+            const uniqueFiles = new Set<string>();
+
+            // Collect unique files from patterns
+            patterns.forEach(pattern => {
+                pattern.files.forEach(file => uniqueFiles.add(file));
+            });
+
+            // Create candidates for top files (limit to avoid token overflow)
+            const fileArray = Array.from(uniqueFiles).slice(0, 30); // Max 30 files
+
+            fileArray.forEach((filePath, index) => {
+                candidates.push({
+                    code: filePath, // Store file path as code reference
+                    priority: 7 + (30 - index) / 30 * 3, // Priority 7-10 based on position
+                    context: `File from pattern analysis: ${filePath}`
+                });
+            });
+        }
+
         return candidates.sort((a, b) => b.priority - a.priority);
     }
 
@@ -176,21 +200,30 @@ export class GeminiAnalyzer {
             let name: string;
             let relatedFiles: string[] = [];
             let relatedComponents: string[] = [];
+            let entityType: string = 'Unknown';
 
             if (candidate.element) {
                 name = `analyzed_${candidate.element.type}_${candidate.element.name}`.toLowerCase();
                 relatedFiles = [candidate.element.filePath];
                 relatedComponents = [candidate.element.name];
+                entityType = 'Component';
             } else if (candidate.pattern) {
                 name = `analyzed_pattern_${candidate.pattern.name}`.toLowerCase().replace(/\s+/g, '_');
                 relatedFiles = candidate.pattern.files;
+                entityType = 'Pattern';
+            } else if (candidate.code) {
+                // File-level candidate (fallback for non-TS/JS projects)
+                const fileName = candidate.code.split('/').pop()?.replace(/\.[^.]+$/, '') || 'file';
+                name = `analyzed_file_${fileName}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                relatedFiles = [candidate.code];
+                entityType = 'File';
             } else {
                 continue;
             }
 
             const entity: MemoryEntity = {
                 name,
-                entityType: candidate.element ? 'Component' : 'Pattern',
+                entityType,
                 observations: [
                     analysis.description,
                     `Purpose: ${analysis.purpose}`,
@@ -306,6 +339,26 @@ Respond in JSON format:
 }`;
         }
 
+        // File-level candidate (fallback for non-TS/JS projects)
+        if (candidate.code) {
+            return `Analyze this file from a code pattern analysis.
+
+File: ${candidate.code}
+Context: ${candidate.context || 'File from codebase pattern analysis'}
+
+Based on the file path and context, provide a semantic analysis.
+
+Respond in JSON format:
+{
+  "description": "Brief 1-sentence description of what this file likely contains",
+  "purpose": "Inferred purpose based on file path",
+  "usage": ["usage scenario 1"],
+  "complexity": "low|medium|high",
+  "tags": ["tag1", "tag2"],
+  "confidence": 0.7
+}`;
+        }
+
         return '';
     }
 
@@ -400,6 +453,9 @@ Respond in JSON format:
         }
         if (candidate.pattern) {
             return `pattern_${candidate.pattern.name}`;
+        }
+        if (candidate.code) {
+            return `file_${candidate.code}`;
         }
         return `unknown_${Math.random()}`;
     }

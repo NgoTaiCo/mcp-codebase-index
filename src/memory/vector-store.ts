@@ -27,6 +27,8 @@ export class MemoryVectorStore {
     private collectionName: string;
     private vectorSize: number;
     private initialized: boolean = false;
+    private syncInterval: NodeJS.Timeout | null = null; // TODO #4: Auto-sync timer
+    private lastSyncCheck: number = 0;
 
     constructor(
         vectorStore: QdrantVectorStore,
@@ -93,10 +95,235 @@ export class MemoryVectorStore {
     }
 
     /**
+     * Clear all vectors from memory collection
+     * Used for fresh bootstrap to prevent orphaned vectors
+     * 
+     * Returns number of vectors deleted
+     */
+    async clearCollection(): Promise<number> {
+        await this.initialize();
+
+        try {
+            // Get collection info to check current count
+            const collectionInfo = await this.qdrant.getCollection(this.collectionName);
+            const vectorCount = collectionInfo.points_count || 0;
+
+            if (vectorCount === 0) {
+                console.log('[MemoryVectorStore] Collection already empty, nothing to clear');
+                return 0;
+            }
+
+            console.log(`[MemoryVectorStore] Clearing ${vectorCount} vectors from ${this.collectionName}...`);
+
+            // Delete collection and recreate (faster than deleting points one by one)
+            await this.qdrant.deleteCollection(this.collectionName);
+
+            // Recreate collection
+            await this.qdrant.createCollection(this.collectionName, {
+                vectors: {
+                    size: this.vectorSize,
+                    distance: 'Cosine'
+                },
+                optimizers_config: {
+                    indexing_threshold: 10000
+                }
+            });
+
+            // Recreate payload indexes
+            await this.qdrant.createPayloadIndex(this.collectionName, {
+                field_name: 'entityType',
+                field_schema: 'keyword'
+            });
+
+            await this.qdrant.createPayloadIndex(this.collectionName, {
+                field_name: 'tags',
+                field_schema: 'keyword'
+            });
+
+            console.log(`[MemoryVectorStore] Successfully cleared ${vectorCount} vectors`);
+            return vectorCount;
+
+        } catch (error) {
+            console.error('[MemoryVectorStore] Error clearing collection:', error);
+            throw new Error(`Failed to clear memory collection: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    /**
+     * Check sync status between memory collection and expectations
+     * Returns metrics about collection health
+     * 
+     * TODO #4: Auto-sync Memory ↔ Qdrant
+     */
+    async checkSync(): Promise<{
+        totalVectors: number;
+        healthy: boolean;
+        issues: string[];
+        lastChecked: number;
+    }> {
+        await this.initialize();
+
+        const issues: string[] = [];
+        let totalVectors = 0;
+
+        try {
+            // Get collection info
+            const collectionInfo = await this.qdrant.getCollection(this.collectionName);
+            totalVectors = collectionInfo.points_count || 0;
+
+            // Check 1: Collection exists
+            if (!collectionInfo) {
+                issues.push('Memory collection does not exist');
+            }
+
+            // Check 2: Vector size matches
+            const config = collectionInfo.config?.params?.vectors;
+            if (config && typeof config === 'object' && 'size' in config) {
+                if (config.size !== this.vectorSize) {
+                    issues.push(`Vector size mismatch: expected ${this.vectorSize}, got ${config.size}`);
+                }
+            }
+
+            // Check 3: Distance metric is Cosine
+            if (config && typeof config === 'object' && 'distance' in config) {
+                if (config.distance !== 'Cosine') {
+                    issues.push(`Distance metric should be Cosine, got ${config.distance}`);
+                }
+            }
+
+            const healthy = issues.length === 0;
+            const lastChecked = Date.now();
+            this.lastSyncCheck = lastChecked; // Store for tracking
+
+            if (healthy) {
+                console.log(`[MemoryVectorStore] Sync check: ✅ Healthy (${totalVectors} vectors)`);
+            } else {
+                console.warn(`[MemoryVectorStore] Sync check: ⚠️  ${issues.length} issues found`);
+                issues.forEach(issue => console.warn(`  - ${issue}`));
+            }
+
+            return {
+                totalVectors,
+                healthy,
+                issues,
+                lastChecked
+            };
+
+        } catch (error) {
+            console.error('[MemoryVectorStore] Error checking sync:', error);
+            return {
+                totalVectors: 0,
+                healthy: false,
+                issues: [`Sync check failed: ${error instanceof Error ? error.message : String(error)}`],
+                lastChecked: Date.now()
+            };
+        }
+    }
+
+    /**
+     * Start periodic sync checking (every 5 minutes)
+     * TODO #4: Auto-sync Memory ↔ Qdrant
+     */
+    startAutoSync(intervalMinutes: number = 5): void {
+        // Stop existing interval if running
+        this.stopAutoSync();
+
+        const intervalMs = intervalMinutes * 60 * 1000;
+        console.log(`[MemoryVectorStore] Starting auto-sync (every ${intervalMinutes} min)`);
+
+        // Run initial check
+        this.checkSync().catch(err => {
+            console.error('[MemoryVectorStore] Initial sync check failed:', err);
+        });
+
+        // Set up periodic checking
+        this.syncInterval = setInterval(async () => {
+            try {
+                await this.checkSync();
+            } catch (error) {
+                console.error('[MemoryVectorStore] Periodic sync check failed:', error);
+            }
+        }, intervalMs);
+    }
+
+    /**
+     * Stop periodic sync checking
+     * TODO #4: Auto-sync Memory ↔ Qdrant
+     */
+    stopAutoSync(): void {
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval);
+            this.syncInterval = null;
+            console.log('[MemoryVectorStore] Auto-sync stopped');
+        }
+    }
+
+    /**
+     * Get last sync check timestamp
+     */
+    getLastSyncCheck(): number {
+        return this.lastSyncCheck;
+    }
+
+    /**
+     * Validate entity before storage
+     * Prevents data corruption from invalid entities
+     */
+    private validateEntity(entity: MemoryEntity): void {
+        // Check entity name
+        if (!entity.name || typeof entity.name !== 'string' || entity.name.trim() === '') {
+            throw new Error(
+                `Invalid entity: name is required and must be a non-empty string. ` +
+                `Received: ${JSON.stringify(entity.name)}`
+            );
+        }
+
+        // Check entity type
+        if (!entity.entityType || typeof entity.entityType !== 'string' || entity.entityType.trim() === '') {
+            throw new Error(
+                `Invalid entity "${entity.name}": entityType is required and must be a non-empty string. ` +
+                `Received: ${JSON.stringify(entity.entityType)}`
+            );
+        }
+
+        // Check observations exist
+        if (!entity.observations || !Array.isArray(entity.observations)) {
+            throw new Error(
+                `Invalid entity "${entity.name}": observations must be a non-empty array. ` +
+                `Received: ${JSON.stringify(entity.observations)}`
+            );
+        }
+
+        // Check observations not empty
+        if (entity.observations.length === 0) {
+            throw new Error(
+                `Invalid entity "${entity.name}": observations array cannot be empty. ` +
+                `At least one observation is required for meaningful search.`
+            );
+        }
+
+        // Check no empty observation strings
+        const emptyObservations = entity.observations.filter(
+            (obs, index) => !obs || typeof obs !== 'string' || obs.trim() === ''
+        );
+
+        if (emptyObservations.length > 0) {
+            throw new Error(
+                `Invalid entity "${entity.name}": contains ${emptyObservations.length} empty observations. ` +
+                `All observations must be non-empty strings. ` +
+                `Please remove empty observations before storage.`
+            );
+        }
+    }
+
+    /**
      * Store a memory entity as a vector
      */
     async storeEntity(entity: MemoryEntity): Promise<void> {
         await this.initialize();
+
+        // Validate entity before processing
+        this.validateEntity(entity);
 
         try {
             // Build searchable text
@@ -254,7 +481,7 @@ export class MemoryVectorStore {
     }
 
     /**
-     * Store multiple entities in batch
+     * Store multiple entities in batch (with parallel embedding)
      */
     async storeBatch(entities: MemoryEntity[]): Promise<BatchStoreResult> {
         await this.initialize();
@@ -266,56 +493,15 @@ export class MemoryVectorStore {
             errors: []
         };
 
-        // Process in batches of 100 for performance
+        // Process in batches of 100 for Qdrant upsert
         const batchSize = 100;
         for (let i = 0; i < entities.length; i += batchSize) {
             const batch = entities.slice(i, i + batchSize);
-            const points: MemoryPoint[] = [];
 
-            for (const entity of batch) {
-                try {
-                    const searchableText = this.buildSearchableText(entity);
-                    const embedding = await this.embedder.embedChunk({
-                        id: `mem_${entity.name}`,
-                        content: searchableText,
-                        type: 'other',
-                        name: entity.name,
-                        filePath: '',
-                        startLine: 0,
-                        endLine: 0,
-                        language: 'text',
-                        imports: [],
-                        complexity: 1
-                    });
-                    const id = this.generateId(entity.name);
-                    const contentHash = this.hashContent(entity);
+            // Parallel embedding with concurrency limit
+            const points = await this.parallelEmbedBatch(batch, result);
 
-                    points.push({
-                        id,
-                        vector: embedding,
-                        payload: {
-                            entityName: entity.name,
-                            entityType: entity.entityType,
-                            observations: entity.observations,
-                            relatedFiles: entity.relatedFiles,
-                            relatedComponents: entity.relatedComponents,
-                            dependencies: entity.dependencies,
-                            tags: entity.tags || this.extractTags(entity),
-                            searchableText,
-                            contentHash,
-                            createdAt: entity.createdAt || Date.now(),
-                            updatedAt: Date.now()
-                        }
-                    });
-
-                    result.stored++;
-                } catch (error) {
-                    result.failed++;
-                    result.errors?.push(`Failed to process ${entity.name}: ${error}`);
-                }
-            }
-
-            // Upsert batch
+            // Upsert batch to Qdrant
             if (points.length > 0) {
                 try {
                     await this.qdrant.upsert(this.collectionName, {
@@ -332,6 +518,85 @@ export class MemoryVectorStore {
 
         console.log(`[MemoryVectorStore] Batch complete: ${result.stored} stored, ${result.failed} failed`);
         return result;
+    }
+
+    /**
+     * Embed entities in parallel with concurrency control
+     * Prevents overwhelming Gemini API (1500 RPM limit)
+     */
+    private async parallelEmbedBatch(
+        entities: MemoryEntity[],
+        result: BatchStoreResult
+    ): Promise<MemoryPoint[]> {
+        const CONCURRENT_LIMIT = 10; // Max 10 parallel embedding requests
+        const points: MemoryPoint[] = [];
+
+        // Process in chunks of CONCURRENT_LIMIT
+        for (let i = 0; i < entities.length; i += CONCURRENT_LIMIT) {
+            const chunk = entities.slice(i, i + CONCURRENT_LIMIT);
+
+            console.log(`[MemoryVectorStore] Embedding batch ${i + 1}-${Math.min(i + CONCURRENT_LIMIT, entities.length)}/${entities.length}...`);
+
+            // Parallel embedding for this chunk
+            const chunkResults = await Promise.allSettled(
+                chunk.map(async (entity) => {
+                    // Validate entity before embedding
+                    this.validateEntity(entity);
+
+                    const searchableText = this.buildSearchableText(entity);
+                    const embedding = await this.embedder.embedChunk({
+                        id: `mem_${entity.name}`,
+                        content: searchableText,
+                        type: 'other',
+                        name: entity.name,
+                        filePath: '',
+                        startLine: 0,
+                        endLine: 0,
+                        language: 'text',
+                        imports: [],
+                        complexity: 1
+                    });
+
+                    const id = this.generateId(entity.name);
+                    const contentHash = this.hashContent(entity);
+
+                    return {
+                        id,
+                        vector: embedding,
+                        payload: {
+                            entityName: entity.name,
+                            entityType: entity.entityType,
+                            observations: entity.observations,
+                            relatedFiles: entity.relatedFiles,
+                            relatedComponents: entity.relatedComponents,
+                            dependencies: entity.dependencies,
+                            tags: entity.tags || this.extractTags(entity),
+                            searchableText,
+                            contentHash,
+                            createdAt: entity.createdAt || Date.now(),
+                            updatedAt: Date.now()
+                        }
+                    } as MemoryPoint;
+                })
+            );
+
+            // Collect results (success + failures)
+            for (let j = 0; j < chunkResults.length; j++) {
+                const chunkResult = chunkResults[j];
+                const entity = chunk[j];
+
+                if (chunkResult.status === 'fulfilled') {
+                    points.push(chunkResult.value);
+                    result.stored++;
+                } else {
+                    result.failed++;
+                    result.errors?.push(`Failed to embed ${entity.name}: ${chunkResult.reason}`);
+                    console.error(`[MemoryVectorStore] Embedding failed for ${entity.name}:`, chunkResult.reason);
+                }
+            }
+        }
+
+        return points;
     }
 
     /**

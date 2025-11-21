@@ -49,6 +49,17 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - 🤖 **Prompt Enhancement**: AI-powered query enhancement with Gemini 2.5 Flash (optional)
 - 📦 **Simple Setup**: Just 4 environment variables to get started
 
+### Memory System
+- 🧠 **Memory Vector Store** - Qdrant-based semantic memory (768-dim Gemini embeddings)
+- 🤖 **4 MCP Tools** - `bootstrap_memory`, `search_memory`, `open_memory_ui`, `check_memory_sync`
+- ⚡ **Parallel Embedding** - 2.8-6.0x faster batch operations
+- 🛡️ **Entity Validation** - Prevents data corruption with pre-storage validation
+- 🧹 **Orphaned Cleanup** - Auto-clears stale vectors with clearExisting option
+- 🔍 **Auto-sync Health** - Continuous monitoring every 5 minutes
+- 🎯 **Smart Bootstrap** - Auto-generate entities via AST + Index + Gemini
+- 🌐 **Web UI** - D3.js graph visualization at localhost:3001
+- 💰 **Token Efficient** - <100k tokens for large projects (~$0.01 cost)
+
 ## 🚀 Quick Start
 
 ### Prerequisites

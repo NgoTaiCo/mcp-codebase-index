@@ -41,7 +41,10 @@ const server = new CodebaseIndexMCPServer({
         '.env', 'build', 'dist', '.next', 'target',
         'vendor', 'coverage', '.pytest_cache',
         '.fvm', '.dart_tool', 'ios/Pods', 'android/.gradle',
-        '.symlinks', 'ios/.symlinks', 'macos/.symlinks'
+        '.symlinks', 'ios/.symlinks', 'macos/.symlinks',
+        // Hidden folders (start with .)
+        '.idea', '.vscode', '.vs', '.settings',
+        '.fleet', '.gradle', '.android', '.ios'
     ],
     promptEnhancement: process.env.PROMPT_ENHANCEMENT === 'true'
 });

@@ -13,13 +13,24 @@ mcp-codebase-index/
 │   ├── README.md                     # Main documentation
 │   ├── SETUP.md                      # Setup guide
 │   ├── QUICK_REF.md                  # Quick reference
-│   ├── CHANGELOG.md                  # Version history
+│   ├── CHANGELOG.md                  # Version history (v3.2 updated)
 │   ├── NAVIGATION.md                 # Navigation guide
 │   ├── COPILOT_INSTRUCTIONS.md       # Copilot usage guide
+│   ├── API.md                        # API documentation (v3.2 updated)
+│   ├── ARCHITECTURE.md               # Architecture (v3.2 updated)
+│   ├── MEMORY_ARCHITECTURE_ANALYSIS.md  # Memory system analysis
+│   ├── MEMORY_FIXES_TRACKLIST.md    # Memory optimization tracking
+│   │
+│   ├── memory/                       # Memory system docs (v3.2)
+│   │   ├── README.md                 # Memory overview
+│   │   ├── MEMORY_QUICK_REFERENCE.md # Memory cheat sheet
+│   │   ├── MEMORY_USER_GUIDE.md      # User guide
+│   │   └── MEMORY_VISUAL_GUIDE.md    # Visual guide
 │   │
 │   ├── guides/                       # Detailed guides
 │   │   ├── QDRANT_CLOUD_SETUP.md    # Qdrant setup
 │   │   ├── mcp-server-guide.md      # MCP development
+│   │   ├── BOOTSTRAP_GUIDE.md       # Bootstrap guide
 │   │   └── TEST_SEARCH.md           # Testing guide
 │   │
 │   └── planning/                     # Development planning
@@ -41,11 +52,19 @@ mcp-codebase-index/
 │   ├── storage/                      # Storage layer
 │   │   └── qdrantClient.ts          # Qdrant vector DB
 │   │
-│   ├── memory/                       # Memory integration (v3.0)
+│   ├── memory/                       # Memory integration
 │   │   ├── vector-store.ts          # Memory vector operations
+│   │   │   ├── validateEntity()     # Entity validation
+│   │   │   ├── parallelEmbedBatch() # Parallel embedding
+│   │   │   ├── clearCollection()    # Orphaned cleanup
+│   │   │   ├── checkSync()          # Health check
+│   │   │   ├── startAutoSync()      # Auto-sync
+│   │   │   └── stopAutoSync()       # Stop auto-sync
 │   │   ├── types.ts                 # Memory entity types
 │   │   ├── index.ts                 # Memory exports
-│   │   └── sync/                    # Sync system (future)
+│   │   └── sync/                    # Sync system
+│   │       ├── update-detector.ts   # Change detection
+│   │       └── sync-manager.ts      # Sync orchestration
 │   │
 │   ├── bootstrap/                    # Smart bootstrap system
 │   │   ├── orchestrator.ts          # Main orchestrator
@@ -79,7 +98,7 @@ mcp-codebase-index/
 │   │   │   ├── visualization.handler.ts       # Visualizations
 │   │   │   ├── indexing.handler.ts            # Index management
 │   │   │   ├── memory-ui.handler.ts           # Memory Web UI
-│   │   │   └── memory-management.handler.ts   # Memory MCP tools (3 only)
+│   │   │   └── memory-management.handler.ts   # Memory MCP tools
 │   │   ├── templates/               # HTML templates
 │   │   │   └── visualization.template.ts # Modern HTML UI
 │   │   └── types/                   # Handler types
@@ -91,7 +110,7 @@ mcp-codebase-index/
 │   └── index.ts                      # Entry point
 │
 ├── 📚 docs/                          # All documentation
-│   ├── memory/                       # Memory integration docs (v3.0)
+│   ├── memory/                       # Memory integration docs
 │   │   ├── README.md                # Memory overview
 │   │   ├── MEMORY_USER_GUIDE.md     # Complete user guide
 │   │   ├── MEMORY_QUICK_REFERENCE.md # Quick reference
@@ -104,11 +123,15 @@ mcp-codebase-index/
 │   └── ...
 │
 ├── 🔧 scripts/                       # Utility scripts
-│   └── bootstrap-cli.ts             # Bootstrap CLI (for testing)
+│   └── bootstrap-cli.ts             # Bootstrap CLI
 │
 ├── ⚙️ config/                        # Configuration files
 │   ├── README.md                     # Config documentation
 │   └── vscode_settings.example.json # VS Code settings example
+│
+├── 📦 memory/                        # Memory system runtime data
+│   └── index-metadata.json/         # Memory collection metadata
+│       └── incremental_state.json   # Incremental sync state
 │
 ├── 📦 .data/                         # Runtime data (gitignored)
 │   ├── index-metadata.json/         # Incremental index state
