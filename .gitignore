@@ -18,3 +18,5 @@ mcp_visualizations/
 output.txt
 docs/planning/archive/*
 /docs/planning/*
+/test/*
+/memory/*

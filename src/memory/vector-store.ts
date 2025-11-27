@@ -60,29 +60,85 @@ export class MemoryVectorStore {
             if (!exists) {
                 console.log(`[MemoryVectorStore] Creating collection: ${this.collectionName}`);
 
-                // Create collection with cosine distance
-                await this.qdrant.createCollection(this.collectionName, {
-                    vectors: {
-                        size: this.vectorSize,
-                        distance: 'Cosine'
-                    },
-                    optimizers_config: {
-                        indexing_threshold: 10000
+                try {
+                    // Create collection with cosine distance
+                    await this.qdrant.createCollection(this.collectionName, {
+                        vectors: {
+                            size: this.vectorSize,
+                            distance: 'Cosine'
+                        },
+                        optimizers_config: {
+                            indexing_threshold: 10000
+                        }
+                    });
+
+                    // Create payload indexes for filtering
+                    await this.qdrant.createPayloadIndex(this.collectionName, {
+                        field_name: 'entityType',
+                        field_schema: 'keyword'
+                    });
+
+                    await this.qdrant.createPayloadIndex(this.collectionName, {
+                        field_name: 'tags',
+                        field_schema: 'keyword'
+                    });
+
+                    // ✅ TODO #8: Verify collection actually exists after creation
+                    console.log('[MemoryVectorStore] Verifying collection creation...');
+                    const verifyCollections = await this.qdrant.getCollections();
+                    const verified = verifyCollections.collections.some(
+                        (c) => c.name === this.collectionName
+                    );
+
+                    if (!verified) {
+                        throw new Error(
+                            `Collection creation failed: "${this.collectionName}" not found after createCollection() call. ` +
+                            `This may indicate quota exceeded, insufficient permissions, or Qdrant server issues. ` +
+                            `Please check Qdrant logs and verify your account limits.`
+                        );
                     }
-                });
 
-                // Create payload indexes for filtering
-                await this.qdrant.createPayloadIndex(this.collectionName, {
-                    field_name: 'entityType',
-                    field_schema: 'keyword'
-                });
+                    // Verify collection configuration
+                    const collectionInfo = await this.qdrant.getCollection(this.collectionName);
+                    const vectorConfig = collectionInfo.config?.params?.vectors as any;
 
-                await this.qdrant.createPayloadIndex(this.collectionName, {
-                    field_name: 'tags',
-                    field_schema: 'keyword'
-                });
+                    if (!vectorConfig || vectorConfig.size !== this.vectorSize) {
+                        throw new Error(
+                            `Collection configuration mismatch: Expected vector size ${this.vectorSize}, ` +
+                            `but got ${vectorConfig?.size || 'undefined'}. Collection may be corrupted.`
+                        );
+                    }
 
-                console.log('[MemoryVectorStore] Collection created successfully');
+                    if (vectorConfig.distance !== 'Cosine') {
+                        throw new Error(
+                            `Collection distance metric mismatch: Expected "Cosine", ` +
+                            `but got "${vectorConfig.distance}". Collection may be corrupted.`
+                        );
+                    }
+
+                    console.log('[MemoryVectorStore] Collection created and verified successfully');
+                    console.log(`[MemoryVectorStore] - Vector size: ${vectorConfig.size}`);
+                    console.log(`[MemoryVectorStore] - Distance metric: ${vectorConfig.distance}`);
+                    console.log(`[MemoryVectorStore] - Payload indexes: entityType, tags`);
+
+                } catch (error: any) {
+                    // Don't set initialized=true if creation or verification failed
+                    console.error('[MemoryVectorStore] Collection creation/verification failed:', error.message);
+
+                    // Clean up partial creation if possible
+                    try {
+                        const cleanup = await this.qdrant.getCollections();
+                        const partialExists = cleanup.collections.some(c => c.name === this.collectionName);
+                        if (partialExists) {
+                            console.warn(`[MemoryVectorStore] Cleaning up partially created collection: ${this.collectionName}`);
+                            await this.qdrant.deleteCollection(this.collectionName);
+                        }
+                    } catch (cleanupError) {
+                        console.warn('[MemoryVectorStore] Cleanup failed (non-critical):', cleanupError);
+                    }
+
+                    throw error; // Re-throw original error
+                }
             } else {
                 console.log(`[MemoryVectorStore] Collection already exists: ${this.collectionName}`);
             }
@@ -266,6 +322,87 @@ export class MemoryVectorStore {
     }
 
     /**
+     * Upsert with automatic retry on transient errors
+     * Handles network timeouts, connection issues, and rate limits
+     * 
+     * TODO #7: Retry Logic for Qdrant Errors
+     * 
+     * @param points - Points to upsert
+     * @param maxRetries - Maximum retry attempts (default: 3)
+     * @throws Error if all retries fail or non-retryable error occurs
+     */
+    private async upsertWithRetry(
+        points: any[],
+        maxRetries: number = 3
+    ): Promise<void> {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                await this.qdrant.upsert(this.collectionName, {
+                    wait: true,
+                    points
+                });
+
+                // Success - log only if retries were needed
+                if (attempt > 1) {
+                    console.log(
+                        `[MemoryVectorStore] Upsert succeeded on attempt ${attempt}/${maxRetries}`
+                    );
+                }
+                return;
+
+            } catch (error: any) {
+                // Determine if error is retryable
+                const isRetryable = this.isRetryableError(error);
+
+                // If not retryable or max attempts reached, throw
+                if (!isRetryable || attempt === maxRetries) {
+                    const errorMsg = error instanceof Error ? error.message : String(error);
+                    throw new Error(
+                        `Qdrant upsert failed after ${attempt} attempt(s): ${errorMsg}`
+                    );
+                }
+
+                // Calculate exponential backoff: 1s, 2s, 4s
+                const delay = Math.pow(2, attempt - 1) * 1000;
+
+                console.warn(
+                    `[MemoryVectorStore] Qdrant error (attempt ${attempt}/${maxRetries}), ` +
+                    `retrying in ${delay}ms: ${error.message || error.code || 'Unknown error'}`
+                );
+
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    /**
+     * Check if error is retryable (transient network/rate limit errors)
+     * 
+     * @param error - Error object from Qdrant
+     * @returns true if error should be retried
+     */
+    private isRetryableError(error: any): boolean {
+        // Network errors (transient)
+        if (error.code === 'ETIMEDOUT') return true;
+        if (error.code === 'ECONNREFUSED') return true;
+        if (error.code === 'ENOTFOUND') return true;
+        if (error.code === 'ECONNRESET') return true;
+
+        // HTTP errors
+        if (error.status === 429) return true; // Rate limit
+        if (error.status === 503) return true; // Service unavailable
+        if (error.status === 502) return true; // Bad gateway
+        if (error.status === 504) return true; // Gateway timeout
+
+        // Don't retry on client errors
+        if (error.status >= 400 && error.status < 500) return false;
+
+        // Default: don't retry unknown errors
+        return false;
+    }
+
+    /**
      * Validate entity before storage
      * Prevents data corruption from invalid entities
      */
@@ -368,11 +505,8 @@ export class MemoryVectorStore {
                 }
             };
 
-            // Upsert to Qdrant
-            await this.qdrant.upsert(this.collectionName, {
-                wait: true,
-                points: [point]
-            });
+            // Upsert to Qdrant with retry logic
+            await this.upsertWithRetry([point]);
 
             console.log(`[MemoryVectorStore] Stored entity: ${entity.name}`);
         } catch (error) {
@@ -501,13 +635,10 @@ export class MemoryVectorStore {
             // Parallel embedding with concurrency limit
             const points = await this.parallelEmbedBatch(batch, result);
 
-            // Upsert batch to Qdrant
+            // Upsert batch to Qdrant with retry logic
             if (points.length > 0) {
                 try {
-                    await this.qdrant.upsert(this.collectionName, {
-                        wait: true,
-                        points
-                    });
+                    await this.upsertWithRetry(points);
                 } catch (error) {
                     console.error('[MemoryVectorStore] Batch upsert error:', error);
                     result.failed += points.length;
@@ -686,6 +817,45 @@ export class MemoryVectorStore {
     }
 
     /**
+     * Batch retrieve multiple entities by names (for update-detector optimization)
+     * @param entityNames - Array of entity names to retrieve
+     * @returns Map of entityName -> payload for O(1) lookup
+     */
+    async batchRetrieveEntities(entityNames: string[]): Promise<Map<string, any>> {
+        if (entityNames.length === 0) {
+            return new Map();
+        }
+
+        await this.initialize();
+
+        try {
+            // Generate all IDs
+            const ids = entityNames.map(name => this.generateId(name));
+
+            // Single batch retrieve ✅
+            const points = await this.qdrant.retrieve(this.collectionName, {
+                ids,
+                with_payload: true
+            });
+
+            // Build O(1) lookup map
+            const entityMap = new Map<string, any>();
+            for (const point of points) {
+                if (point.payload?.entityName) {
+                    entityMap.set(point.payload.entityName as string, point.payload);
+                }
+            }
+
+            console.log(`[MemoryVectorStore] Batch retrieved ${points.length}/${entityNames.length} entities`);
+            return entityMap;
+
+        } catch (error) {
+            console.error('[MemoryVectorStore] Error in batch retrieve:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Build searchable text from entity (critical for relevance)
      * IMPORTANT: Must stay under 36KB limit for Gemini embedding API
      */
@@ -702,6 +872,11 @@ export class MemoryVectorStore {
         const observationsText = entity.observations.join(' ');
         if (observationsText.length > 30000) {
             // Truncate to 30KB, leaving room for other fields
+            console.warn(
+                `[MemoryVectorStore] Entity "${entity.name}" observations too large: ` +
+                `${observationsText.length.toLocaleString()} chars → truncated to 30KB. ` +
+                `Consider splitting into multiple entities.`
+            );
             parts.push(observationsText.substring(0, 30000) + '...[truncated]');
         } else {
             parts.push(...entity.observations);
@@ -717,6 +892,10 @@ export class MemoryVectorStore {
             const files = entity.relatedFiles.slice(0, 50);
             parts.push(...files.map(f => `file:${f}`));
             if (entity.relatedFiles.length > 50) {
+                console.warn(
+                    `[MemoryVectorStore] Entity "${entity.name}" has ${entity.relatedFiles.length} related files. ` +
+                    `Only first 50 will be indexed for search.`
+                );
                 parts.push(`...and ${entity.relatedFiles.length - 50} more files`);
             }
         }

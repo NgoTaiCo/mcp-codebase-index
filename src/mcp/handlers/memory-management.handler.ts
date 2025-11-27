@@ -71,9 +71,16 @@ Alternative: Use external MCP Memory Server for graph-based memory.`
         // CRITICAL: Ensure memory collection exists before bootstrap
         await context.memoryVectorStore.initialize();
 
-        // Clear existing vectors if requested (TODO #3: Orphaned Vector Cleanup)
+        // Clear existing vectors if requested (TODO #9: Clear Existing Entities on Bootstrap)
         let clearedCount = 0;
         if (validated.clearExisting) {
+            // Get current entity count for warning message
+            const currentCount = await context.vectorStore.getVectorCount();
+
+            if (currentCount > 0) {
+                console.warn(`[Bootstrap] ⚠️  clearExisting=true will delete ${currentCount} existing entities before bootstrap`);
+            }
+
             clearedCount = await context.memoryVectorStore.clearCollection();
         }
 
@@ -102,15 +109,33 @@ Alternative: Use external MCP Memory Server for graph-based memory.`
 
         // Auto-import to memory if enabled
         if (validated.autoImport && result.entities.length > 0) {
+            console.log('[Bootstrap] 💾 Phase 4/4: Embedding and storing entities...');
+
             let importedCount = 0;
-            for (const entity of result.entities) {
+            const totalEntities = result.entities.length;
+
+            for (let i = 0; i < result.entities.length; i++) {
+                const entity = result.entities[i];
+
                 try {
                     await context.memoryVectorStore.storeEntity(entity);
                     importedCount++;
+
+                    // Log progress every 5 entities (avoid spam)
+                    if ((i + 1) % 5 === 0 || (i + 1) === totalEntities) {
+                        console.log(`[Bootstrap]   Progress: ${i + 1}/${totalEntities} entities stored...`);
+                    }
                 } catch (error: any) {
-                    console.error(`[Bootstrap] Failed to import ${entity.name}:`, error.message);
+                    console.error(`[Bootstrap]   ⚠️  Failed to import ${entity.name}:`, error.message);
                 }
             }
+
+            console.log(`[Bootstrap] ✓ Stored ${importedCount} entities`);
+            console.log('');
+            console.log(`[Bootstrap] ✅ Bootstrap completed in ${(result.totalTime / 1000).toFixed(2)}s`);
+            console.log(`[Bootstrap]   - Entities: ${result.entities.length}`);
+            console.log(`[Bootstrap]   - Tokens: ${result.tokensUsed.toLocaleString()}`);
+            console.log('');
 
             return {
                 content: [{

@@ -1,6 +1,7 @@
-# Memory Integration v3.0 - Documentation
+# Memory Integration v3.2 - Documentation
 
-**Philosophy:** Automate maximally, use AI smartly, don't overload
+**Philosophy:** Automate maximally, use AI smartly, don't overload  
+**Last Updated:** 2025-11-27
 
 ---
 
@@ -11,13 +12,13 @@
 
 Topics:
 - Quick Start (3 steps)
-- MCP Tools (3 simple tools)
+- MCP Tools (5 tools)
 - Web UI features
 - How it works
 - Best practices
 - Troubleshooting
 
-**Length:** ~400 lines  
+**Length:** ~500 lines  
 **Time to read:** 10-15 minutes
 
 ---
@@ -27,14 +28,14 @@ Topics:
 
 Contains:
 - Quick start commands
-- Tool parameters
+- All 5 MCP tools
 - Conversational examples
 - Common issues & fixes
 - Performance metrics
 - Best practices
 
-**Length:** ~250 lines  
-**Time to read:** 5 minutes
+**Length:** ~120 lines  
+**Time to read:** 3-5 minutes
 
 ---
 
@@ -43,13 +44,42 @@ Contains:
 
 Includes:
 - System architecture diagram
+- All 5 MCP tools diagram
 - Bootstrap workflow
 - Search flow
-- Web UI screenshots
-- Integration patterns
+- Health monitoring flow
+- Web UI architecture
+- Performance characteristics
 
-**Length:** Varies (images)  
+**Length:** ~700 lines  
 **Time to read:** 5-10 minutes
+
+---
+
+### [MEMORY_TEST_STRATEGY.md](./MEMORY_TEST_STRATEGY.md)
+**Testing strategy & results** - Quality assurance
+
+Contains:
+- Phase 1 test results (15/16 passing ✅)
+- Phase 2 test results (28/28 passing ✅)
+- Test coverage matrix
+- Performance benchmarks
+- Test execution instructions
+
+**Length:** ~800 lines  
+**Time to read:** 15-20 minutes
+
+---
+
+## 🔧 MCP Tools (5 Total)
+
+| Tool | Purpose | Usage |
+|------|---------|-------|
+| `bootstrap_memory` | Auto-generate entities | "Bootstrap memory" |
+| `search_memory` | Quick conversational search | "Search memory for auth" |
+| `open_memory_ui` | Visual exploration | "Open memory UI" |
+| `close_memory_ui` | Stop UI server | "Close memory UI" |
+| `check_memory_sync` | Health check | "Check memory health" |
 
 ---
 
@@ -62,6 +92,7 @@ Includes:
 2. Start server: npm start
 3. Tell AI: "Bootstrap memory for this codebase"
 4. Ask AI: "Search memory for authentication"
+5. Ask AI: "Check memory health"
 ```
 
 **Time:** 5 minutes  
@@ -77,6 +108,7 @@ Includes:
 3. Bootstrap: "Bootstrap memory"
 4. Open UI: "Open memory UI"
 5. Explore: http://localhost:3001
+6. Close: "Close memory UI"
 ```
 
 **Time:** 10 minutes  

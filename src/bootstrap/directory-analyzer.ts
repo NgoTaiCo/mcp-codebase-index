@@ -107,34 +107,44 @@ export class DirectoryAnalyzer {
         entities: MemoryEntity[];
         tokensUsed: number;
     }> {
-        console.log('[DirectoryAnalyzer] Starting Gemini-powered directory analysis...');
-        console.log(`  Repo: ${this.repoPath}`);
-        console.log(`  Token budget: ${this.tokenBudget.toLocaleString()}`);
+        console.log('[Bootstrap] 🔍 Phase 1/4: Scanning repository...');
+        console.log(`[Bootstrap]   Repo: ${this.repoPath}`);
+        console.log(`[Bootstrap]   Token budget: ${this.tokenBudget.toLocaleString()}`);
 
         // Phase 1: Scan repository structure
         const directories = this.scanDirectories();
-        console.log(`[DirectoryAnalyzer] Found ${directories.length} directories`);
+        console.log(`[Bootstrap] ✓ Found ${directories.length} directories`);
+        console.log('');
 
         // Phase 2: Gemini selects important directories
+        console.log('[Bootstrap] 🤖 Phase 2/4: Gemini selecting important directories...');
         const directoryAnalysis = await this.selectImportantDirectories(directories);
-        console.log(`[DirectoryAnalyzer] Selected ${directoryAnalysis.selectedDirectories.length} directories for deep analysis`);
-        console.log(`  Architecture: ${directoryAnalysis.architecture}`);
-        console.log(`  Language: ${directoryAnalysis.primaryLanguage}`);
+        console.log(`[Bootstrap] ✓ Selected ${directoryAnalysis.selectedDirectories.length} directories for deep analysis`);
+        console.log(`[Bootstrap]   Architecture: ${directoryAnalysis.architecture}`);
+        console.log(`[Bootstrap]   Language: ${directoryAnalysis.primaryLanguage}`);
+        console.log('');
 
         // Phase 3: Deep analyze selected directories
+        console.log('[Bootstrap] 🔬 Phase 3/4: Deep analyzing directories...');
         const deepAnalyses: DeepDirectoryAnalysis[] = [];
-        for (const dir of directoryAnalysis.selectedDirectories) {
+        const totalToAnalyze = directoryAnalysis.selectedDirectories.length;
+
+        for (let i = 0; i < directoryAnalysis.selectedDirectories.length; i++) {
+            const dir = directoryAnalysis.selectedDirectories[i];
+
             if (this.tokensUsed >= this.tokenBudget) {
-                console.log('[DirectoryAnalyzer] Token budget exhausted');
+                console.log(`[Bootstrap]   ⚠️  Token budget exhausted (${i}/${totalToAnalyze} completed)`);
                 break;
             }
 
+            console.log(`[Bootstrap]   Analyzing ${i + 1}/${totalToAnalyze}: ${dir}...`);
             const analysis = await this.deepAnalyzeDirectory(dir, directoryAnalysis);
             if (analysis) {
                 deepAnalyses.push(analysis);
-                console.log(`  ✓ Analyzed ${dir}`);
             }
         }
+        console.log(`[Bootstrap] ✓ Completed deep analysis (${deepAnalyses.length} directories)`);
+        console.log('');
 
         // Phase 4: Convert to memory entities
         const entities = this.toMemoryEntities(directoryAnalysis, deepAnalyses);

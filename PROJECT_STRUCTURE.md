@@ -207,14 +207,15 @@ export async function handleSearch(
 - `visualization.handler.ts` - Vector visualizations
 - `indexing.handler.ts` - Index management
 - `memory-ui.handler.ts` - Memory Web UI
-- `memory-management.handler.ts` - Memory MCP tools (3 only)
+- `memory-management.handler.ts` - Memory MCP tools (5 tools)
 
-### 3. **Memory Integration (v3.0 - Minimalist Design)**
+### 3. **Memory Integration (v3.2 - Optimized)**
 Memory system provides intelligent context via:
 - **Memory Vector Store** - Qdrant-based semantic memory
-- **3 MCP Tools** - `bootstrap_memory`, `search_memory`, `open_memory_ui`
+- **5 MCP Tools** - `bootstrap_memory`, `search_memory`, `open_memory_ui`, `close_memory_ui`, `check_memory_sync`
 - **Smart Bootstrap** - AST + Index + Gemini analysis
 - **Web UI** - D3.js visualization at localhost:3001
+- **Health Monitoring** - Auto-sync, orphan cleanup
 - **No CLI** - AI chat or Web UI only
 
 **Memory Directories:**

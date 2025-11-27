@@ -33,7 +33,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 - **[Source Code Structure](./src/README.md)** - Code organization
 - **[MCP Server Guide](./docs/guides/mcp-server-guide.md)** - Build your own MCP server
 - **[Bootstrap Guide](./docs/guides/BOOTSTRAP_GUIDE.md)** - Auto-generate memory entities
-- **[Memory Integration](./docs/memory/README.md)** - Memory system overview (v3.0)
+- **[Memory Integration](./docs/memory/README.md)** - Memory system overview (v3.2)
 - **[Memory Quick Reference](./docs/memory/MEMORY_QUICK_REFERENCE.md)** - Memory cheat sheet
 - **[Roadmap](./docs/planning/IMPROVEMENT_PLAN.md)** - Future plans
 
@@ -57,7 +57,7 @@ A Model Context Protocol (MCP) server that enables AI editors to search and unde
 ### 🧠 Memory System
 - **Auto-Bootstrap** - Generate 50+ entities in 3-5 minutes from your codebase
 - **Web UI** - Interactive D3.js graph visualization at localhost:3001
-- **4 MCP Tools** - `bootstrap_memory`, `search_memory`, `open_memory_ui`, `check_memory_sync`
+- **5 MCP Tools** - `bootstrap_memory`, `search_memory`, `open_memory_ui`, `close_memory_ui`, `check_memory_sync`
 - **Health Monitoring** - Automatic sync checks and orphaned vector cleanup
 - **Fast & Efficient** - 2.8-6.0x speedup with parallel processing, <$0.01 per project
 
@@ -181,34 +181,6 @@ Opens Web UI at http://localhost:3001 with:
 - Cheap: <100k tokens for 500-file project
 
 **📖 Complete guide:** [Bootstrap Guide](./docs/guides/BOOTSTRAP_GUIDE.md)
-
-### Memory Management (AI Chat + Web UI Only)
-
-**Bootstrap via AI:**
-```
-"Bootstrap memory for this codebase"
-```
-Auto-generates 50+ entities in 3-5 minutes via MCP tool.
-
-**Search via AI:**
-```
-"Search memory for authentication entities"
-"Find recent bugfixes in memory"
-```
-
-**Visual exploration:**
-```
-"Open memory UI"
-```
-Opens Web UI at http://localhost:3001 with:
-- 📊 D3.js graph visualization
-- 🔍 Real-time search & filters
-- 📈 Statistics dashboard
-- 🖱️ Click nodes for details
-
-**No CLI** - All interactions via AI chat or Web UI.
-
-**📖 Full guide:** [Memory User Guide](./docs/memory/MEMORY_USER_GUIDE.md)
 
 ### Check Indexing Status
 
@@ -443,17 +415,17 @@ For detailed guide including:
 ```
 - ✅ **Fast semantic search** (50-150ms)
 - ✅ **Auto-bootstrap** from codebase
-- ✅ **Auto-tracking** with ImplementationTracker
-- ✅ **Vector-based** similarity search
-- ⚠️ **Requires bootstrap** (one-time setup)
+- ✅ **5 MCP Tools** for complete management
+- ✅ **Health monitoring** and orphan cleanup
+- ✅ **2.8-6.0x faster** batch operations
 
 **Setup:**
 ```bash
 # 1. Enable in config
 ENABLE_INTERNAL_MEMORY=true
 
-# 2. Bootstrap memory
-npx tsx scripts/bootstrap-cli.ts --source=src/ --collection=codebase
+# 2. Bootstrap via AI chat
+"Bootstrap memory for this codebase"
 ```
 
 #### Option 2: External MCP Memory Server (Advanced)
@@ -505,23 +477,24 @@ Python • TypeScript • JavaScript • Dart • Go • Rust • Java • Kotli
 | **Incremental Savings** | 90%+ time reduction |
 | **Parallel Processing** | 25 chunks/sec |
 
-### Memory Search & Sync (New in v3.1)
+### Memory System (v3.2)
 
-| Metric | Value | vs Baseline |
-|--------|-------|-------------|
-| **Memory Search Speed** | 103ms | 8.7x faster (vs 901ms) |
-| **Memory Search Accuracy** | 88% | 53% improvement |
-| **Smart Sync (100 entities, 50% changed)** | 2.3s | Only updates changed |
-| **Change Detection** | ~3ms/entity | 100% accuracy |
-| **Auto Memory Update** | Real-time | Event-driven |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **Memory Search Speed** | 50-150ms | Qdrant vector search |
+| **Memory Search Accuracy** | 88% | Semantic similarity |
+| **Bootstrap Speed** | 3-5 min | For 500-file project |
+| **Batch Store Speed** | 2.8-6.0x faster | Parallel processing |
+| **Health Check** | <200ms | Entity + orphan check |
 
-**Features:**
-- ✅ Content hash-based change detection (SHA-256)
-- ✅ Batch operations (100 entities/batch)
-- ✅ Event-driven sync (instant updates)
-- ✅ Smart sync (skip unchanged entities)
+**v3.2 Features:**
+- ✅ 5 MCP tools: `bootstrap_memory`, `search_memory`, `open_memory_ui`, `close_memory_ui`, `check_memory_sync`
+- ✅ Entity validation prevents corruption
+- ✅ Auto orphan cleanup
+- ✅ Health monitoring every 5 minutes
+- ✅ 2.8-6.0x faster batch operations
 
-**📖 Performance details:** [Phase 1 Summary](./docs/PHASE_1_SUMMARY.md) | [Phase 2 Summary](./docs/PHASE_2_SUMMARY.md)
+**📖 Memory docs:** [Memory User Guide](./docs/memory/MEMORY_USER_GUIDE.md) | [Memory Quick Reference](./docs/memory/MEMORY_QUICK_REFERENCE.md)
 
 ---
 
@@ -563,40 +536,26 @@ mcp-codebase-index/
 ├── src/                     # Source code
 │   ├── core/               # Core business logic
 │   ├── storage/            # Data persistence
-│   ├── memory/             # Memory system (NEW in v3.1)
-│   │   ├── vector-store.ts    # Memory vector storage (426 lines)
-│   │   ├── types.ts           # Memory type definitions (151 lines)
-│   │   ├── sync/              # Sync system
-│   │   │   ├── update-detector.ts  # Change detection (186 lines)
-│   │   │   ├── sync-manager.ts     # Sync orchestration (287 lines)
-│   │   │   └── index.ts
-│   │   └── index.ts
+│   ├── memory/             # Memory system (v3.2)
+│   │   ├── vector-store.ts    # Memory vector storage
+│   │   ├── types.ts           # Memory type definitions
+│   │   └── sync/              # Health monitoring
 │   ├── enhancement/        # Prompt enhancement
 │   ├── visualization/      # Vector visualization
-│   ├── bootstrap/          # Smart Bootstrap (NEW in v3.0)
-│   │   ├── orchestrator.ts        # Main orchestrator (431 lines)
-│   │   ├── ast-parser.ts          # Code structure extraction
-│   │   ├── index-analyzer.ts      # Pattern detection
-│   │   └── gemini-analyzer.ts     # Semantic analysis
+│   ├── bootstrap/          # Smart Bootstrap
+│   │   ├── orchestrator.ts    # Main orchestrator
+│   │   ├── ast-parser.ts      # Code structure extraction
+│   │   ├── index-analyzer.ts  # Pattern detection
+│   │   └── gemini-analyzer.ts # Semantic analysis
 │   ├── mcp/                # MCP server
-│   │   ├── server.ts      # Server orchestration (1350+ lines)
-│   │   ├── handlers/      # Modular handlers
-│   │   │   ├── memory-management.handler.ts  # 3 MCP tools (507 lines)
-│   │   │   ├── memory-ui.handler.ts          # Web UI server
-│   │   │   └── ...
-│   │   ├── templates/     # HTML templates
-│   │   └── types/         # Handler types
-│   ├── intelligence/       # Contextual intelligence
-│   │   ├── contextCompiler.ts        # Memory integration
-│   │   ├── implementationTracker.ts  # Auto-sync integration
-│   │   └── ...
+│   │   ├── server.ts          # Server orchestration
+│   │   └── handlers/          # 5 memory + other handlers
 │   ├── types/              # Type definitions
 │   └── index.ts            # Entry point
 │
 ├── test/                    # Tests
-│   ├── memory-vector-store.test.ts  # Memory tests (261 lines)
-│   ├── memory-sync.test.ts          # Sync tests (217 lines)
-│   └── ...
+│   ├── memory-flow/           # Memory system tests
+│   └── todo-tests/            # Feature implementation tests
 │
 ├── config/                  # Configuration files
 ├── .data/                   # Runtime data (gitignored)

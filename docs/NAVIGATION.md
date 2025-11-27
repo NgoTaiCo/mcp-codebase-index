@@ -32,12 +32,20 @@ docs/
 ├── COPILOT_INSTRUCTIONS.md      # GitHub Copilot usage guide
 ├── NAVIGATION.md                # This file
 │
+├── memory/                      # Memory system docs (v3.2)
+│   ├── README.md               # Memory overview
+│   ├── MEMORY_USER_GUIDE.md    # Complete user guide
+│   ├── MEMORY_QUICK_REFERENCE.md # Quick reference
+│   └── MEMORY_VISUAL_GUIDE.md  # Diagrams & flowcharts
+│
 ├── guides/                      # Detailed guides
 │   ├── COPILOT_CLI_SETUP.md    # Setup for GitHub Copilot CLI
 │   ├── GEMINI_CLI_SETUP.md     # Setup for Google Gemini CLI
 │   ├── KIRO_SETUP.md           # Setup for Kiro AI Editor
 │   ├── ROO_CLINE_SETUP.md      # Setup for Roo Cline (VS Code)
 │   ├── QDRANT_CLOUD_SETUP.md   # Qdrant setup walkthrough
+│   ├── BOOTSTRAP_GUIDE.md      # Bootstrap memory guide
+│   ├── MEMORY_WEB_UI.md        # Memory Web UI guide
 │   ├── PROMPT_ENHANCEMENT_GUIDE.md  # Prompt enhancement guide
 │   ├── VECTOR_VISUALIZATION.md  # Vector visualization guide
 │   ├── mcp-server-guide.md     # Build your own MCP server
@@ -83,6 +91,16 @@ docs/
 | What commands are available? | [Quick Reference](./QUICK_REF.md) |
 | How do I test if it's working? | [Testing Guide](./guides/TEST_SEARCH.md) |
 | How do I use prompt enhancement? | [Prompt Enhancement Guide](./guides/PROMPT_ENHANCEMENT_GUIDE.md) |
+
+### Memory System
+| Question | Document |
+|----------|----------|
+| What is Memory Integration? | [Memory README](./memory/README.md) |
+| How do I bootstrap memory? | [Memory User Guide](./memory/MEMORY_USER_GUIDE.md) |
+| What MCP tools are available? | [Memory Quick Reference](./memory/MEMORY_QUICK_REFERENCE.md) |
+| How does memory work? | [Memory Visual Guide](./memory/MEMORY_VISUAL_GUIDE.md) |
+| How do I use Web UI? | [Memory Web UI Guide](./guides/MEMORY_WEB_UI.md) |
+| How do I check memory health? | [Memory User Guide](./memory/MEMORY_USER_GUIDE.md#check_memory_sync) |
 
 ### Troubleshooting
 | Question | Document |

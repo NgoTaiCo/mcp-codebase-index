@@ -1,6 +1,8 @@
 # Memory Integration - Visual Guide
 
-**Diagrams and Flowcharts for Understanding Memory Integration v3.0**
+**Diagrams and Flowcharts for Understanding Memory Integration v3.2**
+
+**Last Updated:** 2025-11-27
 
 ---
 
@@ -16,6 +18,20 @@
                               ↓
 ┌─────────────────────────────────────────────────────────────────────┐
 │                   MCP Codebase Index Server                         │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │                  MCP Tools (5 Memory Tools)                   │ │
+│  │                                                               │ │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────┐ │ │
+│  │  │ bootstrap_memory│  │ search_memory   │  │ open_memory_ui│ │ │
+│  │  │ (auto-generate) │  │ (quick queries) │  │ (visualization│ │ │
+│  │  └─────────────────┘  └─────────────────┘  └───────────────┘ │ │
+│  │                                                               │ │
+│  │  ┌─────────────────┐  ┌─────────────────┐                    │ │
+│  │  │ close_memory_ui │  │check_memory_sync│                    │ │
+│  │  │ (stop UI server)│  │ (health check)  │                    │ │
+│  │  └─────────────────┘  └─────────────────┘                    │ │
+│  └───────────────────────────────────────────────────────────────┘ │
 │                                                                     │
 │  ┌───────────────────────────────────────────────────────────────┐ │
 │  │                  Intelligence Layer                           │ │
@@ -50,11 +66,9 @@
 │  └───────────────────────────────────────────────────────────────┘ │
 │                                                                     │
 │  ┌───────────────────────────────────────────────────────────────┐ │
-│  │           Implementation Tracker (Background)                 │ │
+│  │           Health Monitoring (Background)                      │ │
 │  │                                                               │ │
-│  │  File Watcher → Detect Changes → Gemini Analysis            │ │
-│  │                              ↓                                │ │
-│  │                    Auto-Update Memory                         │ │
+│  │  Auto-Sync → Check every 5 min → Cleanup orphans → Alert    │ │
 │  └───────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
                               ↓
@@ -71,7 +85,97 @@
 
 ---
 
-## 2. Search Flow (Detailed)
+## 2. MCP Tools Overview (5 Tools)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Memory MCP Tools (5 Total)                       │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  1. bootstrap_memory                                                │
+│     Purpose: Auto-generate entities from codebase                   │
+│     Usage: "Bootstrap memory for this codebase"                     │
+│                                                                     │
+│     ┌─────────────────────────────────────────────────────────────┐ │
+│     │  Phase 1: AST Parser (0 tokens, <1 min)                     │ │
+│     │    ├─ Extract classes, functions, interfaces               │ │
+│     │    └─ Build initial entities                               │ │
+│     │                                                             │ │
+│     │  Phase 2: Index Analyzer (0 tokens, <1 min)                 │ │
+│     │    ├─ Analyze Qdrant vectors                                │ │
+│     │    └─ Detect patterns via clustering                        │ │
+│     │                                                             │ │
+│     │  Phase 3: Gemini Analyzer (~50k tokens, 2-3 min)            │ │
+│     │    ├─ Deep analysis of top 50 items                         │ │
+│     │    └─ Extract architecture decisions                        │ │
+│     │                                                             │ │
+│     │  Phase 4: Auto-Import (if autoImport=true)                  │ │
+│     │    └─ Store in Qdrant "memory" collection                   │ │
+│     └─────────────────────────────────────────────────────────────┘ │
+│     Result: 50+ entities in 3-5 minutes (~$0.01 cost)               │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  2. search_memory                                                   │
+│     Purpose: Quick conversational search - stay in chat             │
+│     Usage: "Search memory for authentication entities"              │
+│                                                                     │
+│     Query → Embed → Qdrant Search → Top K Results → Format         │
+│                                                                     │
+│     Parameters:                                                     │
+│     - query: string (required)                                      │
+│     - entityType: string (optional filter)                          │
+│     - tags: string[] (optional filter)                              │
+│     - limit: number (default: 10)                                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  3. open_memory_ui                                                  │
+│     Purpose: Visual exploration via Web UI                          │
+│     Usage: "Open memory UI" / "Show me the memory graph"            │
+│                                                                     │
+│     ┌─────────────────────────────────────────────────────────────┐ │
+│     │  http://localhost:3001                                      │ │
+│     │  ├─ 📊 D3.js graph visualization                            │ │
+│     │  ├─ 🔍 Real-time search & filters                           │ │
+│     │  ├─ 📈 Statistics dashboard                                 │ │
+│     │  └─ 🖱️  Click nodes for details                             │ │
+│     └─────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│     Parameters:                                                     │
+│     - port: number (default: 3001)                                  │
+│     - host: string (default: 'localhost')                           │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  4. close_memory_ui                                                 │
+│     Purpose: Stop the Memory Explorer web server                    │
+│     Usage: "Close memory UI" / "Stop memory server"                 │
+│                                                                     │
+│     Stops the HTTP server started by open_memory_ui                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  5. check_memory_sync                                               │
+│     Purpose: Manual health check for memory system                  │
+│     Usage: "Check memory health" / "Check memory sync status"       │
+│                                                                     │
+│     ┌─────────────────────────────────────────────────────────────┐ │
+│     │  Checks:                                                    │ │
+│     │  ├─ ✅ Entity count in collection                           │ │
+│     │  ├─ ✅ Orphaned vectors detection                           │ │
+│     │  ├─ ✅ Last sync timestamp                                  │ │
+│     │  └─ ✅ Overall health status                                │ │
+│     └─────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│     Returns: { healthy, entityCount, orphanedCount, lastSync }      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Search Flow (Detailed)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -179,16 +283,16 @@
 
 ---
 
-## 3. Bootstrap Flow
+## 4. Bootstrap Flow
 
 ```
-┌──────────────────────────────────────────────────────┐
-│ Bootstrap CLI Command                                │
-│                                                      │
-│ npx tsx scripts/bootstrap-cli.ts                    │
-│   --source=src/                                     │
-│   --collection=codebase                             │
-└──────────────────────┬───────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ Bootstrap via AI Chat                                    │
+│                                                          │
+│ "Bootstrap memory for this codebase"                     │
+│ OR                                                       │
+│ "Bootstrap memory with clearExisting=true"               │
+└──────────────────────┬───────────────────────────────────┘
                        ↓
        ┌───────────────────────────────┐
        │  Phase 1: AST Parser          │
@@ -205,6 +309,7 @@
        │  │  └─ Exports                │
        │  └─ Create entities           │
        │                               │
+       │  Speed: 549 files/sec         │
        │  Output:                      │
        │  - 87 entities extracted      │
        │  - Type: Component            │
@@ -229,6 +334,7 @@
        │  │  └─ Utils (cluster 4-5)    │
        │  └─ Enrich entities           │
        │                               │
+       │  Speed: 464 vectors/sec       │
        │  Output:                      │
        │  - Patterns detected: 4       │
        │  - Entities enriched with     │
@@ -259,17 +365,20 @@
        │  └─ Rate limiting:            │
        │     1 req/sec (safe)          │
        │                               │
+       │  Confidence: 95.6% average    │
        │  Output:                      │
        │  - 50 entities analyzed       │
        │  - Rich observations          │
-       │  - Tokens used: 82,340        │
+       │  - Tokens used: ~82,340       │
        └───────────────┬───────────────┘
                        ↓
        ┌───────────────────────────────┐
-       │  Memory Storage               │
+       │  Phase 4: Memory Storage      │
+       │  (Parallel, 2.8-6.0x faster)  │
        │                               │
        │  MemoryVectorStore:           │
-       │  ├─ Embed each entity         │
+       │  ├─ Validate entities         │
+       │  ├─ Parallel embed batch      │
        │  │  (768-dim via Gemini)      │
        │  ├─ Generate content hash     │
        │  ├─ Extract auto-tags         │
@@ -287,9 +396,9 @@
        │  Summary:                     │
        │  ├─ Total files: 125          │
        │  ├─ Entities created: 87      │
-       │  ├─ Tokens used: 82,340       │
-       │  ├─ Duration: 4m 15s          │
-       │  └─ Output: entities.json     │
+       │  ├─ Tokens used: ~82,340      │
+       │  ├─ Duration: 3-5 minutes     │
+       │  └─ Cost: ~$0.01              │
        │                               │
        │  Coverage: 90%+ of codebase   │
        │  Ready for use! 🎉           │
@@ -298,107 +407,11 @@
 
 ---
 
-## 4. Auto-Memory Update Flow
-
-```
-┌──────────────────────────────────────────────────┐
-│ Developer writes code                            │
-│                                                  │
-│ Created: src/auth/google.strategy.ts            │
-│ Modified: src/auth/auth.controller.ts           │
-└────────────────────┬─────────────────────────────┘
-                     ↓
-     ┌───────────────────────────────┐
-     │  File Watcher (chokidar)      │
-     │                               │
-     │  Event: fileCreated           │
-     │  Path: src/auth/google...     │
-     │                               │
-     │  Event: fileModified          │
-     │  Path: src/auth/auth...       │
-     └───────────────┬───────────────┘
-                     ↓
-     ┌───────────────────────────────┐
-     │  Implementation Tracker       │
-     │                               │
-     │  trackIntent(intentId)        │
-     │  recordChange(change)         │
-     └───────────────┬───────────────┘
-                     ↓
-     ┌───────────────────────────────┐
-     │  Gemini Analysis              │
-     │  (After change stabilizes)    │
-     │                               │
-     │  Input:                       │
-     │  - File changes               │
-     │  - File content               │
-     │                               │
-     │  Analysis:                    │
-     │  {                            │
-     │    components_added: [        │
-     │      "GoogleStrategy"         │
-     │    ],                         │
-     │    functions_added: [         │
-     │      "validate",              │
-     │      "handleCallback"         │
-     │    ],                         │
-     │    dependencies: [            │
-     │      "passport-google-..."    │
-     │    ],                         │
-     │    summary: "Implemented      │
-     │      Google OAuth login"      │
-     │  }                            │
-     └───────────────┬───────────────┘
-                     ↓
-     ┌───────────────────────────────┐
-     │  Create Memory Entity         │
-     │                               │
-     │  {                            │
-     │    name: "google_oauth_...",  │
-     │    entityType: "Feature",     │
-     │    observations: [            │
-     │      "Implemented Google...", │
-     │      "Uses passport-...",     │
-     │      "Developer: ngotaico"    │
-     │    ],                         │
-     │    relatedFiles: [...],       │
-     │    relatedComponents: [...],  │
-     │    dependencies: [...]        │
-     │  }                            │
-     └───────────────┬───────────────┘
-                     ↓
-     ┌───────────────────────────────┐
-     │  MemoryVectorStore.store()    │
-     │                               │
-     │  1. Build searchable text     │
-     │  2. Generate embedding        │
-     │  3. Calculate content hash    │
-     │  4. Extract tags              │
-     │  5. Upsert to Qdrant          │
-     │                               │
-     │  ✅ Entity stored             │
-     └───────────────┬───────────────┘
-                     ↓
-     ┌───────────────────────────────┐
-     │  Next search automatically    │
-     │  includes this context!       │
-     │                               │
-     │  search_codebase({            │
-     │    query: "OAuth login"       │
-     │  })                           │
-     │                               │
-     │  → Returns newly created      │
-     │    memory entity              │
-     └───────────────────────────────┘
-```
-
----
-
 ## 5. Memory UI Architecture
 
 ```
 ┌────────────────────────────────────────────────┐
-│ User opens browser: http://localhost:3001     │
+│ User: "Open memory UI"                         │
 └──────────────────────┬─────────────────────────┘
                        ↓
        ┌───────────────────────────────┐
@@ -426,7 +439,8 @@
        │                               │
        │  ├─ getEntity()               │
        │  ├─ search()                  │
-       │  └─ getStats()                │
+       │  ├─ getStats()                │
+       │  └─ checkSync()               │
        └───────────────┬───────────────┘
                        ↓
        ┌───────────────────────────────┐
@@ -482,7 +496,49 @@
 
 ---
 
-## 6. Data Flow Timeline
+## 6. Health Monitoring Flow
+
+```
+┌─────────────────────────────────────────────────┐
+│  check_memory_sync Tool                         │
+└─────────────────────────────────────────────────┘
+
+User: "Check memory health"
+         ↓
+┌─────────────────────────────────────────────────┐
+│  Step 1: Count Entities                         │
+│  ├─ Query Qdrant "memory" collection            │
+│  └─ Get total vector count                      │
+└─────────────────────┬───────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────┐
+│  Step 2: Detect Orphans                         │
+│  ├─ Check for vectors without valid metadata    │
+│  └─ Flag orphaned entries                       │
+└─────────────────────┬───────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────┐
+│  Step 3: Sync Status                            │
+│  ├─ Get last auto-sync timestamp                │
+│  └─ Calculate time since last sync              │
+└─────────────────────┬───────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────┐
+│  Step 4: Generate Report                        │
+│                                                 │
+│  {                                              │
+│    healthy: true,                               │
+│    entityCount: 52,                             │
+│    orphanedCount: 0,                            │
+│    lastSync: "2025-11-27T10:30:00Z",            │
+│    recommendations: []                          │
+│  }                                              │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Data Flow Timeline
 
 ```
 Time: 0s
@@ -538,7 +594,7 @@ Value added: Rich context, accurate suggestions
 
 ---
 
-## 7. Memory Lifecycle
+## 8. Memory Lifecycle
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -555,12 +611,13 @@ Stage 1: CREATION
 │     Timeline: Real-time, <1 second
 │
 └─ Via Manual:
-   └─ Created via CLI or API
-      Timeline: On-demand
+   └─ Created via Web UI or API
+   Timeline: On-demand
 
       ↓
 
-Stage 2: STORAGE
+Stage 2: STORAGE (2.8-6.0x faster with parallel)
+├─ Entity validation (prevents corruption)
 ├─ Embedding generation (Gemini)
 ├─ Content hash calculation
 ├─ Tag extraction
@@ -583,29 +640,29 @@ Stage 4: UPDATE
 │
 ├─ Update triggers:
 │  ├─ Code modified
-│  ├─ Manual update (CLI)
-│  └─ Batch sync
+│  ├─ Manual update (Web UI)
+│  └─ Batch re-bootstrap
 │
 └─ Re-embedding + re-storage
 
       ↓
 
 Stage 5: DELETION
-├─ Manual deletion (CLI)
-├─ Cleanup scripts
+├─ Manual deletion (Web UI)
+├─ Orphan cleanup (automatic)
 └─ Collection rebuild (rare)
 
       ↓
 
-Stage 6: ARCHIVAL (Optional)
-├─ Export to JSON
-├─ Version control
-└─ Backup & restore
+Stage 6: HEALTH CHECK
+├─ Auto-sync every 5 minutes
+├─ Orphan detection & cleanup
+└─ Manual check via check_memory_sync
 ```
 
 ---
 
-## 8. Performance Characteristics
+## 9. Performance Characteristics (v3.2)
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -624,39 +681,32 @@ Code Search (Qdrant)
 ├─ Average: 70ms
 └─ Accuracy: 92%
 
-Intent Analysis (Gemini)
-├─ Simple query: 200ms
-├─ Complex query: 500ms
-├─ Average: 350ms
-└─ Cache hit rate: 40%
-
-Context Compilation
-├─ Parallel fetch: 150ms
-├─ Markdown gen: 25ms
-├─ Total: 175ms
-└─ Size: 2-5KB
+Entity Storage (v3.2 optimized)
+├─ Single entity: 100ms
+├─ Batch (parallel): 2.8-6.0x faster
+├─ Validation: <1ms per entity
+└─ Hash calculation: <1ms
 
 Bootstrap (500 files)
-├─ Phase 1 (AST): 45s
-├─ Phase 2 (Index): 35s
-├─ Phase 3 (Gemini): 180s
+├─ Phase 1 (AST): 45s (549 files/sec)
+├─ Phase 2 (Index): 35s (464 vectors/sec)
+├─ Phase 3 (Gemini): 180s (95.6% confidence)
 └─ Total: 260s (4.3 min)
-
-Auto Memory Update
-├─ File change detect: <1ms
-├─ Gemini analysis: 500ms
-├─ Entity storage: 100ms
-└─ Total: 600ms
 
 Memory UI
 ├─ Initial load: 300ms
 ├─ Graph render: 200ms
 ├─ Search: 100ms
 └─ Navigation: <50ms
+
+Health Check
+├─ Entity count: <50ms
+├─ Orphan detection: <100ms
+└─ Full report: <200ms
 ```
 
 ---
 
-**Visual Guide by**: Memory Integration v3.0 Team  
-**Version**: 3.0  
-**Last Updated**: 2025-11-20
+**Visual Guide by**: Memory Integration v3.2 Team  
+**Version**: 3.2 (Optimized)  
+**Last Updated**: 2025-11-27
